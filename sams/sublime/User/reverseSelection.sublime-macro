@@ -1,0 +1,9 @@
+[
+	{
+		"args":
+		{
+			"operation": "reverse"
+		},
+		"command": "permute_selection"
+	}
+]

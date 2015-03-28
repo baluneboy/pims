@@ -1,0 +1,24 @@
+#################################################################################
+FILE: "./var/log/messages"
+PREFIX: "([A-Za-z]{3} )*\s*\d{1,2} \d{2}:\d{2}:\d{2} (\d{4}|icu-f01)[ :] *"
+ATTRS: ['numLinesMatch', 'rangeGMT','medianFrequency']
+
+SUFFIX: "rarpd\[\d*\]: ep1: [0-9:]{11,}"
+LIKE: Jan 14 15:02:37 icu-f01 rarpd[19458]: ep1: 0:60:97:94:35:53
+
+SUFFIX: "newsyslog\[\d*\]: logfile turned over"
+LIKE: Jan 14 10:59:59 icu-f01 newsyslog[16290]: logfile turned over
+
+#################################################################################
+FILE: "./var/log/sams-ii/watchdoglog"
+PREFIX: "([A-Za-z]{3} )*\s*\d{1,2} \d{2}:\d{2}:\d{2} (\d{4}|icu-f01)[ :] *"
+ATTRS: ['numLinesMatch', 'rangeGMT','medianFrequency']
+
+SUFFIX: "newsyslog\[\d*\]: logfile turned over"
+LIKE: Dec  8 08:59:59 icu-f01 newsyslog[7634]: logfile turned over
+
+SUFFIX: "Killed \[[0-9 ]*\], found in file \[/usr/local/sams-ii/telemetry_downlinker.pid\] which was \[\d*\] seconds old\."
+LIKE: Wed Dec  8 09:00:58 2010: Killed [7619          ], found in file [/usr/local/sams-ii/telemetry_downlinker.pid] which was [117] seconds old.
+
+SUFFIX: "Ran command \[/usr/local/bin/telemetry_downlinker -d\]\."
+LIKE: Wed Dec  8 09:00:59 2010: Ran command [/usr/local/bin/telemetry_downlinker -d].

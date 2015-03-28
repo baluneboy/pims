@@ -1,0 +1,275 @@
+########################################################################################
+ps -ef
+UID        PID  PPID  C STIME TTY          TIME CMD
+root         1     0  0 Jun19 ?        00:00:01 /sbin/init
+root         2     0  0 Jun19 ?        00:00:02 [kthreadd]
+root         3     2  0 Jun19 ?        00:41:44 [ksoftirqd/0]
+root         6     2  0 Jun19 ?        00:00:00 [migration/0]
+root         7     2  0 Jun19 ?        00:00:30 [watchdog/0]
+root         8     2  0 Jun19 ?        00:00:00 [migration/1]
+root        10     2  0 Jun19 ?        00:03:09 [ksoftirqd/1]
+root        12     2  0 Jun19 ?        00:11:59 [watchdog/1]
+root        13     2  0 Jun19 ?        00:00:00 [cpuset]
+root        14     2  0 Jun19 ?        00:00:00 [khelper]
+root        15     2  0 Jun19 ?        00:00:00 [kdevtmpfs]
+root        16     2  0 Jun19 ?        00:00:00 [netns]
+root        18     2  0 Jun19 ?        00:00:16 [sync_supers]
+root        19     2  0 Jun19 ?        00:00:00 [bdi-default]
+root        20     2  0 Jun19 ?        00:00:00 [kintegrityd]
+root        21     2  0 Jun19 ?        00:00:02 [kblockd]
+root        22     2  0 Jun19 ?        00:00:00 [ata_sff]
+root        23     2  0 Jun19 ?        00:00:00 [khubd]
+root        24     2  0 Jun19 ?        00:00:00 [md]
+root        26     2  0 Jun19 ?        00:00:02 [khungtaskd]
+root        27     2  0 Jun19 ?        00:02:57 [kswapd0]
+root        28     2  0 Jun19 ?        00:00:00 [ksmd]
+root        29     2  0 Jun19 ?        00:00:00 [khugepaged]
+root        30     2  0 Jun19 ?        00:00:00 [fsnotify_mark]
+root        31     2  0 Jun19 ?        00:00:00 [ecryptfs-kthrea]
+root        32     2  0 Jun19 ?        00:00:00 [crypto]
+root        40     2  0 Jun19 ?        00:00:00 [kthrotld]
+root        48     2  0 Jun19 ?        00:00:00 [scsi_eh_0]
+root        49     2  0 Jun19 ?        00:00:00 [scsi_eh_1]
+root        50     2  0 Jun19 ?        00:00:00 [scsi_eh_2]
+root        52     2  0 Jun19 ?        00:00:00 [scsi_eh_3]
+root        53     2  0 Jun19 ?        00:00:00 [scsi_eh_4]
+root        56     2  0 Jun19 ?        00:00:00 [scsi_eh_5]
+root        57     2  0 Jun19 ?        00:00:00 [scsi_eh_6]
+root        58     2  0 Jun19 ?        00:00:01 [kworker/u:6]
+root        60     2  0 Jun19 ?        00:00:00 [kworker/u:8]
+root        79     2  0 Jun19 ?        00:00:00 [devfreq_wq]
+root       276     2  0 Jun19 ?        00:00:00 [firewire]
+root       284     2  0 Jun19 ?        00:00:00 [ttm_swap]
+root       357     2  0 Jun19 ?        00:03:58 [jbd2/sda1-8]
+root       358     2  0 Jun19 ?        00:00:00 [ext4-dio-unwrit]
+root       440     1  0 Jun19 ?        00:00:00 upstart-udev-bridge --daemon
+root       444     1  0 Jun19 ?        00:00:00 /sbin/udevd --daemon
+root       550     2  0 Jun19 ?        00:00:00 [irq/48-mei]
+root       593   444  0 Jun19 ?        00:00:00 /sbin/udevd --daemon
+root       594   444  0 Jun19 ?        00:00:00 /sbin/udevd --daemon
+root       664     2  0 Jun19 ?        00:00:00 [ktpacpid]
+root       699     2  0 Jun19 ?        00:00:00 [kmemstick]
+root       700     2  0 Jun19 ?        00:00:00 [kpsmoused]
+root       704     2  0 Jun19 ?        00:00:00 [hd-audio0]
+root       773     2  0 Jun19 ?        00:00:00 [kmpathd]
+root       775     2  0 Jun19 ?        00:00:00 [kmpath_handlerd]
+root       788     2  0 Jun19 ?        00:00:00 [pccardd]
+root       792     2  0 Jun19 ?        00:00:00 [r592_io]
+root       793     2  0 Jun19 ?        00:00:00 [r852]
+root       856     2  0 Jun19 ?        00:00:00 [cfg80211]
+root       883     1  0 Jun19 ?        00:00:09 rpcbind -w
+root       915     1  0 Jun19 ?        00:00:00 upstart-socket-bridge --daemon
+root       922     2  0 Jun19 ?        00:00:00 [iwl4965]
+root       962     2  0 Jun19 ?        00:00:00 [rpciod]
+root       971     2  0 Jun19 ?        00:00:00 [nfsiod]
+102       1005     1  0 Jun19 ?        00:00:00 dbus-daemon --system --fork --activation=upstart
+root      1031     1  0 Jun19 ?        00:00:00 rpc.idmapd
+syslog    1034     1  0 Jun19 ?        00:09:34 rsyslogd -c5
+root      1039     1  0 Jun19 ?        00:00:00 /usr/sbin/bluetoothd
+root      1064     2  0 Jun19 ?        00:00:00 [krfcommd]
+statd     1071     1  0 Jun19 ?        00:00:00 rpc.statd -L
+root      1185     1  0 Jun19 tty4     00:00:00 /sbin/getty -8 38400 tty4
+root      1191     1  0 Jun19 tty5     00:00:00 /sbin/getty -8 38400 tty5
+root      1195     1  0 Jun19 ?        00:00:00 /usr/sbin/rpc.bootparamd -s
+root      1203     1  0 Jun19 tty2     00:00:00 /sbin/getty -8 38400 tty2
+root      1206     1  0 Jun19 tty3     00:00:00 /sbin/getty -8 38400 tty3
+root      1211     1  0 Jun19 tty6     00:00:00 /sbin/getty -8 38400 tty6
+whoopsie  1222     1  0 Jun19 ?        00:00:00 whoopsie
+root      1224     1  0 Jun19 ?        00:16:41 /usr/sbin/irqbalance
+root      1225     1  0 Jun19 ?        00:00:00 acpid -c /etc/acpi/events -s /var/run/acpid.socket
+daemon    1229     1  0 Jun19 ?        00:00:00 atd
+root      1265     2  0 Jun19 ?        00:00:00 [lockd]
+root      1266     2  0 Jun19 ?        00:00:00 [nfsd4]
+root      1267     2  0 Jun19 ?        00:00:00 [nfsd4_callbacks]
+root      1268     2  0 Jun19 ?        00:31:00 [nfsd]
+root      1269     2  0 Jun19 ?        00:30:43 [nfsd]
+root      1270     2  0 Jun19 ?        00:31:00 [nfsd]
+root      1271     2  0 Jun19 ?        00:30:27 [nfsd]
+root      1272     2  0 Jun19 ?        00:30:14 [nfsd]
+root      1273     2  0 Jun19 ?        00:30:23 [nfsd]
+root      1274     2  0 Jun19 ?        00:30:37 [nfsd]
+root      1275     2  0 Jun19 ?        00:30:47 [nfsd]
+root      1279     1  0 Jun19 ?        00:00:08 /usr/sbin/rpc.mountd --manage-gids
+root      1301     1  0 Jun19 ?        00:00:00 /usr/sbin/inetd
+root      1315     1  0 Jun19 ?        00:00:00 /usr/sbin/rarpd -e -v
+root      1592     1  0 Jun19 ?        00:00:00 /usr/sbin/sshd -D
+root      1606     2  0 Jun19 ?        00:04:42 [flush-8:0]
+root      1827     1  0 Jun19 ?        00:00:17 bootpd -s
+ntp       1844     1  0 Jun19 ?        00:05:30 /usr/sbin/ntpd -p /var/run/ntpd.pid -g -u 119:127
+root      2118     1  0 Jun19 ?        08:13:56 /usr/local/bin/RIC_manager -d
+root      2120     1  0 Jun19 ?        03:43:23 /usr/local/bin/telemetry_downlinker -d
+root      2127     1  0 Jun19 ?        02:09:46 /usr/local/bin/cu_state_monitor -d
+root      2137     1  0 Jun19 ?        00:00:34 cron
+root      2139     1  0 Jun19 tty1     00:00:00 /sbin/getty -8 38400 tty1
+root      2434     2  0 13:21 ?        00:00:05 [kworker/0:0]
+root      2604     1  0 07:27 ?        00:03:17 /usr/local/bin/generic_client tshes-06-accel tshes-06 9760
+root      2605     1  0 07:27 ?        00:00:00 /usr/local/bin/generic_client tshes-06-state tshes-06 9761 70
+root      3004     2  0 14:52 ?        00:00:00 [kworker/0:1]
+root      3578     2  0 14:53 ?        00:00:00 [kworker/1:1]
+root      4827     2  0 14:57 ?        00:00:00 [kworker/0:2]
+root      5419     2  0 14:58 ?        00:00:00 [kworker/1:0]
+root      6008 17056  0 15:00 ?        00:00:00 /usr/local/bin/cumain -d
+root      6009  6008  0 15:00 ?        00:00:00 sh -c monday
+root      6010  6009  0 15:00 ?        00:00:00 /bin/sh /usr/local/sams-ii/scripts/monday
+root      6012  6010  2 15:00 ?        00:00:00 /usr/bin/python /usr/local/sams-ii/scripts/monday.py
+root      6015  6012  0 15:00 ?        00:00:00 sh -c ps -ef >> /usr/tgz/samslist2014230.txt 
+root      6016  6015  0 15:00 ?        00:00:00 ps -ef
+root     14605     1  0 Aug06 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     14607 14605  0 Aug06 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     14609 14607  0 Aug06 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     14611     1  0 Aug06 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     14615 14611  0 Aug06 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     14616     1  0 Aug06 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     14618 14615  0 Aug06 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     14619 14616  0 Aug06 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     14627 14619  0 Aug06 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     14678 14609  0 Aug06 ?        00:00:00 [rsh] <defunct>
+root     14679 14618  0 Aug06 ?        00:00:00 [rsh] <defunct>
+root     14680 14627  0 Aug06 ?        00:00:00 [rsh] <defunct>
+root     14949     1  0 Jul17 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     14950 14949  0 Jul17 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     14954     1  0 Jul17 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     14955 14954  0 Jul17 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     14959     1  0 Jul17 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     14960 14959  0 Jul17 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     14999 14950  0 Jul17 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     15000 14955  0 Jul17 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     15001 14960  0 Jul17 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     15010     1  0 Aug06 ?        00:06:49 /usr/local/bin/generic_client 122-f03 ee122-f03 9805
+root     15024 15000  0 Jul17 ?        00:00:00 [rsh] <defunct>
+root     15025 14999  0 Jul17 ?        00:00:00 [rsh] <defunct>
+root     15026 15001  0 Jul17 ?        00:00:00 [rsh] <defunct>
+root     15810     1  0 Aug08 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     15811 15810  0 Aug08 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     15812 15811  0 Aug08 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     15813 15812  0 Aug08 ?        00:00:00 [rsh] <defunct>
+root     17056     1  0 Aug06 ?        00:00:10 /usr/local/bin/cumain -d
+root     17074     1  0 Aug06 ?        01:34:49 /usr/local/bin/generic_client 121-f05 ee122-f03 9803
+root     17083     1  0 Aug06 ?        00:07:05 /usr/local/bin/generic_client 122-f02 ee122-f02 9805
+root     17087     1  0 Aug06 ?        01:39:38 /usr/local/bin/generic_client 121-f04 ee122-f02 9803
+root     17091     1  0 Aug06 ?        01:39:30 /usr/local/bin/generic_client 121-f03 ee122-f02 9804
+root     21754     1  0 Jul22 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     21756 21754  0 Jul22 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     21759     1  0 Jul22 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     21761 21759  0 Jul22 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     21764     1  0 Jul22 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     21766 21764  0 Jul22 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     21817 21756  0 Jul22 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     21818 21761  0 Jul22 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     21819 21766  0 Jul22 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     21835 21818  0 Jul22 ?        00:00:00 [rsh] <defunct>
+root     21836 21819  0 Jul22 ?        00:00:00 [rsh] <defunct>
+root     21837 21817  0 Jul22 ?        00:00:00 [rsh] <defunct>
+root     23280     1  0 Aug06 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     23281 23280  0 Aug06 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     23285     1  0 Aug06 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     23286 23285  0 Aug06 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     23290     1  0 Aug06 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     23291 23290  0 Aug06 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     23342 23281  0 Aug06 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     23343 23286  0 Aug06 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     23344 23291  0 Aug06 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     23361 23343  0 Aug06 ?        00:00:00 [rsh] <defunct>
+root     23362 23342  0 Aug06 ?        00:00:00 [rsh] <defunct>
+root     23363 23344  0 Aug06 ?        00:00:00 [rsh] <defunct>
+root     24997     1  0 Jul15 ?        00:00:00 ee122-f04 /usr/local/bin/accel_server 122-f04 121-f08 1 500.000000 10.000000 7 3 60 42 icu-f01 9807 9804 9801 9860 /usr/local/sams-ii/RTS_Config.conf 121-f08
+root     28571     1  0 Jul22 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     28572 28571  0 Jul22 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     28575 28572  0 Jul22 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     28577     1  0 Jul22 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     28578 28577  0 Jul22 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     28581 28578  0 Jul22 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     28583     1  0 Jul22 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     28584 28583  0 Jul22 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     28587 28584  0 Jul22 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     28641 28587  0 Jul22 ?        00:00:00 [rsh] <defunct>
+root     28642 28581  0 Jul22 ?        00:00:00 [rsh] <defunct>
+root     28643 28575  0 Jul22 ?        00:00:00 [rsh] <defunct>
+root     28690     2  1 14:33 ?        00:00:17 [kworker/1:2]
+root     28849     1  0 Jul29 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     28850 28849  0 Jul29 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     28854     1  0 Jul29 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     28855 28854  0 Jul29 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     28863 28850  0 Jul29 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     28864 28855  0 Jul29 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     28869     1  0 Jul29 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     28877 28869  0 Jul29 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     28903 28877  0 Jul29 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     28930 28863  0 Jul29 ?        00:00:00 [rsh] <defunct>
+root     28931 28864  0 Jul29 ?        00:00:00 [rsh] <defunct>
+root     28932 28903  0 Jul29 ?        00:00:00 [rsh] <defunct>
+root     29243     1  0 13:06 ?        00:00:49 /usr/local/bin/generic_client tshes-05-accel tshes-05 9760
+root     29245     1  0 13:06 ?        00:00:00 /usr/local/bin/generic_client tshes-05-state tshes-05 9761 70
+root     31336     1  0 Jun20 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     31337 31336  0 Jun20 ?        00:00:00 sh -c rsh ee122-f02 /usr/local/bin/ee_reboot 1 
+root     31338 31337  0 Jun20 ?        00:00:00 rsh ee122-f02 /usr/local/bin/ee_reboot 1
+root     31348 31338  0 Jun20 ?        00:00:00 [rsh] <defunct>
+root     31499     1  0 Jun20 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     31500 31499  0 Jun20 ?        00:00:00 sh -c rsh ee122-f03 /usr/local/bin/ee_reboot 1 
+root     31501 31500  0 Jun20 ?        00:00:00 rsh ee122-f03 /usr/local/bin/ee_reboot 1
+root     31502 31501  0 Jun20 ?        00:00:00 [rsh] <defunct>
+root     31666     1  0 Aug15 ?        00:00:00 /usr/local/bin/daemon rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     31667 31666  0 Aug15 ?        00:00:00 sh -c rsh ee122-f04 /usr/local/bin/ee_reboot 1 
+root     31668 31667  0 Aug15 ?        00:00:00 rsh ee122-f04 /usr/local/bin/ee_reboot 1
+root     31675 31668  0 Aug15 ?        00:00:00 [rsh] <defunct>
+root     31996     1  0 Aug15 ?        00:01:48 /usr/local/bin/generic_client 122-f04 ee122-f04 9805
+root     32000     1  0 Aug15 ?        00:26:04 /usr/local/bin/generic_client 121-f02 ee122-f04 9803
+root     32004     1  0 Aug15 ?        00:26:06 /usr/local/bin/generic_client 121-f08 ee122-f04 9804
+
+########################################################################################
+df -k
+Filesystem     1K-blocks     Used Available Use% Mounted on
+/dev/sda1      151950716 56330484  88012120  40% /
+udev             1978944        4   1978940   1% /dev
+tmpfs             796612      780    795832   1% /run
+none                5120        0      5120   0% /run/lock
+none             1991524        0   1991524   0% /run/shm
+
+########################################################################################
+ls -al /usr/tgz
+total 86704
+drwxr-xr-x  2 root root     4096 Aug 18 15:00 .
+drwxr-xr-x 14 root root     4096 Aug  5  2013 ..
+-rw-rw-rw-  1 root root     6890 Jun 28 14:29 list2014179.txt
+-rw-rw-rw-  1 root root     7476 Jul  2 11:10 list2014183b.txt
+-rw-rw-rw-  1 root root     6844 Jul  2 01:29 list2014183.txt
+-rw-rw-rw-  1 root root    12362 Jul 30 18:05 list2014211b.txt
+-rw-rw-rw-  1 root root    14536 Aug 11 15:05 list2014223a.txt
+-rw-rw-rw-  1 root root    15126 Aug 15 11:17 list2014227a.txt
+-rw-rw-rw-  1 root root    14354 Aug 15 11:15 list2014227.txt
+-rw-rw-rw-  1 root root  4392761 Nov  4  2013 logs_day1.tgz
+-rw-rw-rw-  1 root root 15176848 Oct 25  2013 logs_day2.tgz
+-rw-rw-rw-  1 root root  7124166 Oct 26  2013 logs_day3.tgz
+-rw-rw-rw-  1 root root  7083816 Oct 28  2013 logs_day4_2.tgz
+-rw-rw-rw-  1 root root  6991302 Oct 27  2013 logs_day4.tgz
+-rw-rw-rw-  1 root root     5652 Jun 20 15:30 ntp2014171.txt
+-rw-rw-rw-  1 root root     5654 Jun 23 15:11 ntp2014174b.txt
+-rw-rw-rw-  1 root root     5068 Jun 23 15:11 ntp2014174.txt
+-rw-rw-rw-  1 root root     9433 Jun 19 13:55 samslist2014170.txt
+-rw-rw-rw-  1 root root    10352 Jun 23 15:05 samslist2014174.txt
+-rw-rw-rw-  1 root root    10407 Jun 30 15:03 samslist2014181.txt
+-rw-rw-rw-  1 root root    10836 Jul  7 15:06 samslist2014188.txt
+-rw-rw-rw-  1 root root    10968 Jul 14 15:00 samslist2014195.txt
+-rw-rw-rw-  1 root root    10371 Jul 17 11:38 samslist2014198.txt
+-rw-rw-rw-  1 root root    13168 Jul 22 15:27 samslist2014203.txt
+-rw-rw-rw-  1 root root    29533 Jul 23 14:47 samslist2014204.txt
+-rw-rw-rw-  1 root root    14527 Jul 24 13:29 samslist2014205.txt
+-rw-rw-rw-  1 root root    15306 Jul 28 15:02 samslist2014209.txt
+-rw-rw-rw-  1 root root    32563 Jul 30 20:07 samslist2014211.txt
+-rw-rw-rw-  1 root root    16571 Aug  4 16:03 samslist2014216.txt
+-rw-rw-rw-  1 root root    19006 Aug 11 15:00 samslist2014223.txt
+-rw-rw-rw-  1 root root    17304 Aug 18 15:00 samslist2014230.txt
+-rw-rw-rw-  1 root root  1855008 Jun 19 13:55 samslogs2014170.tgz
+-rw-rw-rw-  1 root root  1476146 Jun 23 15:05 samslogs2014174.tgz
+-rw-rw-rw-  1 root root  1258566 Jun 30 15:03 samslogs2014181.tgz
+-rw-rw-rw-  1 root root  1321068 Jul  7 15:06 samslogs2014188.tgz
+-rw-rw-rw-  1 root root  1483340 Jul 14 15:00 samslogs2014195.tgz
+-rw-rw-rw-  1 root root  1667818 Jul 17 11:38 samslogs2014198.tgz
+-rw-rw-rw-  1 root root  1796346 Jul 22 15:27 samslogs2014203.tgz
+-rw-rw-rw-  1 root root  7426244 Jul 23 14:47 samslogs2014204.tgz
+-rw-rw-rw-  1 root root  7190560 Jul 24 13:29 samslogs2014205.tgz
+-rw-rw-rw-  1 root root  6969952 Jul 28 15:02 samslogs2014209.tgz
+-rw-rw-rw-  1 root root  5958050 Jul 30 20:07 samslogs2014211.tgz
+-rw-rw-rw-  1 root root  4580496 Aug  4 16:03 samslogs2014216.tgz
+-rw-rw-rw-  1 root root  4616344 Aug 11 15:01 samslogs2014223.tgz
+

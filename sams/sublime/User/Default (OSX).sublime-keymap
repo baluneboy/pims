@@ -1,0 +1,4 @@
+[
+{ "keys": ["super+;"], "command": "run_macro_file", "args": {"file": "Packages/User/reverseSelection.sublime-macro"} },
+{ "keys": ["super+k"], "command": "all" }
+]

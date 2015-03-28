@@ -1,0 +1,41 @@
+import os, re
+import sublime, sublime_plugin
+
+FILES_TO_HIGHLIGHT = [
+'.*/var/log/(syslog|syslog\.\d{1})',
+'.*/var/log/(auth\.log|auth\.log\.\d{1})',
+'.*/var/log/sams-ii/(messages|messages\.\d{1})',
+]
+
+class SyntaxHighlightCommand(sublime_plugin.TextCommand):
+    def run(self, edit, **args):
+        current_syntax = args['current_syntax']
+        new_syntax = args['new_syntax']
+        print 'Current syntax ' + current_syntax
+        try:
+            #sublime.load_resource(new_syntax)
+            self.view.set_syntax_file(new_syntax)
+            print 'Syntax set using ' + new_syntax
+        except:
+            print 'Could NOT set syntax using ' + new_syntax
+
+class SamsLogsSyntax(sublime_plugin.EventListener):
+    def on_load(self, view):
+        file_name = view.file_name()
+        if file_name:
+            for file_pattern in FILES_TO_HIGHLIGHT:
+                match = re.search(file_pattern, file_name, re.IGNORECASE)
+                if match:
+                    base_name = os.path.basename(file_name).split('.')[0]
+                    #pth = '/home/pims/.config/sublime-text-2/Packages/syslog'
+                    pth = 'Packages/' + base_name
+                    tm_file_name = base_name + '.tmLanguage'
+                    new_syntax = os.path.join(pth, tm_file_name)
+                    current_syntax = view.settings().get('syntax')
+                    print 'current_syntax:', current_syntax
+                    print 'new_syntax    :', new_syntax
+                    # only set the syntax if it's different
+                    if False: # new_syntax != current_syntax:
+                        view.run_command('syntax_highlight', {"current_syntax": current_syntax, "new_syntax": new_syntax})
+                    else:
+                        print 'DOING NOTHING HERE'

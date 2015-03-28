@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>comment</key>
+	<string></string>
+	<key>fileTypes</key>
+	<array>
+		<string>samslist</string>
+	</array>
+	<key>foldingStartMarker</key>
+	<string>\(</string>
+	<key>foldingStopMarker</key>
+	<string>\)</string>
+	<key>keyEquivalent</key>
+	<string>^~L</string>
+	<key>name</key>
+	<string>samslist</string>
+	<key>patterns</key>
+	<array>
+
+		<!-- MAIN PROCESS LINES ARE META FUNCTION CODED WITH CAPTURES AT 2 & 4 -->
+		<dict>
+			<key>captures</key>
+			<dict>
+				<!-- YYYY-MM-DD PART -->
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>
+				<!-- T SEP -->
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>tsh.generic_client.samslist</string>
+				</dict>				
+				<!-- hh:mm:ss PART -->
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.syslog</string>
+				</dict>
+				<!-- PROCESS AND VERSION PART -->
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>			
+				<!-- PROCESS AND VERSION PART -->
+				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>	
+			</dict>
+			<key>match</key>
+			<string>^(\d{4}-\d{2}-\d{2})(T)(\d{2}:\d{2}:\d{2})\.\d{6}.\d{2}:\d{2} icu-f01\s+((Cumain|Generic_client|Telem|RIC_mgr)\sv2\.00)</string>
+			<key>name</key>
+			<string>meta.function.syslog</string>
+		</dict>
+
+		<!-- TSH GENERIC CLIENTS -->		
+		<dict>
+			<key>match</key>
+			<string>.*generic_client tshes.*$\n</string>
+			<key>name</key>
+			<string>tsh.generic_client.samslist</string>
+		</dict>
+
+		<!-- SE GENERIC CLIENTS -->				
+		<dict>
+			<key>match</key>
+			<string>.*generic_client 121.*$\n</string>
+			<key>name</key>
+			<string>se.generic_client.samslist</string>
+		</dict>
+
+		<!-- EE GENERIC CLIENTS -->				
+		<dict>
+			<key>match</key>
+			<string>.*generic_client 122.*$\n</string>
+			<key>name</key>
+			<string>ee.generic_client.samslist</string>
+		</dict>
+
+		<!-- NEEDED PROCESSES ARE GREEN BOLD LINES -->
+		<dict>
+			<key>match</key>
+			<string>.*(/usr/local/bin/cumain -d|/usr/sbin/rarpd -e -v|/usr/local/bin/(cu_state_monitor|RIC_manager|telemetry_downlinker) -d).*$\n</string>
+			<key>name</key>
+			<string>line.green.bold.samslist</string>
+		</dict>		
+
+		<!-- BIG USE PERCENTAGE ARE RED BOLD LINES -->		
+		<dict>
+			<key>match</key>
+			<string>.*\d+\s+\d+\s+\d+\s+\d{2}\%.*$\n</string>
+			<key>name</key>
+			<string>line.red.bold.samslist</string>
+		</dict>
+
+		<!-- SMALL USE PERCENTAGE ARE GREEN BOLD LINES -->				
+		<dict>
+			<key>match</key>
+			<string>.*\d+\s+\d+\s+\d+\s+\d{1}\%.*$\n</string>
+			<key>name</key>
+			<string>line.green.bold.samslist</string>
+		</dict>			
+
+		<!-- RSH ARE GRAY DIM -->				
+		<dict>
+			<key>match</key>
+			<string>^(root\s+\d+\s+\d+\s+\d+\s+\w+\s+\?\s+\d{2}:\d{2}:\d{2}\s+(/usr/local/bin/daemon rsh ee122.*|rsh ee122.*|sh -c rsh ee122.*|\[rsh\] .defunct.)).*$\n</string>
+			<key>name</key>
+			<string>comment.line.samslist</string>
+		</dict>			
+				
+	</array>
+	<key>scopeName</key>
+	<string>source.samslist</string>
+	<key>uuid</key>
+	<string>1d60787a-9ed4-41cb-8c4f-685dab32e0e1</string>
+</dict>
+</plist>

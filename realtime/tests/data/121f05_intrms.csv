@@ -1,0 +1,8 @@
+parameter,value,notes
+data.scale_factor,1e6,scale factor for accel. data (e.g. use 1e6 for units of ug)
+time.analysis_interval,10,number of seconds in analysis interval (e.g.  use 10 for 10-second interval RMS)
+time.analysis_overlap,9,number of seconds to overlap with previous analysis interval (e.g. use 9 for 9-second overlap)
+time.plot_span,600,target number of seconds for plot span (e.g. use 600 for ~10-minute plot span)
+pw.startTime,2014-02-10 18:55:00,start GMT for display (note: PIMS real-time databases cover at least last 12 hours or so)
+axes.ymin,0,minimum value for axes yscale
+axes.ymin,100,maximum value for axes yscale

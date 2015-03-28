@@ -1,0 +1,14 @@
+[parameters]
+prefix = "([A-Za-z]{3} )*\s*\d{1,2} \d{2}:\d{2}:\d{2} (\d{4}|icu-f01)[ :] *"
+
+[attributes]
+num_lines_match = True
+range_GMT = True
+median_frequency = True
+
+[[sub_attributes]]
+dummy = yolanda
+
+[var/log/messages]
+suffix = "rarpd\[\d*\]: ep1: [0-9:]{11,}"
+some_list = 11, 12, 13

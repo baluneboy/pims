@@ -1,0 +1,20 @@
+[
+    {
+        "caption": "ken",
+        "mnemonic": "k",
+        "id": "ken",
+        "children":
+        [
+            {
+                "caption": "Reg Replace",
+                "children":
+                [
+                    {
+                        "command": "replace_with_output",
+                        "caption": "Replace with Output"
+                    }
+                ]
+            }
+        ]
+    }
+]

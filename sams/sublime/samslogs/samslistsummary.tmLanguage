@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>comment</key>
+	<string></string>
+	<key>fileTypes</key>
+	<array>
+		<string>samslistsummary</string>
+	</array>
+	<key>foldingStartMarker</key>
+	<string>\(</string>
+	<key>foldingStopMarker</key>
+	<string>\)</string>
+	<key>keyEquivalent</key>
+	<string>^~L</string>
+	<key>name</key>
+	<string>samslistsummary</string>
+	<key>patterns</key>
+	<array>
+		<!-- #SAMSLISTBAD at EOL is BOLD RED -->				
+		<dict>
+			<key>match</key>
+			<string>.*\#SAMSLISTBAD$</string>
+			<key>name</key>
+			<string>line.red.bold.samslistsummary</string>
+		</dict>
+		<!-- #SAMSLISTGOOD at EOL is BOLD GREEN -->						
+		<dict>
+			<key>match</key>
+			<string>.*\#SAMSLISTGOOD$</string>
+			<key>name</key>
+			<string>line.green.bold.samslistsummary</string>
+		</dict>	
+		<!-- #SAMSLISTOKAY at EOL is BOLD YELLOW -->								
+		<dict>
+			<key>match</key>
+			<string>.*\#SAMSLISTOKAY$</string>
+			<key>name</key>
+			<string>line.yellow.bold.samslistsummary</string>
+		</dict>
+		<!-- # HEADER # type lines are ITALIC BLUE -->								
+		<dict>
+			<key>match</key>
+			<string>^# [A-Z ]+ #$</string>
+			<key>name</key>
+			<string>line.blue.italic.samslistsummary</string>
+		</dict>		
+		<!-- None at EOL is GRAY dimmed -->													
+		<dict>
+			<key>match</key>
+			<string>.*None$</string>
+			<key>name</key>
+			<string>comment.line.none.samslistsummary</string>
+		</dict>
+	</array>
+	<key>scopeName</key>
+	<string>source.samslistsummary</string>
+	<key>uuid</key>
+	<string>3273c80d-50e0-4a58-a73b-30bdd076181a</string>
+</dict>
+</plist>

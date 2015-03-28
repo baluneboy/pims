@@ -1,0 +1,13 @@
+[files]
+
+    [[var/log/messages]]
+        active = True
+        prefix = '([A-Za-z]{3} )*\s*\d{1,2} \d{2}:\d{2}:\d{2} (\d{4}|icu-f01)[ :] *'
+        attributes = 'numLinesMatch', 'rangeGMT','medianFrequency'
+        suffixes = 'rarpd\[\d*\]: ep1: [0-9:]{11,}', 'newsyslog\[\d*\]: logfile turned over'
+
+    [[var/log/sams-ii/watchdoglog]]
+        active = True
+        prefix = '([A-Za-z]{3} )*\s*\d{1,2} \d{2}:\d{2}:\d{2} (\d{4}|icu-f01)[ :] *'
+        attributes = 'numLinesMatch', 'rangeGMT','medianFrequency'
+        suffixes = 'newsyslog\[\d*\]: logfile turned over', 'Killed \[[0-9 ]*\], found in file \[/usr/local/sams-ii/telemetry_downlinker.pid\] which was \[\d*\] seconds old\.', 'Ran command \[/usr/local/bin/telemetry_downlinker -d\]\.'

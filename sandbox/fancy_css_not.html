@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+        <head>
+        	<meta http-equiv="refresh" content="25">
+  			<title>SAMS Health and Status</title>
+        <style>
+				h2
+				{
+				font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+				color:black;
+				text-align:left;
+				}
+        .df tbody tr:nth-child(even) {background: #DDD} tr:nth-child(odd) {background: #FFF}
+				caption {caption-side:top;}
+				caption, th, td {
+				  padding: .2em .8em;
+				  border: 1px solid #fff;
+				}
+				caption {
+				  font-weight: bold;
+				  font-size: 1.1em;
+				}
+				#customers
+				{
+				font-family:"Trebuchet MS", Arial, Helvetica, sans-serif;
+				width:100%;
+				border-collapse:collapse;
+				}
+				#customers td, #customers th 
+				{
+				font-size:1.0em;
+				border:1px solid #123456;
+				padding:3px 7px 2px 7px;
+				}
+				#customers th 
+				{
+				font-size:1.0em;
+				text-align:left;
+				padding-top:5px;
+				padding-bottom:4px;
+				background-color:black;
+				border:1px solid #FFFFFF;
+				color:#ffffff;
+				}
+				#customers tr.alt td 
+				{
+				color:#000000;
+				background-color:#EAF2D3;
+				}
+            </style>
+        </head>
+        <body>
+
+	<h2>SAMS Health and Status</h2>
+
+    <table border="1" id="customers" class="dataframe df">
+	<caption style="text-align:left">Electronics Enclosures (EEs) </caption>    	
+  <thead>
+    <tr style="text-align: right;">
+      <th>ee_id</th>
+      <th>timestamp</th>
+      <th>packet_status</th>
+      <th>head0_plus5V</th>
+      <th>head0_plus15V</th>
+      <th>head0_minus15V</th>
+      <th>head1_plus5V</th>
+      <th>head1_plus15V</th>
+      <th>head1_minus15V</th>
+      <th>tempbase</th>
+      <th>pc104_plus5V</th>
+      <th>ref_plus5V</th>
+      <th>ref_zeroV</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>       f02</td>
+      <td> 2014-03-29 05:11:59</td>
+      <td> 46493</td>
+      <td> 5.137</td>
+      <td> 14.981</td>
+      <td>-14.926</td>
+      <td> 5.140</td>
+      <td> 15.050</td>
+      <td>-14.957</td>
+      <td> 24.478</td>
+      <td> 5.128</td>
+      <td> 4.446</td>
+      <td> 0</td>
+    </tr>
+    <tr>
+      <td>       f03</td>
+      <td> 2014-03-29 05:11:59</td>
+      <td> 46510</td>
+      <td> 5.115</td>
+      <td> 15.003</td>
+      <td>-14.974</td>
+      <td> 5.119</td>
+      <td> 14.942</td>
+      <td>-15.109</td>
+      <td> 22.980</td>
+      <td> 5.121</td>
+      <td> 4.469</td>
+      <td> 0</td>
+    </tr>
+    <tr>
+      <td>       f04</td>
+      <td> 2014-03-29 05:11:59</td>
+      <td> 46484</td>
+      <td> 5.098</td>
+      <td> 14.824</td>
+      <td>-14.717</td>
+      <td> 5.129</td>
+      <td> 14.878</td>
+      <td>-14.845</td>
+      <td> 22.723</td>
+      <td> 5.134</td>
+      <td> 4.395</td>
+      <td> 0</td>
+    </tr>
+  </tbody>
+</table><br><br><table border="1" class="dataframe df" id="customers">
+  <caption style="text-align:left">Control Unit (CU) </caption>    	
+  <thead>
+    <tr style="text-align: right;">
+      <th>cu_id</th>
+      <th>timestamp</th>
+      <th>packet_status</th>
+      <th>cpu_utilization0</th>
+      <th>cpu_utilization1</th>
+      <th>cpu_utilization2</th>
+      <th>cpu_clock</th>
+      <th>processes_running</th>
+      <th>battery_charge</th>
+      <th>cpu_temp0</th>
+      <th>cpu_temp1</th>
+      <th>gpu_temp</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>       f01</td>
+      <td> 2014-03-29 05:12:01</td>
+      <td> 53525</td>
+      <td> 2</td>
+      <td> 8</td>
+      <td> 12</td>
+      <td> 800</td>
+      <td> 4</td>
+      <td> 98</td>
+      <td> 47</td>
+      <td> 45</td>
+      <td> 60</td>
+    </tr>
+  </tbody>
+</table>
+        </body>
+    </html>

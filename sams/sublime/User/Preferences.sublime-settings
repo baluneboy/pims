@@ -1,0 +1,11 @@
+{
+	"color_scheme": "Packages/Color Scheme - Default/SamsLogs.tmTheme",
+	"detect_slow_plugins": false,
+	"dictionary": "Packages/Language - English/en_US.dic",
+	"font_size": 10,
+	"http_proxy": "localhost:31280",
+	"ignored_packages":
+	[
+		"Vintage"
+	]
+}

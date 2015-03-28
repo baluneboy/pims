@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>comment</key>
+	<string></string>
+	<key>fileTypes</key>
+	<array>
+		<string>syslog</string>
+	</array>
+	<key>foldingStartMarker</key>
+	<string>\(</string>
+	<key>foldingStopMarker</key>
+	<string>\)</string>
+	<key>keyEquivalent</key>
+	<string>^~L</string>
+	<key>name</key>
+	<string>syslog</string>
+	<key>patterns</key>
+	<array>
+		
+		<!-- CREW DISPLAY ARE DIMMED COMMENT LINES -->				
+		<dict>
+			<key>match</key>
+			<string>((\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}.\d{2}:\d{2} icu-f01 CRON\[\d+\]:)|(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}.\d{2}:\d{2} icu-f01 Generic_client.*CONNECT FAILED\-\-crew display)).*$\n?</string>
+			<key>name</key>
+			<string>comment.line.syslog</string>
+		</dict>		
+		
+		<!-- MAIN PROCESS LINES ARE META FUNCTION CODED WITH CAPTURES AT 2 & 4 -->
+		<dict>
+			<key>captures</key>
+			<dict>
+				<!-- YYYY-MM-DD PART -->
+				<key>1</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>
+				<!-- T SEP -->
+				<key>2</key>
+				<dict>
+					<key>name</key>
+					<string>tsh.generic_client.syslog</string>
+				</dict>				
+				<!-- hh:mm:ss PART -->
+				<key>3</key>
+				<dict>
+					<key>name</key>
+					<string>entity.name.function.syslog</string>
+				</dict>
+				<!-- PROCESS AND VERSION PART -->
+				<key>4</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>			
+				<!-- PROCESS AND VERSION PART -->
+				<key>5</key>
+				<dict>
+					<key>name</key>
+					<string>storage.type.function-type.syslog</string>
+				</dict>	
+			</dict>
+			<key>match</key>
+			<string>^(\d{4}-\d{2}-\d{2})(T)(\d{2}:\d{2}:\d{2})\.\d{6}.\d{2}:\d{2} icu-f01\s+((Cumain|Generic_client|Telem|RIC_mgr)\sv2\.00)</string>
+			<key>name</key>
+			<string>meta.function.syslog</string>
+		</dict>	
+		
+		<!-- WAITING, QUITTING, AND HASTA_LA_VISTA WORDS (NOT LINES) ARE CODED AS KEYWORD CONTROL -->
+		<dict>
+			<key>match</key>
+			<string>No (input|connection).*(Waiting 240 more|QUITTING|Quitting)|HASTA_LA_VISTA_BABY|Saying goodbye now|(?i:fail|error|bad)</string>
+			<key>name</key>
+			<string>keyword.control.syslog</string>
+		</dict>
+		
+		<!-- SAMS EQUIPMENT DESIGNATORS ARE CODED AS CONSTANTS [PURPLE?] -->
+		<dict>
+			<key>match</key>
+			<string>(?i:tshes-0\d|12(1|2)\-f0\d)\b</string>
+			<key>name</key>
+			<string>constant.language.syslog</string>
+		</dict>
+		
+		<!-- ICU-F01 IS CODED AS SUPPORT FUNCTION -->
+		<dict>
+			<key>match</key>
+			<string>\bicu-f01\b</string>
+			<key>name</key>
+			<string>support.function.syslog</string>
+		</dict>
+		
+		<!-- TSHES-0x IS CODED AS CONSTANT NUMERIC -->		
+		<dict>
+			<key>match</key>
+			<string>\btshes-0\d\b</string>
+			<key>name</key>
+			<string>constant.numeric.syslog</string>
+		</dict>
+	
+	</array>
+	<key>scopeName</key>
+	<string>source.syslog</string>
+	<key>uuid</key>
+	<string>eaf56b8f-0183-42f2-8971-f879e6f452e1</string>
+</dict>
+</plist>
+
+
+<!--
+2013-10-21T21:43:03.419604+00:00 icu-f01 Cumain v2.00[3108]: Creating generic_client for accel...
+2013-10-30T17:13:45.318461+00:00 icu-f01 Cumain v2.00[2305]: Command line chunk [generic_client 122-f01 ee122-f01 9805] (37 chars)
+2013-08-22T16:14:16.383857+00:00 icu-f01 Cumain v2.00[26066]: Command [generic_client 121-s01 ee122-s03 9803] completed successfully.
+2013-10-30T17:13:45.324552+00:00 icu-f01 Cumain v2.00[31053]: Executed command line [generic_client 122-f01 ee122-f01 9805]
+-->

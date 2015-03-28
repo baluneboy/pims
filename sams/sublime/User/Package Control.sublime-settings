@@ -1,0 +1,16 @@
+{
+	"in_process_packages":
+	[
+	],
+	"installed_packages":
+	[
+		"AAAPackageDev",
+		"ApplySyntax",
+		"FuzzyFileNav",
+		"HighlightWords",
+		"LineEndings",
+		"Package Control",
+		"SchemeCycler",
+		"WordHighlight"
+	]
+}

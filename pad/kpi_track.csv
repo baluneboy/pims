@@ -1,0 +1,12 @@
+Group,System,Resource,Numerator,Denominator
+continuous,mams,ossraw,D,T
+continuous,mams,hirap,D,T
+continuous,sams,121f03,D,T
+continuous,sams,121f04,D,T
+continuous,sams,cu,X,T
+power_rack_dependent,sams,121f05,D,R
+power_rack_dependent,sams,121f02,D,R
+power_rack_dependent,sams,121f08,D,R
+payload_dependent,sams,es03,D,P
+payload_dependent,sams,es05,D,P
+payload_dependent,sams,es06,D,P

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="US-ASCII"?>
+<sams2_accel>
+	<SensorID>121f02</SensorID>
+	<TimeZero>2014_10_17_06_31_15.515</TimeZero>
+	<Gain>10.0</Gain>
+	<SampleRate>500.0</SampleRate>
+	<CutoffFreq>200.0</CutoffFreq>
+	<GData format="binary 32 bit IEEE float little endian" file="2014_10_17_06_31_15.515+2014_10_17_06_41_15.528.121f02"/>
+	<BiasCoeff x="1.23" y="4.46" z="7.89"/>
+	<SensorCoordinateSystem name="121f02" r="0.0" p="0.0" w="180.0" x="460.38" y="193.43" z="222.98" comment="COL1F1,  Seat Track after EDR-SAMS-RELOC1" time="2014_08_12_14_10_00.000"/>
+	<DataCoordinateSystem name="SSAnalysis" r="0.0" p="0.0" w="0.0" x="0.0" y="0.0" z="0.0" comment="S0, Geom. Ctr. ITA" time="2001_05_01_00_00_00.000"/>
+	<DataQualityMeasure>temperature+gain+axial-mis-alignment, Valid</DataQualityMeasure>
+	<ISSConfiguration>Increment:  28, Flight: ULF7</ISSConfiguration>
+	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
+</sams2_accel>

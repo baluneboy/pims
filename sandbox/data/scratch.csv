@@ -1,0 +1,56 @@
+set	date	timestr	tag	#	Maneuver Start-Stop GMT	S-band?	Beta Angle	Attitude Name	Ref Frame	YPR	T/F Cfg	Event	Remarks
+				Start Increment 7									
+				Soyuz 6S Docking (H20031141802.ACR)									4/28/2003
+1	4/28/2003	2003/118/00:30	Soyuz 6S Docking (H20031141802.ACR)	1	118/00:30		-29	+XPH +ZNN TEA	XPOP	0.5		Handover USS to RUS	
+1	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)		-					351.2			
+1	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							360			
+2	4/28/2003	2003/118/00:33	Soyuz 6S Docking (H20031141802.ACR)	2	118/00:33		-29	+XPH +ZNN	XPOP	359.8		Duty attitude ISS	
+2	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							352.1			
+2	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							357.6			
+3	4/28/2003	2003/118/03:33	Soyuz 6S Docking (H20031141802.ACR)	3	118/03:33		-29	-XVV -ZLV Bias	LVLH	185.6		6S Docking Attitude	
+3	4/28/2003	2003/118/03:56	Soyuz 6S Docking (H20031141802.ACR)		118/03:56					38.9			
+3	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							132.6			
+4	4/28/2003	2003/118/05:57	Soyuz 6S Docking (H20031141802.ACR)	4	118/05:57		-29	-XVV -ZLV Bias	LVLH	185.6		Free Drift	
+4	4/28/2003	2003/118/06:09	Soyuz 6S Docking (H20031141802.ACR)		118/06:09					38.9			
+4	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							132.6			
+5	4/28/2003	2003/118/06:09	Soyuz 6S Docking (H20031141802.ACR)	5	118/06:09		-29	+XVV +ZLV TEA	LVLH	350		Maneuver to LVLH	
+5	4/28/2003	2003/118/06:32	Soyuz 6S Docking (H20031141802.ACR)		118/06:32					350.6			
+5	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							0			
+6	4/28/2003	2003/118/07:00	Soyuz 6S Docking (H20031141802.ACR)	6	118/07:00		-29	+XVV +ZLV TEA	LVLH	350		Handover RUS to USS	
+6	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)		-					350.6			
+6	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							0			
+7	4/28/2003	2003/118/07:10	Soyuz 6S Docking (H20031141802.ACR)	7	118/07:10		-29	+XVV +ZLV TEA	LVLH	350		Momentum Management	
+7	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)		-					350.6			
+7	4/28/2003	2003/	Soyuz 6S Docking (H20031141802.ACR)							0			
+				Reboost and Transition to LVLH (H2003 273 1351.ACR)									10/1/2003
+157	10/1/2003	2003/274/09:56	Reboost and Transition to LVLH (H2003 273 1351.ACR)	157	274/09:56		12	-XPH +ZNN TEA	XPOP	180.5		Handover USS to RUS	
+157	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)		-					353.1			
+157	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)							360			
+158	10/1/2003	2003/274/10:02	Reboost and Transition to LVLH (H2003 273 1351.ACR)	158	274/10:02		12	+XVV +ZLV	LVLH	359.7		XPOP to LVLH maneuver	not at orbit noon b/c of comm
+158	10/1/2003	2003/274/10:17	Reboost and Transition to LVLH (H2003 273 1351.ACR)		274/10:17					353.8			
+158	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)							357.9			
+159	10/1/2003	2003/274/11:35	Reboost and Transition to LVLH (H2003 273 1351.ACR)	159	274/11:35		12	+XVV +ZLV	LVLH	0.4		Mnvr to Reboost Attitude	
+159	10/1/2003	2003/274/11:36	Reboost and Transition to LVLH (H2003 273 1351.ACR)		274/11:36					356.4			
+159	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)							0			
+160	10/1/2003	2003/274/13:23	Reboost and Transition to LVLH (H2003 273 1351.ACR)	160	274/13:23		11	+XVV +ZLV TEA	LVLH	350		Mnvr to LVLH TEA	
+160	10/1/2003	2003/274/13:25	Reboost and Transition to LVLH (H2003 273 1351.ACR)		274/13:25					352.8			
+160	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)							0			
+161	10/1/2003	2003/274/13:48	Reboost and Transition to LVLH (H2003 273 1351.ACR)	161	274/13:48		11	+XVV +ZLV TEA	LVLH	350		Handover RUS to USS	
+161	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)		-					352.8			
+161	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)							0			
+162	10/1/2003	2003/274/14:12	Reboost and Transition to LVLH (H2003 273 1351.ACR)	162	274/14:12		11	+XVV +ZLV TEA	LVLH	350		Momentum Management	
+162	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)		-					352.8			
+162	10/1/2003	2003/	Reboost and Transition to LVLH (H2003 273 1351.ACR)							0			
+				Maneuver to XPOP (M20032770624) Chit 1135									10/7/2003
+163	10/7/2003	2003/280/19:17	Maneuver to XPOP (M20032770624) Chit 1135	163	280/19:17		-19	+XVV +ZLV TEA	LVLH	350		Handover US to RS	
+163	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135		-					352.8			
+163	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135							0			
+164	10/7/2003	2003/280/19:32	Maneuver to XPOP (M20032770624) Chit 1135	164	280/19:32		-19	+XPH +ZNN TEA	XPOP	0.5		Maneuver to XPOP	
+164	10/7/2003	2003/280/19:46	Maneuver to XPOP (M20032770624) Chit 1135		280/19:46					353.1			
+164	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135							360			
+165	10/7/2003	2003/280/20:04	Maneuver to XPOP (M20032770624) Chit 1135	165	280/20:04		-19	+XPH +ZNN TEA	XPOP	0.5		Handover RS to US	
+165	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135							353.1			
+165	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135							360			
+166	10/7/2003	2003/280/20:38	Maneuver to XPOP (M20032770624) Chit 1135	166	280/20:38		-19	+XPH +ZNN TEA	XPOP	0.5		Momentum Management	
+166	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135							353.1			
+166	10/7/2003	2003/	Maneuver to XPOP (M20032770624) Chit 1135							360			

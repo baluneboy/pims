@@ -1,0 +1,15 @@
+Path,Stroke,BHX,BHY,AX,AY,FHX,FHY
+,,Simple closed stroke with straight line segments,,,,,
+Example CSV Path 1,Closed,100,100,100,100,100,100
+Example CSV Path 1,Closed,200,100,200,100,200,100
+Example CSV Path 1,Closed,200,200,200,200,200,200
+Example CSV Path 1,Closed,100,200,100,200,100,200
+Example CSV Path 1,Closed,100,100,100,100,100,100
+,,"Same stroke, open (and shifted for visibility)",,,,,
+Example CSV Path 1,Open,250,100,250,100,250,100
+Example CSV Path 1,Open,350,100,350,100,350,100
+Example CSV Path 1,Open,350,200,350,200,350,200
+Example CSV Path 1,Open,250,200,250,200,250,200
+,,Another path with a Bezier curve to show handles.,,,,,
+Example CSV Path 2,1,100,100,100,100,200,0
+Example CSV Path 2,1,200,200,300,100,300,100
