@@ -152,6 +152,21 @@ class LoosePadIntervalSet(IntervalSet):
             self.intervals = newIntervals
             self.intervals.sort()
 
+def demo():
+    from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
+    f1 = '/misc/yoda/pub/pad/2015_03_14_00_05_47.252+2015_03_14_00_15_47.267.121f05.header'
+    f2 = '/misc/yoda/pub/pad/2015_03_14_00_15_48.867+2015_03_14_00_25_00.000.121f05.header'
+    t1, t2 = pad_fullfilestr_to_start_stop(f1)
+    t3, t4 = pad_fullfilestr_to_start_stop(f2)
+    r = LoosePadIntervalSet()
+    r.add(Interval(t1,t2))
+    print r
+    r.add(Interval(t3,t4))
+    print r
+    
+demo()
+raise SystemExit
+    
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
