@@ -20,21 +20,25 @@ class LoosePadIntervalSet(IntervalSet):
         meaning if they were joined, then there would be no discontinuity.
 
         >>> d1 = datetime.datetime(2015,1,1,0,0,0)
-        >>> d2 = datetime.datetime(2015,1,1,0,0,1,100000)
-        >>> d3 = datetime.datetime(2015,1,1,0,0,2)
-        >>> d4 = datetime.datetime(2015,1,1,0,0,6,600000)
-        >>> d5 = datetime.datetime(2015,1,1,0,0,8)
-        >>> d6 = datetime.datetime(2015,1,1,0,0,8,876543)
+        >>> d2 = d1 + datetime.timedelta(seconds=12.345)
+        >>> d3 = d2 + datetime.timedelta(seconds=1.6)           # 1.6 sec
+        >>> d4 = d3 + datetime.timedelta(seconds=0.5)
+        >>> d5 = d4 + datetime.timedelta(seconds=1.5)           # 1.5 sec
+        >>> d6 = d5 + datetime.timedelta(seconds=86400.123456)  # over a day
         >>> r1 = Interval(d1, d2)
         >>> r2 = Interval(d3, d4)
         >>> r3 = Interval(d5, d6)
         >>> s = LoosePadIntervalSet()
         >>> s.close_enough(r1, r2)
-        True
+        False
         >>> s.close_enough(r2, r3)
         True
         >>> s.close_enough(r1, r3)
         False
+        >>> s.close_enough(r3, r1)
+        False
+        >>> s.close_enough(r3, r2)
+        True
 
         """
         if i1.comes_before(i2):
@@ -49,6 +53,27 @@ class LoosePadIntervalSet(IntervalSet):
         return result
 
     def _get_fill(self, i1, i2):
+        """Returns an interval from earlier interval's upper_bound to later interval's lower_bound
+
+        >>> d1 = datetime.datetime(2015,1,1,0,0,0)
+        >>> d2 = d1 + datetime.timedelta(seconds=12.345)
+        >>> d3 = d2 + datetime.timedelta(seconds=1.6)
+        >>> d4 = d3 + datetime.timedelta(seconds=0.5)
+        >>> d5 = d4 + datetime.timedelta(seconds=60.0)
+        >>> d6 = d5 + datetime.timedelta(seconds=86400.123456)
+        >>> r1 = Interval(d1, d2)
+        >>> r2 = Interval(d3, d4)
+        >>> r3 = Interval(d5, d6)        
+        >>> s = LoosePadIntervalSet()
+        >>> print s._get_fill(r1, r2)
+        [datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)..datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)]
+        >>> print s._get_fill(r2, r3)
+        [datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)..datetime.datetime(2015, 1, 1, 0, 1, 14, 445000)]
+        >>> print s._get_fill(r3, r2)
+        [datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)..datetime.datetime(2015, 1, 1, 0, 1, 14, 445000)]
+        
+        """
+        
         if i1.comes_before(i2):
             result = Interval(i1.upper_bound, i2.lower_bound)
         else:
@@ -60,11 +85,11 @@ class LoosePadIntervalSet(IntervalSet):
 
         >>> d0 = datetime.datetime(2014,12,31,23,59,58)
         >>> d1 = datetime.datetime(2015,1,1,0,0,0)
-        >>> d2 = datetime.datetime(2015,1,1,0,0,1,100000)
-        >>> d3 = datetime.datetime(2015,1,1,0,0,2)
-        >>> d4 = datetime.datetime(2015,1,1,0,0,6,600000)
-        >>> d5 = datetime.datetime(2015,1,1,0,0,8,100000)
-        >>> d6 = datetime.datetime(2015,1,1,0,0,8,876543)
+        >>> d2 = d1 + datetime.timedelta(seconds=12.345)
+        >>> d3 = d2 + datetime.timedelta(seconds=1.6)
+        >>> d4 = d3 + datetime.timedelta(seconds=0.5)
+        >>> d5 = d4 + datetime.timedelta(seconds=60.0)
+        >>> d6 = d5 + datetime.timedelta(seconds=86400.123456)
         >>> r1 = Interval(d1, d2)
         >>> r2 = Interval(d3, d4)
         >>> r3 = Interval(d5, d6)        
@@ -74,13 +99,33 @@ class LoosePadIntervalSet(IntervalSet):
         datetime.datetime(2014, 12, 31, 23, 59, 58)
         >>> r.add(r1)
         >>> print r
-        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 1, 100000)]
+        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)]
         >>> r.add(r2)
         >>> print r
-        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 6, 600000)]
+        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)],[datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)..datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)]
         >>> r.add(r3)
         >>> print r
-        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 8, 876543)]
+        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)],[datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)..datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)],[datetime.datetime(2015, 1, 1, 0, 1, 14, 445000)..datetime.datetime(2015, 1, 2, 0, 1, 14, 568456)]
+        
+        >>> r = LoosePadIntervalSet()
+        >>> r.add(d0)
+        >>> print r
+        datetime.datetime(2014, 12, 31, 23, 59, 58)
+        >>> print r2
+        [datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)..datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)]
+        >>> r.add(r2)
+        >>> print r
+        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)..datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)]
+        >>> print r1
+        [datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)]
+        >>> r.add(r1)
+        >>> print r
+        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)],[datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)..datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)]
+        >>> print r3
+        [datetime.datetime(2015, 1, 1, 0, 1, 14, 445000)..datetime.datetime(2015, 1, 2, 0, 1, 14, 568456)]
+        >>> r.add(r3)
+        >>> print r
+        datetime.datetime(2014, 12, 31, 23, 59, 58),[datetime.datetime(2015, 1, 1, 0, 0)..datetime.datetime(2015, 1, 1, 0, 0, 12, 345000)],[datetime.datetime(2015, 1, 1, 0, 0, 13, 945000)..datetime.datetime(2015, 1, 1, 0, 0, 14, 445000)],[datetime.datetime(2015, 1, 1, 0, 1, 14, 445000)..datetime.datetime(2015, 1, 2, 0, 1, 14, 568456)]
 
         """
         if isinstance(obj, Interval):
