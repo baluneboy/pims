@@ -29,15 +29,15 @@ class LoosePadIntervalSet(IntervalSet):
         >>> r2 = Interval(d3, d4)
         >>> r3 = Interval(d5, d6)
         >>> s = LoosePadIntervalSet()
-        >>> s.close_enough(r1, r2)
+        >>> s.close_enough(r1, r2) # False
         False
-        >>> s.close_enough(r2, r3)
+        >>> s.close_enough(r2, r3) # True
         True
-        >>> s.close_enough(r1, r3)
+        >>> s.close_enough(r1, r3) # False
         False
-        >>> s.close_enough(r3, r1)
+        >>> s.close_enough(r3, r1) # False
         False
-        >>> s.close_enough(r3, r2)
+        >>> s.close_enough(r3, r2) # True
         True
 
         """
@@ -163,9 +163,9 @@ def demo():
     print r
     r.add(Interval(t3,t4))
     print r
-    
-demo()
-raise SystemExit
+#    
+#demo()
+#raise SystemExit
     
 if __name__ == "__main__":
     import doctest

@@ -139,6 +139,25 @@ def format_datetime_as_pad_underscores(dtm):
     """
     return dtm.strftime('%Y_%m_%d_%H_%M_%S.%f')[:-3] # remove 3 trailing zeros
 
+# convert datetime start/stop to PAD fullfile string
+def start_stop_to_pad_fullfilestr(start, stop, pad_path='/misc/yoda/pub/pad', subdir_prefix='sams2_accel_', sensor='121f0x', joiner='-'):
+    """Convert datetime start/stop to PAD fullfile string
+    
+    >>> start = datetime.datetime(2013,10,25,1,2,3,456789)
+    >>> stop = datetime.datetime(2013,10,25,1,2,13,123456)
+    >>> start_stop_to_pad_fullfilestr(start, stop)
+    '/misc/yoda/pub/pad/year2013/month10/day25/sams2_accel_121f0x/2013_10_25_01_02_03.456-2013_10_25_01_02_13.123.121f0x'
+
+    >>> start_stop_to_pad_fullfilestr(start, stop, pad_path='/tmp', subdir_prefix='hey_now_', sensor='abcd', joiner='#')
+    '/tmp/year2013/month10/day25/hey_now_abcd/2013_10_25_01_02_03.456#2013_10_25_01_02_13.123.abcd'
+    
+    """    
+    s1 = format_datetime_as_pad_underscores(start)
+    s2 = format_datetime_as_pad_underscores(stop)
+    fname = s1 + joiner + s2 + '.' + sensor
+    ymd_path = datetime_to_ymd_path(start, base_dir=pad_path)
+    return os.path.join(ymd_path, subdir_prefix + sensor, fname)
+
 def days_ago_string(n):
     """Return n days ago as YYYY_mm_dd string."""
     n_days_ago = datetime.date.today()-datetime.timedelta(n)
