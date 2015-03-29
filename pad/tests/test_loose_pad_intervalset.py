@@ -7,6 +7,13 @@ from interval import Interval
 from pims.pad.loose_pad_intervalset import LoosePadIntervalSet
 from pims.utils.pimsdateutil import start_stop_to_pad_fullfilestr
 
+# TODO
+# - consolidate common code in various test methods in suite under setUp method
+# - for setUp concoct an array of PAD header files to tease out nooks and crannies of "close enough" spackle over gaps
+# - intra-file gaps of say 1sec, 1.5sec, 2sec
+# - variable maxgapsec parameter to test spackling
+# - test this on a real set of PAD header files from yoda
+
 class LoosePadIntervalSetTestCase(unittest.TestCase):
     """
     Test suite for pims.pad.LoosePadIntervalSet.
