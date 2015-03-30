@@ -58,3 +58,6 @@ target/
 
 # Mac OSX stuff
 .DS_Store
+
+# Sublime stuff
+.sublime-settings

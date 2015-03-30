@@ -37,6 +37,24 @@ def days_hours_minutes(td):
     """
     return td.days, td.seconds//3600, (td.seconds//60)%60
 
+def ceil_minute(t):
+    """Return datetime rounded down (floored) to nearest 1-minute mark.
+    
+    >>> ceil_minute( datetime.datetime(2012,12,31,23,39,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 40)
+    """
+    return floor_minute(t) + datetime.timedelta(minutes=1)
+
+def floor_minute(t):
+    """Return datetime rounded down (floored) to nearest 1-minute mark.
+    
+    >>> floor_minute( datetime.datetime(2012,12,31,23,39,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 39)
+    """
+    return t - datetime.timedelta( minutes=t.minute % 1,
+                                    seconds=t.second,
+                                    microseconds=t.microsecond)
+
 def floor_ten_minutes(t):
     """Return datetime rounded down (floored) to nearest 10-minute mark.
     
@@ -44,6 +62,20 @@ def floor_ten_minutes(t):
     datetime.datetime(2012, 12, 31, 23, 30)
     """
     return t - datetime.timedelta( minutes=t.minute % 10,
+                                    seconds=t.second,
+                                    microseconds=t.microsecond)
+
+def floor_hour(t):
+    """Return datetime rounded down (floored) to nearest hour mark.
+    
+    >>> floor_hour( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> floor_hour( datetime.datetime(2012,12,31,23,00,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> floor_hour( datetime.datetime(2012,12,31,23,00,00,000000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    """
+    return t - datetime.timedelta( minutes=t.minute,
                                     seconds=t.second,
                                     microseconds=t.microsecond)
 
@@ -99,6 +131,15 @@ def doytimestr_to_datetime(timestr):
     else:
         fmt = '%Y:%j:%H:%M:%S'
     return datetime.datetime.strptime(timestr, fmt)
+
+# convert datetime object to string like 2014:077:00:02:00
+def datetime_to_doytimestr(dtm):
+    """convert datetime object to string like 2014:077:00:02:00
+    
+    >>> datetime_to_doytimestr(datetime.datetime(2014, 6, 12, 8, 11, 10, 123456))
+    '2014:163:08:11:10.123456'
+    """      
+    return dtm.strftime('%Y:%j:%H:%M:%S.%f')
 
 # convert string like 2014-05-02 to datetime object
 def datestr_to_datetime(timestr):
@@ -340,6 +381,14 @@ def days_ago_to_date_time(n):
     d = days_ago_to_date(n)
     return datetime.datetime.combine(d, datetime.time(0))
 
+def datetime_to_days_ago(d):
+    """Convert datetime object to number of days ago."""
+    today = datetime.datetime.now().date()
+    days_ago = (today - d.date()).days
+    if days_ago < 0:
+        raise Exception('you want DAYSAGO, BUT input argument is in the future')
+    return days_ago
+    
 def unix2dtm(u):
     """convert a unix time u to a datetime object"""
     return datetime.datetime.utcfromtimestamp(u)

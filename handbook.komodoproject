@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="09b75751-5924-4495-b231-61ba2ceaa152" kpf_version="5" name="handbook.komodoproject">
+<file id="251cbf59-cf2b-4076-86c7-bdda44150436" idref="09b75751-5924-4495-b231-61ba2ceaa152" name="handbook.py" url="files/handbook.py">
+</file>
+<file id="59d8eb9e-a86d-47e8-9b56-f891b61497a2" idref="09b75751-5924-4495-b231-61ba2ceaa152" name="handbookpdfs.py" url="patterns/handbookpdfs.py">
+</file>
+<file id="fe15c04f-2d88-40e6-b3f9-90cdc528c24c" idref="09b75751-5924-4495-b231-61ba2ceaa152" name="handbookme.py" url="nautilus/handbookme.py">
+</file>
+</project>

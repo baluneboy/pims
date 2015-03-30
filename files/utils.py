@@ -8,6 +8,11 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.strings.utils import remove_non_ascii
 
+def file_age_days(fname):
+    utime_file = os.path.getmtime(fname)
+    utime_now = time.time()
+    return int( (utime_now - utime_file) // 86400 )
+
 def mkdir_p(path):
     try:
         os.makedirs(path)
@@ -35,6 +40,23 @@ def prepend_tofile(s, txtfile):
     except:
         print 'FAILED to prepend to %s' % txtfile
     return bool_success
+
+# similar to unix tail
+def tail(f, n, offset=0):
+    """Reads a n lines from f with an offset of offset lines."""
+    avg_line_length = 74
+    to_read = n + offset
+    while 1:
+        try:
+            f.seek(-(avg_line_length * to_read), 2)
+        except IOError:
+            # oops, apparently file smaller than what we want to step back, so go to beginning instead
+            f.seek(0)
+        pos = f.tell()
+        lines = f.read().splitlines()
+        if len(lines) >= to_read or pos == 0:
+            return lines[-to_read:offset and -offset or None]
+        avg_line_length *= 1.3
 
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:
@@ -98,10 +120,15 @@ def ike_jaxa_file_transfer(fromdir, todir):
     pass
 
 def demo():
-    dirpath = '/misc/yoda/pub/pad/year2013/month01/day03'
+    dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
+    sensor_subdir = 'sams2_accel_121f03'
     fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
-    for f in filter_filenames(dirpath, re.compile(fullfile_pattern).match):
+    big_list = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith('121f03.header')]
+    for f in big_list: #filter_filenames(dirpath, re.compile(fullfile_pattern).match):
         print f
+
+#demo()
+#raise SystemExit
 
 # remove files in folder that are older than numdays
 def remove_old_files(folder, numdays):

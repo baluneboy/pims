@@ -37,7 +37,7 @@ def tail( csvFile, numLines=1 ):
             # read BUFFER
             data.append(f.read(BUFSIZ))
         else:
-            # file too small, start from begining
+            # file too small, start from beginning
             f.seek(0,0)
             # only read what was not read
             data.append(f.read(bytes))

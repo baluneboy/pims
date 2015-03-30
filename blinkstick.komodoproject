@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="b84aa9c9-49d5-4203-9f0e-f3b339f8815f" kpf_version="5" name="blinkstick.komodoproject">
+<file id="ae46e9c0-3cc5-4bd1-b8d3-fe0e1cccb404" idref="b84aa9c9-49d5-4203-9f0e-f3b339f8815f" name="demo_blinkstick.py" url="blinkstick/demo_blinkstick.py">
+</file>
+<file id="ba0f0fdf-f926-495b-bbd4-1de81e997c5a" idref="b84aa9c9-49d5-4203-9f0e-f3b339f8815f" name="blinkstick_main.py" url="blinkstick/blinkstick_main.py">
+</file>
+<file id="cfa26902-5669-4abe-b601-688e27521959" idref="b84aa9c9-49d5-4203-9f0e-f3b339f8815f" name="british_garden_monitor.py" url="blinkstick/british_garden_monitor.py">
+</file>
+<file id="e79a55bb-08f3-4323-a823-7e17acbb9aec" idref="b84aa9c9-49d5-4203-9f0e-f3b339f8815f" name="smachines.py" url="statemachine/smachines.py">
+</file>
+<file id="f61badb0-a536-4031-b5c4-7b3a90743c31" idref="b84aa9c9-49d5-4203-9f0e-f3b339f8815f" name="smachine_test.py" url="statemachine/tests/smachine_test.py">
+</file>
+</project>

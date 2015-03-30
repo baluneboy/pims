@@ -41,6 +41,8 @@ class LoosePadIntervalSet(IntervalSet):
         True
 
         """
+        if self.maxgapsec <= 0:
+            return False
         if i1.comes_before(i2):
             if (i2.lower_bound - i1.upper_bound).total_seconds() <= self.maxgapsec:
                 result = True
@@ -152,18 +154,36 @@ class LoosePadIntervalSet(IntervalSet):
             self.intervals = newIntervals
             self.intervals.sort()
 
+def demo_big_list(dirpath, sensor):
+    import re
+    from pims.files.utils import filter_filenames
+    fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
+    suffix = sensor + '.header'
+    header_files = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith(suffix)]
+    
+#dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
+#sensor = '121f03'
+#big_list = demo_big_list(dirpath, sensor)
+#for f in big_list[0:9]: #filter_filenames(dirpath, re.compile(fullfile_pattern).match):
+#    print f
+#raise SystemExit
+
 def demo():
     from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
     f1 = '/misc/yoda/pub/pad/2015_03_14_00_05_47.252+2015_03_14_00_15_47.267.121f05.header'
     f2 = '/misc/yoda/pub/pad/2015_03_14_00_15_48.867+2015_03_14_00_25_00.000.121f05.header'
     t1, t2 = pad_fullfilestr_to_start_stop(f1)
     t3, t4 = pad_fullfilestr_to_start_stop(f2)
-    r = LoosePadIntervalSet()
+    r = LoosePadIntervalSet(maxgapsec=1) # try 1 to see "not close enough" or 2 for "close enough"
     r.add(Interval(t1,t2))
-    print r
+    #print r
     r.add(Interval(t3,t4))
-    print r
-#    
+    #print r
+    ss = Interval(datetime.datetime(2015, 3, 14, 0, 0, 0), datetime.datetime(2015, 3, 15, 0, 0, 0))
+    iss = IntervalSet( (ss,) )
+    # now set of gaps are these
+    print iss - r
+    
 #demo()
 #raise SystemExit
     

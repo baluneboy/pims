@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="9f7c0f6e-e422-46eb-a479-128aa220308c" kpf_version="5" name="amp_kpi.komodoproject">
+<file id="49c8e1ed-b0e0-4172-b4ad-473d76e112bf" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="modification.py" url="excel/modification.py">
+</file>
+<file id="7abcc6f9-5929-4d7c-9c01-f1cd8e53ca73" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="process_sto_file.py" url="pad/process_sto_file.py">
+</file>
+<file id="d896f32a-c23c-4ea4-b3c2-046ef92bf9a5" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="amp_kpi.py" url="pad/amp_kpi.py">
+</file>
+<file id="e9197b16-d4d6-44ab-ac0c-79d4bc28bf6f" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="kpi_track.csv" url="pad/kpi_track.csv">
+</file>
+<file id="ed95dadc-92be-42fd-b3e5-0adc524b3a42" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="samsquery.py" url="database/samsquery.py">
+</file>
+</project>

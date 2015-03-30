@@ -8,22 +8,18 @@ from dateutil import parser
 import pandas as pd
 from cStringIO import StringIO
 import socket
+from MySQLdb import *
+from pims.config.conf import get_db_params
 from pims.config.conf import get_config
 from pims.utils.datetime_ranger import DateRange
 
-def get_samsops_db_params(app_name):
-    cfg = get_config()
-    config_dict = cfg['apps'][app_name]
-    host = config_dict['host']
-    schema = config_dict['schema']
-    uname = config_dict['uname']
-    pword = config_dict['pword']
-    return host, schema, uname, pword    
-    
 # Get sensitive authentication credentials for internal MySQL db query
-_HOST, _SCHEMA, _UNAME, _PASSWD = get_samsops_db_params('samsquery')
+_SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
 
-#print _HOST, _SCHEMA; raise SystemExit
+#print _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS; raise SystemExit
+
+def mysql_con_yoda(host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS, db=_SCHEMA_SAMS):
+    return Connection(host=host, user=user, passwd=passwd, db=db)
 
 def get_cronjob():
     cmd = 'crontab -l | grep samsquery.py'
