@@ -2,10 +2,11 @@
 
 import unittest
 import datetime
-from interval import Interval
+from interval import Interval, IntervalSet
 
 from pims.pad.loose_pad_intervalset import LoosePadIntervalSet
-from pims.utils.pimsdateutil import start_stop_to_pad_fullfilestr
+from pims.utils.pimsdateutil import start_stop_to_pad_fullfilestr, datetime_to_doytimestr, floor_minute, ceil_minute
+from pims.pad.pad_gaps_and_intervals import get_loose_interval_set_from_header_filenames
 
 # TODO
 # - consolidate common code in various test methods in suite under setUp method
@@ -21,10 +22,26 @@ class LoosePadIntervalSetTestCase(unittest.TestCase):
 
     def setUp(self):
         # create some convenient (fake) pad header files
-        self.fake_pad_headers = [
-            '/misc/yoda/pub/pad/2015_03_14_00_05_47.252+2015_03_14_00_15_47.267.121f05.header',
-            '/misc/yoda/pub/pad/2015_03_14_00_15_48.867+2015_03_14_00_25_00.000.121f05.header'
-            ]
+        ##self.fake_pad_headers = [
+        ##    '/misc/yoda/pub/pad/2015_03_14_00_05_47.252+2015_03_14_00_15_47.267.121f05.header',
+        ##    '/misc/yoda/pub/pad/2015_03_14_00_15_48.867+2015_03_14_00_25_00.000.121f05.header'
+        ##    ]
+        pass
+
+    def _get_fake_headers(self):
+        start = datetime.datetime(2015, 1, 1, 0, 0, 0)
+        stop =  datetime.datetime(2015, 1, 1, 1, 0, 0)
+        this_day_interval = Interval( start, start + datetime.timedelta(days=1) )
+        this_day_interval_set = IntervalSet( (this_day_interval,) )        
+        minutes_per_file = 60.0
+        sec_between_files = 0.5
+        headers = []
+        t1 = start
+        while t1 <= stop:
+            t2 = t1 + datetime.timedelta(minutes=minutes_per_file)
+            headers.append(start_stop_to_pad_fullfilestr(t1, t2, pad_path='/tmp/pad', subdir_prefix='fake_accel_', sensor='123f00', joiner='-'))
+            t1 += datetime.timedelta(seconds=sec_between_files)
+        return headers, this_day_interval_set
 
     def test_close_enough(self):
         """
@@ -93,6 +110,23 @@ class LoosePadIntervalSetTestCase(unittest.TestCase):
         s.add(r3)
         self.assertEqual( s[3].lower_bound, datetime.datetime(2015, 1, 1, 0, 1, 14, 445000) )
         self.assertEqual( s[3].upper_bound, datetime.datetime(2015, 1, 2, 0, 1, 14, 568456) )
+
+    def test_fake_headers(self):
+        """
+        Tests the fake headers with nice gaps.
+        """
+        fake_pad_headers, this_day_interval_set = self._get_fake_headers()
+        sensor_list_gaps = IntervalSet()
+        header_files_all_sensors = fake_pad_headers
+        header_files = [ x for x in header_files_all_sensors if x.endswith('122f00' + '.header') ]
+        sensor_day_interval_set = get_loose_interval_set_from_header_filenames(header_files, 0.1) # maxgapsec = 0.1
+        # now, the set of gaps are these
+        sensor_gaps_interval_set = this_day_interval_set - sensor_day_interval_set
+        sensor_day_total_gap_minutes = 0
+        for gap in sensor_gaps_interval_set:
+            sensor_day_total_gap_minutes += (gap.upper_bound - gap.lower_bound).total_seconds() / 60.0
+            sensor_list_gaps.add(gap)
+        self.assertEqual( sensor_day_total_gap_minutes, 22.345 )
 
 def suite():
     return unittest.makeSuite(LoosePadIntervalSetTestCase, 'test')

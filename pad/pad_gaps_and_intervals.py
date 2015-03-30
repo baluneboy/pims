@@ -23,7 +23,7 @@ def find_headers(ymd_dir):
     return splitout
 
 # get loose pad interval set from header filenames
-def get_loose_interval_set_from_header_filename(header_files, maxgapsec):
+def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
     """get loose pad interval set from header filenames"""
     interval_set = LoosePadIntervalSet(maxgapsec=maxgapsec)
     for header_file in header_files:
@@ -49,7 +49,7 @@ def process_header_files(dstart, dstop, maxgapsec, sensor_list):
             if sensor in sensor_list:
                 header_files = [ x for x in header_files_all_sensors if x.endswith(sensor + '.header') ]
                 header_files.sort()
-                sensor_day_interval_set = get_loose_interval_set_from_header_filename(header_files, maxgapsec)
+                sensor_day_interval_set = get_loose_interval_set_from_header_filenames(header_files, maxgapsec)
                 #print '-' * 55
                 #print d.date(), 'maxgapsec =', maxgapsec, sensor, len(header_files), len(sensor_day_interval_set)
                 #for i in sensor_day_interval_set:
@@ -71,13 +71,16 @@ def process_header_files(dstart, dstop, maxgapsec, sensor_list):
                 print '{0:>6.1f} minutes, from {1:<24s} to {2:>24s}'.format(gap_minutes, t1, t2)
         d += datetime.timedelta(days=1)
 
-print ''
-dstart = parser.parse('2015-03-24')
-dstop =  parser.parse('2015-03-28')
-maxgapsec = 20 #0.000001
-sensor_list = ['121f02', '121f03', '121f04', '121f05', '121f08']
-process_header_files(dstart, dstop, maxgapsec, sensor_list)
-raise SystemExit
+def demo1():
+    print ''
+    dstart = parser.parse('2015-03-24')
+    dstop =  parser.parse('2015-03-28')
+    maxgapsec = 20 #0.000001
+    sensor_list = ['121f02', '121f03', '121f04', '121f05', '121f08']
+    process_header_files(dstart, dstop, maxgapsec, sensor_list)
+
+#demo1()
+#raise SystemExit
 
 # iterate over day directory (only sams2 subdirs for now)
 def main(daydir):
