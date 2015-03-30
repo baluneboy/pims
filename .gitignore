@@ -61,3 +61,9 @@ target/
 
 # Sublime stuff
 .sublime-settings
+.last-run
+.merged-ca-bundle
+.user-ca-bundle
+.tmLanguage.cache
+.tmLanguage.cache
+.tmLanguage.cache
