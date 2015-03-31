@@ -4,7 +4,7 @@ import time
 import errno
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
-from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN
+from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.strings.utils import remove_non_ascii
 
@@ -92,6 +92,30 @@ def guess_file(name, klass, show_warnings=False):
         print 'Unrecognized file "%s"' % name
     return p
 
+def extract_sensor_from_headers_list(headers):
+    """extract sensor part of string from list of header files
+
+    Returns list with items: sensor part if matches regex pattern; otherwise, empty string.
+
+    >>> a = '/misc/yoda/pub/pad/year2013/month01/day02/sams2_accel_121f0A/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0A.header'
+    >>> b = '/misc/yoda/pub/pad/year2013/month01/day02/sams2_accel_121f0B/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0B.header'
+    >>> c = 'seesaw'
+    >>> d = 'stringcheese'
+    >>> extract_sensor_from_headers_list([a, b, c, d]) # headers = [a, b, c, d]
+    ['121f0A', '121f0B', '', '']
+    >>> extract_sensor_from_headers_list([c, a, d])    # headers = [c, a, d]
+    ['', '121f0A', '']
+
+    """    
+    def get_sensor_part(hdr_file):
+        result = ''
+        if hdr_file:
+            m = re.match(_PADHEADERFILES_PATTERN, hdr_file)
+            if m: result = m.group('sensor')
+        return result
+    sensors = [ get_sensor_part(x) for x in headers ]    
+    return sensors
+
 def listdir_filename_pattern(dirpath, fname_pattern):
     """Listdir files that match fname_pattern."""
     if not os.path.exists(dirpath):
@@ -101,12 +125,11 @@ def listdir_filename_pattern(dirpath, fname_pattern):
     return files
 
 def filter_filenames(dirpath, predicate):
-    """Usage:
-           >>> filePattern = '\d{14}.\d{14}/\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.*'
-           >>> dirpath = '/misc/jaxa'
-           >>> predicate = re.compile(r'/misc/jaxa/' + filePattern).match
-           >>> for filename in filter_filenames(dirpath, predicate):
-           ....    # do something
+    """
+    #>>> filePattern = '\d{14}.\d{14}/\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.*'
+    #>>> dirpath = '/misc/jaxa'
+    #>>> predicate = re.compile(r'/misc/jaxa/' + filePattern).match
+    #>>> for filename in filter_filenames(dirpath, predicate): print filename
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:
@@ -149,4 +172,6 @@ def remove_old_files(folder, numdays):
                 print 'keeping %s' % fullfile
 
 if __name__ == "__main__":
-    demo()
+    import doctest
+    doctest.testmod()
+    

@@ -12,9 +12,10 @@ _PLOTSPATH = "/misc/yoda/www/plots"
 
 ###############################################################################################################################
 #/misc/yoda/pub/pad/year2013/month11/day01/sams2_accel_121f05/2013_11_01_23_52_29.944-2013_11_02_00_02_29.959.121f05.header
+#/misc/yoda/pub/pad/year2015/month03/day29/iss_rad_radgse/2015_03_29_09_39_21.609+2015_03_29_11_39_17.480.radgse.header
 _PADPATH_PATTERN = "(?P<ymdpath>%s/pub/pad/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _YODAPATH
 _PADHEADERFILES_PATTERN = _PADPATH_PATTERN + (
-    "/(?P<subdir>.*_accel_(?P<sensor>.*))/"                             # subdir
+    "/(?P<subdir>.*_(accel|rad)_(?P<sensor>.*))/"                       # subdir
     "(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}_\d{2}_\d{2}\.\d{3})" # underscore-delimited start part of fname, then
     "(?P<pm>[\+\-])"                                                    # plus/minus
     "(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"              # underscore-delimited stop part of fname, then
