@@ -36,24 +36,24 @@ def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
     return interval_set
 
 # process headers over range of days
-def process_header_files(dstart, dstop, maxgapsec, sensor_list):
+def OBSOLETEprocess_header_files(dstart, dstop, maxgapsec, sensor_list):
     """process headers over range of days"""
     d = dstart
     while d <= dstop:
         print '\n%s' % d
         print '=' * 99
-        this_day_interval = Interval( d, d + datetime.timedelta(days=1) )
-        this_day_interval_set = IntervalSet( (this_day_interval,) )
+        thisday_interval = Interval( d, d + datetime.timedelta(days=1) )
+        thisday_intervalset = IntervalSet( (thisday_interval,) )
         sensor_list_gaps = IntervalSet()
         ymd_dir = datetime_to_ymd_path(d)
-        header_files_all_sensors = find_headers(ymd_dir)
-        sensors = list( set( extract_sensor_from_headers_list(header_files_all_sensors) ) )
+        headers_all = find_headers(ymd_dir)
+        sensors = list( set( extract_sensor_from_headers_list(headers_all) ) )
         #sensors.sort()
 
         for sensor in sensors:
             if sensor in sensor_list:
 
-                header_files = [ x for x in header_files_all_sensors if x.endswith(sensor + '.header') ]
+                header_files = [ x for x in headers_all if x.endswith(sensor + '.header') ]
                 #header_files.sort()
                 sensor_day_interval_set = get_loose_interval_set_from_header_filenames(header_files, maxgapsec)
 
@@ -63,7 +63,7 @@ def process_header_files(dstart, dstop, maxgapsec, sensor_list):
                 #    print i.lower_bound, i.upper_bound
 
                 # now set of gaps are these
-                sensor_gaps_interval_set = this_day_interval_set - sensor_day_interval_set
+                sensor_gaps_interval_set = thisday_intervalset - sensor_day_interval_set
                 sensor_day_total_gap_minutes = 0
                 for gap in sensor_gaps_interval_set:
                     sensor_day_total_gap_minutes += (gap.upper_bound - gap.lower_bound).total_seconds() / 60.0
@@ -120,88 +120,117 @@ def process_header_files(dstart, dstop, maxgapsec, sensor_list):
 
 class LooseSensorDayIntervals(object):
     
-    def __init__(self, start, stop, maxgapsec, sensor_list=[]):
+    def __init__(self, start, stop, maxgapsec):
         self.start = start
         self.stop = stop
         self.maxgapsec = maxgapsec
-        self.sensor_list = sensor_list
-        self.sensorday_items = self.get_headers_intervals()
+        self.headers, self.intervals = self.get_headers_intervals()
+        self.gaps = self.get_gaps()
 
     # get header files and intervals per sensor/day from start to stop
     def get_headers_intervals(self):
         """get header files and intervals per sensor/day from start to stop"""       
         d = self.start
-        sensorday_intervals = {}
+        headers = {}
+        intervals = {}
         while d <= self.stop:
-            this_day_interval = Interval( d, d + datetime.timedelta(days=1) )
-            this_day_interval_set = IntervalSet( (this_day_interval,) )
-            sensor_list_gaps = IntervalSet()
             ymd_dir = datetime_to_ymd_path(d)
-            header_files_all_sensors = find_headers(ymd_dir)
-            sensors = list( set( extract_sensor_from_headers_list(header_files_all_sensors) ) )
-            sensors.sort()
+            headers_all = find_headers(ymd_dir)
+            sensors = list( set( extract_sensor_from_headers_list(headers_all) ) )
             for sensor in sensors:
-                header_files = [ x for x in header_files_all_sensors if x.endswith(sensor + '.header') ]
+                header_files = [ x for x in headers_all if x.endswith(sensor + '.header') ]
                 sensor_day_interval_set = get_loose_interval_set_from_header_filenames(header_files, self.maxgapsec)
-                sensorday_intervals[(sensor,d.date())] = (header_files, sensor_day_interval_set)
+                headers[(sensor,d.date())] = header_files
+                intervals[(sensor,d.date())] = sensor_day_interval_set
             d += datetime.timedelta(days=1)
-        order_sensorday_intervals = OrderedDict( sorted(sensorday_intervals.items()) )
-        return order_sensorday_intervals
+        ordered_headers = OrderedDict( sorted(headers.items()) )            
+        ordered_intervals = OrderedDict( sorted(intervals.items()) )
+        return ordered_headers, ordered_intervals
 
     # get gaps (the opposite of intervals) per sensor/day from start to stop
     def get_gaps(self):
         """get gaps (the opposite of intervals) per sensor/day from start to stop"""
-        sensorday_gaps = {}
-        for k, v in self.sensorday_items.iteritems():
+        gaps = {}
+        for k, interval_set in self.intervals.iteritems():
             sensor, day = k[0], k[1]
-            header_files, interval_set = v[0], v[1]
             sensor_gaps = IntervalSet()
             this_datetime = datetime.datetime.combine(day, datetime.datetime.min.time())
-            this_day_interval = Interval( this_datetime, this_datetime + datetime.timedelta(days=1) )
-            this_day_interval_set = IntervalSet( (this_day_interval,) )
-            sensor_gaps_interval_set = this_day_interval_set - interval_set
+            thisday_interval = Interval( this_datetime, this_datetime + datetime.timedelta(days=1) )
+            thisday_intervalset = IntervalSet( (thisday_interval,) )
+            sensor_gaps_interval_set = thisday_intervalset - interval_set
             sensor_day_total_gap_minutes = 0
             for gap in sensor_gaps_interval_set:
                 sensor_day_total_gap_minutes += (gap.upper_bound - gap.lower_bound).total_seconds() / 60.0
                 sensor_gaps.add(gap)
-            sensorday_gaps[(sensor,this_datetime.date())] = sensor_gaps
-        order_sensorday_gaps = OrderedDict( sorted(sensorday_gaps.items()) )
-        return order_sensorday_gaps
+            gaps[(sensor,this_datetime.date())] = sensor_gaps
+        ordered_gaps = OrderedDict( sorted(gaps.items()) )
+        return ordered_gaps
 
     # show per sensor from start through stop
     def show(self, what='intervals'):
         """show intervals per sensor from start to stop"""
         startstr = self.start.strftime('%Y-%m-%d')
         stopstr  = max([self.stop, self.start + datetime.timedelta(days=1)]).strftime('%Y-%m-%d')
-        if what in ['all' 'intervals']:
+        if what in ['intervals', 'gaps']:
             s = 'START = {0:<24s}\nSTOP  = {1:<24s}\nmaxgapsec = {2:<.3f} seconds'.format(startstr, stopstr, self.maxgapsec)
+            s += self._get_intervalstr(what)
         else:
             # must just want to see header files
             s = 'START = {0:<24s}\nSTOP  = {1:<24s}'.format(startstr, stopstr)
-
-        for k, v in self.sensorday_items.iteritems():
-            sensor, day = k[0], k[1]
-            header_files, interval_set = v[0], v[1]
-            s += '\n\n%s %s %d headers gives %d intervals' % (day.strftime('%Y-%m-%d'), sensor, len(header_files), len(interval_set))
-            if what in ['all', 'intervals']:
-                total_sec = 0
-                for i in interval_set:
-                    t1 = datetime_to_doytimestr(i.lower_bound)[0:-3]
-                    t2 = datetime_to_doytimestr(i.upper_bound)[0:-3]
-                    dursec = (i.upper_bound - i.lower_bound).total_seconds()
-                    total_sec += dursec
-                    if dursec < 60.0:
-                        durstr = '{0:>8.1f} seconds'.format(dursec)
-                    else:
-                        durstr = '{0:>8.1f} minutes'.format(dursec / 60.0)                    
-                    s += '\n{0:<9s} {1:<22s} {2:>22s} {3:>16s}'.format(sensor, t1, t2, durstr)
-                s += '\nTOTAL HOURS = {0:<4.1f} for {1:s} on {2:s}'.format(total_sec / 3600.0, sensor, str(day))
-            if what in ['all', 'headers']:
-                for h in header_files:
-                    s += '\n%s' % h
-            if what not in ['all', 'headers', 'intervals']:
-                s += '\nUnhandled input: what is "%s"?' % what
+            s += self._get_headerstr()
         print s
+        return
+
+    def _get_countstr(self, sensor, day):
+        num_headers = len( self.headers[(sensor, day)] )
+        num_intervals = len( self.intervals[(sensor, day)] )
+        num_gaps = len( self.gaps[(sensor, day)] )
+        s = '%s %s has %d headers, %d intervals, and %d gaps with maxgapsec = %.3f' % (
+            day.strftime('%Y-%m-%d'), sensor, num_headers, num_intervals, num_gaps, self.maxgapsec)        
+        return s
+
+    # get headers as string, per sensor from start through stop
+    def _get_headerstr(self):
+        """get headers as string, per sensor from start through stop"""
+        s = ''
+        for k, header_files in self.headers.iteritems():
+            sensor, day = k[0], k[1]
+            s += '\n\n%s' % self._get_countstr(sensor, day)
+            i = 0
+            for h in header_files:
+                i += 1
+                s += '\n%d %s' % (i, h)
+        return s
+
+    # get intervals (or gaps) as string, per sensor from start through stop
+    def _get_intervalstr(self, what):
+        """get intervals (or gaps) as string, per sensor from start through stop"""
+        s = ''
+        if 'intervals' == what:
+            items = self.intervals
+        elif 'gaps' == what:
+            items = self.gaps
+        else:
+            raise Exception('unhandled exception for "what = %s"' % what)
+            return s
+        for k, intervals in items.iteritems():
+            sensor, day = k[0], k[1]
+            s += '\n\n%s' % self._get_countstr(sensor, day)
+            c = 0
+            total_sec = 0
+            for i in intervals:
+                c += 1
+                t1 = datetime_to_doytimestr(i.lower_bound)[0:-3]
+                t2 = datetime_to_doytimestr(i.upper_bound)[0:-3]
+                dursec = (i.upper_bound - i.lower_bound).total_seconds()
+                total_sec += dursec
+                if dursec < 60.0:
+                    durstr = '{0:>8.2f} seconds'.format(dursec)
+                else:
+                    durstr = '{0:>8.2f} minutes'.format(dursec / 60.0)                    
+                s += '\n{0:<22s} {1:>22s} {2:>16s} {3:<9s} {4:3s} {5:<5d}'.format(t1, t2, durstr, sensor, what[0:3], c)
+            s += '\nTOTAL HOURS = {0:<4.1f} for {1:s} on {2:s}'.format(total_sec / 3600.0, sensor, str(day))
+        return s
 
         # FIXME explain what is being shown (gaps, headers/intervals, DSM convenient output or wtf?)
         #
@@ -231,24 +260,14 @@ class LooseSensorDayIntervals(object):
         # day087_part4 2015:087:18:06:00 to 2015:087:18:55:00
         # day087_part5 2015:087:19:53:00 to 2015:087:20:24:00
         # day087_part6 2015:087:21:43:00 to 2015:087:22:44:00
-        #
-        # THIS IS WHAT GAPS OUTPUT LOOKS LIKE (PRECISE RANGES):
-        # maxgapsec = 1.5 seconds
-        # -----------------------
-        # gap 2015:084:06:30:00.123456 to 2015:084:06:49:00.123456
 
 def demo_intervals():
-    dstart = parser.parse('2015-03-29')
-    dstop =  parser.parse('2015-03-29')
-    maxgapsec = 3.0 * 1/500.0 # 3 data pts at 500 sa/sec
-    intervals = LooseSensorDayIntervals(dstart, dstop, maxgapsec)
-    #intervals.show('intervals')
-    gaps = intervals.get_gaps()
-    for k, interval_set in gaps.iteritems():
-        sensor, day = k[0], k[1]
-        print sensor, day
-        for i in interval_set:
-            print 'gap', i.lower_bound, i.upper_bound
+    dstart = parser.parse('2015-03-25')
+    dstop =  parser.parse('2015-03-30')
+    maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
+    hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec)
+    hig.show('gaps')
+    hig.show('intervals')
     
 demo_intervals()
 raise SystemExit
