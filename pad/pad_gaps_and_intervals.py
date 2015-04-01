@@ -35,89 +35,6 @@ def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
         interval_set.add( Interval( dtStartFilename, dtStopFilename ) )
     return interval_set
 
-# process headers over range of days
-def OBSOLETEprocess_header_files(dstart, dstop, maxgapsec, sensor_list):
-    """process headers over range of days"""
-    d = dstart
-    while d <= dstop:
-        print '\n%s' % d
-        print '=' * 99
-        thisday_interval = Interval( d, d + datetime.timedelta(days=1) )
-        thisday_intervalset = IntervalSet( (thisday_interval,) )
-        sensor_list_gaps = IntervalSet()
-        ymd_dir = datetime_to_ymd_path(d)
-        headers_all = find_headers(ymd_dir)
-        sensors = list( set( extract_sensor_from_headers_list(headers_all) ) )
-        #sensors.sort()
-
-        for sensor in sensors:
-            if sensor in sensor_list:
-
-                header_files = [ x for x in headers_all if x.endswith(sensor + '.header') ]
-                #header_files.sort()
-                sensor_day_interval_set = get_loose_interval_set_from_header_filenames(header_files, maxgapsec)
-
-                #print '-' * 55
-                #print d.date(), 'maxgapsec =', maxgapsec, sensor, len(header_files), len(sensor_day_interval_set)
-                #for i in sensor_day_interval_set:
-                #    print i.lower_bound, i.upper_bound
-
-                # now set of gaps are these
-                sensor_gaps_interval_set = thisday_intervalset - sensor_day_interval_set
-                sensor_day_total_gap_minutes = 0
-                for gap in sensor_gaps_interval_set:
-                    sensor_day_total_gap_minutes += (gap.upper_bound - gap.lower_bound).total_seconds() / 60.0
-                    #print '%s, %.1f minutes, %s, %s' % (sensor, sensor_day_total_gap_minutes, gap.lower_bound, gap.upper_bound)
-                    sensor_list_gaps.add(gap)
-
-        # FIXME explain what is being shown (gaps, intervals, DSM convenient output or wtf?)
-        #
-        # THIS IS WHAT DSM OUTPUT LOOKS LIKE (WIDER RANGES):
-        # day084_part1 2015:084:06:30:00 to 2015:084:06:49:00
-        # day084_part2 2015:084:07:37:00 to 2015:084:08:19:00
-        # day084_part3 2015:084:14:26:00 to 2015:084:15:17:00
-        # day084_part4 2015:084:18:44:00 to 2015:084:18:55:00
-        # day084_part5 2015:084:19:15:00 to 2015:084:19:54:00
-        # 
-        # day085_part1 2015:085:08:01:00 to 2015:085:08:12:00
-        # day085_part2 2015:085:15:28:00 to 2015:085:16:10:00
-        # day085_part3 2015:085:16:44:00 to 2015:085:17:24:00
-        # 
-        # day086_part1 2015:086:06:06:00 to 2015:086:06:17:00
-        # day086_part2 2015:086:12:57:00 to 2015:086:13:53:00
-        # day086_part3 2015:086:14:34:00 to 2015:086:15:08:00
-        # day086_part4 2015:086:16:17:00 to 2015:086:16:40:00
-        # day086_part5 2015:086:17:38:00 to 2015:086:18:10:00
-        # day086_part6 2015:086:19:46:00 to 2015:086:19:52:00
-        # day086_part7 2015:086:21:18:00 to 2015:086:21:25:00
-        # day086_part8 2015:086:22:41:00 to 2015:086:23:09:00
-        # 
-        # day087_part1 2015:087:06:40:00 to 2015:087:07:14:00
-        # day087_part2 2015:087:15:15:00 to 2015:087:16:03:00
-        # day087_part3 2015:087:16:27:00 to 2015:087:17:03:00
-        # day087_part4 2015:087:18:06:00 to 2015:087:18:55:00
-        # day087_part5 2015:087:19:53:00 to 2015:087:20:24:00
-        # day087_part6 2015:087:21:43:00 to 2015:087:22:44:00
-        #
-        # THIS IS WHAT GAPS OUTPUT LOOKS LIKE (PRECISE RANGES):
-        # maxgapsec = 1.5 seconds
-        # -----------------------
-        # gap 2015:084:06:30:00.123456 to 2015:084:06:49:00.123456
-        #
-        # THIS IS WHAT INTERVALS OUTPUT LOOKS LIKE (PRECISE RANGES)
-        # start = START
-        # stop  = STOP
-        # -----------------------
-        # interval 2015:084:06:30:00.123456 to 2015:084:06:49:00.123456        
-        
-        for g in sensor_list_gaps:
-            gap_minutes = (g.upper_bound - g.lower_bound).total_seconds() / 60.0
-            if gap_minutes > 2:
-                t1 = datetime_to_doytimestr( floor_minute( g.lower_bound ))
-                t2 = datetime_to_doytimestr(  ceil_minute( g.upper_bound ))
-                print '{0:>6.1f} minutes, from {1:<24s} to {2:>24s}'.format(gap_minutes, t1, t2)
-        d += datetime.timedelta(days=1)
-
 class LooseSensorDayIntervals(object):
     
     def __init__(self, start, stop, maxgapsec):
@@ -179,13 +96,27 @@ class LooseSensorDayIntervals(object):
             s = 'START = {0:<24s}\nSTOP  = {1:<24s}'.format(startstr, stopstr)
             s += self._get_headerstr()
         print s
-        return
+
+    def show_dsm(self, keep_sensors):
+        master_gaps = LoosePadIntervalSet(maxgapsec=15.0*60.0)
+        for k, gaps in self.gaps.iteritems():
+            sensor, day = k[0], k[1]
+            if sensor in keep_sensors:
+                for g in gaps:
+                    t1 = floor_minute(g.lower_bound)
+                    t2 = ceil_minute( g.upper_bound)
+                    master_gaps.add( Interval(t1, t2) )
+        for g in master_gaps:
+            day = int( g.lower_bound.date().strftime('%j') )
+            g1str = datetime_to_doytimestr(g.lower_bound)[0:-7]
+            g2str = datetime_to_doytimestr(g.upper_bound)[0:-7]
+            print 'day{0:0>3}_partX  {1:<18s} {2:<18s}'.format(day, g1str, g2str)
 
     def _get_countstr(self, sensor, day):
         num_headers = len( self.headers[(sensor, day)] )
         num_intervals = len( self.intervals[(sensor, day)] )
         num_gaps = len( self.gaps[(sensor, day)] )
-        s = '%s %s has %d headers, %d intervals, and %d gaps with maxgapsec = %.3f' % (
+        s = '%s %s has %d headers, %d intervals, and %d gaps when maxgapsec = %.3f' % (
             day.strftime('%Y-%m-%d'), sensor, num_headers, num_intervals, num_gaps, self.maxgapsec)        
         return s
 
@@ -232,67 +163,17 @@ class LooseSensorDayIntervals(object):
             s += '\nTOTAL HOURS = {0:<4.1f} for {1:s} on {2:s}'.format(total_sec / 3600.0, sensor, str(day))
         return s
 
-        # FIXME explain what is being shown (gaps, headers/intervals, DSM convenient output or wtf?)
-        #
-        # THIS IS WHAT DSM OUTPUT LOOKS LIKE (WIDER RANGES):
-        # day084_part1 2015:084:06:30:00 to 2015:084:06:49:00
-        # day084_part2 2015:084:07:37:00 to 2015:084:08:19:00
-        # day084_part3 2015:084:14:26:00 to 2015:084:15:17:00
-        # day084_part4 2015:084:18:44:00 to 2015:084:18:55:00
-        # day084_part5 2015:084:19:15:00 to 2015:084:19:54:00
-        # 
-        # day085_part1 2015:085:08:01:00 to 2015:085:08:12:00
-        # day085_part2 2015:085:15:28:00 to 2015:085:16:10:00
-        # day085_part3 2015:085:16:44:00 to 2015:085:17:24:00
-        # 
-        # day086_part1 2015:086:06:06:00 to 2015:086:06:17:00
-        # day086_part2 2015:086:12:57:00 to 2015:086:13:53:00
-        # day086_part3 2015:086:14:34:00 to 2015:086:15:08:00
-        # day086_part4 2015:086:16:17:00 to 2015:086:16:40:00
-        # day086_part5 2015:086:17:38:00 to 2015:086:18:10:00
-        # day086_part6 2015:086:19:46:00 to 2015:086:19:52:00
-        # day086_part7 2015:086:21:18:00 to 2015:086:21:25:00
-        # day086_part8 2015:086:22:41:00 to 2015:086:23:09:00
-        # 
-        # day087_part1 2015:087:06:40:00 to 2015:087:07:14:00
-        # day087_part2 2015:087:15:15:00 to 2015:087:16:03:00
-        # day087_part3 2015:087:16:27:00 to 2015:087:17:03:00
-        # day087_part4 2015:087:18:06:00 to 2015:087:18:55:00
-        # day087_part5 2015:087:19:53:00 to 2015:087:20:24:00
-        # day087_part6 2015:087:21:43:00 to 2015:087:22:44:00
-
 def demo_intervals():
     dstart = parser.parse('2015-03-25')
     dstop =  parser.parse('2015-03-30')
     maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec)
-    hig.show('gaps')
-    hig.show('intervals')
+    hig.show('headers')
+    #hig.show('intervals')
+    #hig.show('gaps')
+    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
     
 demo_intervals()
-raise SystemExit
-
-def demo_gaps():
-    dstart = parser.parse('2015-03-29')
-    dstop =  parser.parse('2015-03-29')
-    maxgapsec = 3.0 * 1/500.0 # 3 data pts at 500 sa/sec
-    sensorday_intervals, str_intervals = get_intervals(dstart, dstop, maxgapsec)
-    for k, v in sensorday_intervals.iteritems():
-        sensor, day = k[0], k[1]
-        print sensor, day, v
-
-demo_gaps()
-raise SystemExit
-
-def demo1():
-    print ''
-    dstart = parser.parse('2015-03-29')
-    dstop =  parser.parse('2015-03-29')
-    maxgapsec = 20 #0.000001
-    sensor_list = ['121f02', '121f03', '121f04', '121f05', '121f08']
-    process_header_files(dstart, dstop, maxgapsec, sensor_list)
-
-demo1()
 raise SystemExit
 
 # iterate over day directory (only sams2 subdirs for now)
