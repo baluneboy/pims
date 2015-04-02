@@ -123,7 +123,8 @@ def doytimestr_to_datetime(timestr):
     
     >>> doytimestr_to_datetime('2014:077:00:02:00')
     datetime.datetime(2014, 3, 18, 0, 2)
-    """    
+    """
+    if not timestr: return None
     if not re.match('^\d{4}:\d{3}:\d{2}:\d{2}:(\d{2}\.\d{1,6}|\d{2})$', timestr):
         raise ValueError('string does not match expected pattern')
     if '.' in timestr:

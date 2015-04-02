@@ -165,13 +165,13 @@ class LooseSensorDayIntervals(object):
 
 def demo_intervals():
     dstart = parser.parse('2015-03-25')
-    dstop =  parser.parse('2015-03-30')
+    dstop =  parser.parse('2015-03-31')
     maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec)
-    hig.show('headers')
+    #hig.show('headers')
     #hig.show('intervals')
     #hig.show('gaps')
-    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+    hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
     
 demo_intervals()
 raise SystemExit
