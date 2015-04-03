@@ -23,6 +23,11 @@ df = pd.read_csv('/misc/yoda/www/plots/user/sams/gaps/input4dsmstatuschk.csv', s
 df['start'] = df['start'].apply(doytimestr_to_datetime)
 df['stop'] = df['stop'].apply(doytimestr_to_datetime)
 df['tdelta'] = df['stop'] - df['start']
+#df.to_csv('/tmp/trash.csv')
+#raise SystemExit
 df['dbminutes'] = df.apply(lambda x: get_db_minutes(x['start'], x['stop'], sensor='121f03', host='manbearpig'), axis=1)
 df['missing'] = df['tdelta'] - df['dbminutes']
-print df
+#print df
+df['start'] = df['start'].apply(datetime_to_doytimestr)
+df['stop']  = df['stop'].apply(datetime_to_doytimestr)
+print df[ df['missing'] > datetime.timedelta(minutes=2) ]

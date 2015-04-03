@@ -164,8 +164,8 @@ class LooseSensorDayIntervals(object):
         return s
 
 def demo_intervals():
-    dstart = parser.parse('2015-03-25')
-    dstop =  parser.parse('2015-03-31')
+    dstart = parser.parse('2015-04-01')
+    dstop =  parser.parse('2015-04-01')
     maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec)
     #hig.show('headers')

@@ -139,7 +139,8 @@ def datetime_to_doytimestr(dtm):
     
     >>> datetime_to_doytimestr(datetime.datetime(2014, 6, 12, 8, 11, 10, 123456))
     '2014:163:08:11:10.123456'
-    """      
+    """
+    if not dtm: return None
     return dtm.strftime('%Y:%j:%H:%M:%S.%f')
 
 # convert string like 2014-05-02 to datetime object
