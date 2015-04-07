@@ -92,6 +92,34 @@ def guess_file(name, klass, show_warnings=False):
         print 'Unrecognized file "%s"' % name
     return p
 
+def tuplify_headers(headers):
+    """convert list of header files to list of (year..., path) tuples
+
+    Returns list of tuples like [('year2015/month03...', '/misc/yoda/pub/'), etc.]
+
+    >>> a = '/misc/yoda/pub/pad/year2013/month01/day02/sams2_accel_121f0A/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0A.header'
+    >>> b = '/data/pad/year2013/month01/day02/sams2_accel_121f0C/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0C.header'
+    >>> c = 'stringcheese'
+    >>> tuplify_headers([a, b, c])
+    [('year2013/month01/day02/sams2_accel_121f0A/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0A.header', '/misc/yoda/pub/pad/'), ('year2013/month01/day02/sams2_accel_121f0C/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0C.header', '/data/pad/'), (None, None)]
+
+    """
+    def get_path_part(hdr_file):
+        pat = _PADHEADERFILES_PATTERN.replace('/misc/yoda/pub/pad', '.*/pad')
+        result = ''
+        if hdr_file:
+            m = re.match(pat, hdr_file)
+            if m: result = m.group('ymdpath')
+        return result.split('year')[0]
+    tups = []
+    for h in headers:
+        path_part = get_path_part(h)
+        if path_part:
+            tups.append( (h.replace(path_part, ''), path_part) )
+        else:
+            tups.append( (None, None) )
+    return tups
+
 def extract_sensor_from_headers_list(headers):
     """extract sensor part of string from list of header files
 
@@ -99,18 +127,19 @@ def extract_sensor_from_headers_list(headers):
 
     >>> a = '/misc/yoda/pub/pad/year2013/month01/day02/sams2_accel_121f0A/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0A.header'
     >>> b = '/misc/yoda/pub/pad/year2013/month01/day02/sams2_accel_121f0B/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0B.header'
-    >>> c = 'seesaw'
+    >>> c = '/data/pad/year2013/month01/day02/sams2_accel_121f0C/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f0C.header'
     >>> d = 'stringcheese'
-    >>> extract_sensor_from_headers_list([a, b, c, d]) # headers = [a, b, c, d]
-    ['121f0A', '121f0B', '', '']
+    >>> extract_sensor_from_headers_list([a, b, b, c, d]) # headers = [a, b, b, c, d]
+    ['121f0A', '121f0B', '121f0B', '121f0C', '']
     >>> extract_sensor_from_headers_list([c, a, d])    # headers = [c, a, d]
-    ['', '121f0A', '']
+    ['121f0C', '121f0A', '']
 
     """    
     def get_sensor_part(hdr_file):
+        pat = _PADHEADERFILES_PATTERN.replace('/misc/yoda/pub/pad', '.*/pad')
         result = ''
         if hdr_file:
-            m = re.match(_PADHEADERFILES_PATTERN, hdr_file)
+            m = re.match(pat, hdr_file)
             if m: result = m.group('sensor')
         return result
     sensors = [ get_sensor_part(x) for x in headers ]    

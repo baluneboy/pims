@@ -184,7 +184,8 @@ def grouper(n, iterable, fillvalue=None):
     """grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
     
     >>> demo_grouper()
-    [[0 1 2] [3 4 5] [6 7 8] [ 9 10 11] None None None]
+    [array([0, 1, 2]) array([3, 4, 5]) array([6, 7, 8]) array([ 9, 10, 11])
+     None None None]
     """
     args = [iter(iterable)] * n
     return izip_longest(fillvalue=fillvalue, *args)

@@ -12,13 +12,14 @@ from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.pad.loose_pad_intervalset import LoosePadIntervalSet
 from pims.utils.pimsdateutil import datetime_to_doytimestr, floor_minute, ceil_minute
-from pims.files.utils import extract_sensor_from_headers_list
+from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers
+from pims.utils.iterabletools import pairwise
 
 # find header files for given year/month/day
 def find_headers(ymd_dir):
     """find header files for given year/month/day"""
     if not os.path.exists(ymd_dir):
-        raise OSError('%s does not exist' % ymd_dir)
+        print('NOTE: %s does not exist' % ymd_dir)
     #cmd = 'find ' + ymd_dir + ' -maxdepth 2 -type f -name "*header" -exec basename {} \; | grep -v 006'
     cmd = 'find ' + ymd_dir + ' -maxdepth 2 -type f -name "*header" | grep -v 006'
     p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
@@ -37,10 +38,11 @@ def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
 
 class LooseSensorDayIntervals(object):
     
-    def __init__(self, start, stop, maxgapsec):
+    def __init__(self, start, stop, maxgapsec, base_dir='/misc/yoda/pub/pad'):
         self.start = start
         self.stop = stop
         self.maxgapsec = maxgapsec
+        self.base_dir = base_dir
         self.headers, self.intervals = self.get_headers_intervals()
         self.gaps = self.get_gaps()
 
@@ -51,7 +53,7 @@ class LooseSensorDayIntervals(object):
         headers = {}
         intervals = {}
         while d <= self.stop:
-            ymd_dir = datetime_to_ymd_path(d)
+            ymd_dir = datetime_to_ymd_path(d, base_dir=self.base_dir)
             headers_all = find_headers(ymd_dir)
             sensors = list( set( extract_sensor_from_headers_list(headers_all) ) )
             for sensor in sensors:
@@ -164,16 +166,34 @@ class LooseSensorDayIntervals(object):
         return s
 
 def demo_intervals():
-    dstart = parser.parse('2015-04-01')
-    dstop =  parser.parse('2015-04-01')
+    dstart = parser.parse('2015-03-17')
+    dstop =  parser.parse('2015-03-19')
     maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
-    hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec)
-    #hig.show('headers')
+    hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
+    hig.show('headers')
     #hig.show('intervals')
     #hig.show('gaps')
-    hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+
+def demo_trim_pad_via_headers():
+    dstart = parser.parse('2015-03-17')
+    dstop =  parser.parse('2015-03-18')
+    maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
+    hig_jimmy = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/data/pad')
+    hig_yoda = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
+    for sensday, hdrs in hig_jimmy.headers.iteritems():
+        headers = tuplify_headers(hdrs) # jimmy headers
+        headers += tuplify_headers(hig_yoda.headers[sensday]) # and yoda headers
+        sensor, day = sensday
+        print 'Working on %s for %s' % (sensor, day)
+        hdr_list = sorted(headers, key = lambda x: x[0])
+        for f1, f2 in pairwise(hdr_list):
+            if f1[1] != f2[1]:
+                print '-' * 11
+                print f1
+                print f2
     
-demo_intervals()
+demo_trim_pad_via_headers()
 raise SystemExit
 
 # iterate over day directory (only sams2 subdirs for now)
