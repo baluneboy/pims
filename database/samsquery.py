@@ -15,10 +15,11 @@ from pims.utils.datetime_ranger import DateRange
 
 # Get sensitive authentication credentials for internal MySQL db query
 _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
+_HOST_SAMS = 'yoda'
 
 #print _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS; raise SystemExit
 
-def mysql_con_yoda(host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS, db=_SCHEMA_SAMS):
+def mysql_con_yoda(host=_HOST_SAMS, user=_UNAME_SAMS, passwd=_PASSWD_SAMS, db=_SCHEMA_SAMS):
     return Connection(host=host, user=user, passwd=passwd, db=db)
 
 def get_cronjob():

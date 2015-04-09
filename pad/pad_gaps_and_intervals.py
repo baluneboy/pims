@@ -10,7 +10,7 @@ from interval import Interval, IntervalSet
 
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
-from pims.pad.loose_pad_intervalset import LoosePadIntervalSet
+from pims.pad.loose_pad_intervalset import LoosePadIntervalSet, CompareOverlapInterval
 from pims.utils.pimsdateutil import datetime_to_doytimestr, floor_minute, ceil_minute
 from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers
 from pims.utils.iterabletools import pairwise
@@ -165,6 +165,65 @@ class LooseSensorDayIntervals(object):
             s += '\nTOTAL HOURS = {0:<4.1f} for {1:s} on {2:s}'.format(total_sec / 3600.0, sensor, str(day))
         return s
 
+def compare_yoda_jimmy_files(tup1, tup2):
+    """
+    
+    INPUTS:
+    each tup is either like ('year2015/month03...', '/data/pad')      # JIMMY HEADER FILE
+                    or like ('year2015/month04...', '/misc/yoda/pad') # YODA  HEADER FILE
+                       
+    """
+    ok_path_parts = ['/data/pad/', '/misc/yoda/pub/pad/']
+    if (tup1[1] not in ok_path_parts) or (tup2[1] not in ok_path_parts):
+        print 'path part 1st arg is: %s' % tup1[1]
+        print 'path part 2nd arg is: %s' % tup2[1]
+        print 'okay path parts:', ok_path_parts
+        raise Exception('unhandled path part')
+    hdr_file1 = os.path.join(tup1[1],tup1[0])
+    start1, stop1 = pad_fullfilestr_to_start_stop(hdr_file1)
+    cmp_interval1 = CompareOverlapInterval(start1, stop1)
+    hdr_file2 = os.path.join(tup2[1],tup2[0])
+    start2, stop2 = pad_fullfilestr_to_start_stop(hdr_file2)
+    cmp_interval2 = CompareOverlapInterval(start2, stop2)
+    if tup1[1] == '/misc/yoda/pub/pad/':
+        yoda_tup = (hdr_file1, cmp_interval1)
+        jimmy_tup = (hdr_file2, cmp_interval2)
+    else:
+        yoda_tup = (hdr_file2, cmp_interval2)
+        jimmy_tup = (hdr_file1, cmp_interval1)
+    return yoda_tup, jimmy_tup
+
+def rough_kpi_merge_for_march2015(higJimmy, higYoda):
+    """merge played back intervals (for SAMS) with PAD on yoda to improve estimate of PAD hours"""
+    s = ''
+    for k, intervals in higJimmy.intervals.iteritems():
+        sensor, day = k[0], k[1]
+        y = higYoda.intervals[k]
+        for j in intervals:
+            y.add(j)
+        c = 0
+        total_sec = 0
+        for i in y.intervals:
+            c += 1
+            t1 = datetime_to_doytimestr(i.lower_bound)[0:-3]
+            t2 = datetime_to_doytimestr(i.upper_bound)[0:-3]
+            dursec = (i.upper_bound - i.lower_bound).total_seconds()
+            total_sec += dursec
+        s += '\n{2:s},{1:s},{0:.1f}'.format(total_sec / 3600.0, sensor, str(day))
+    return s
+
+def rough_kpi_for_march2015():
+    dstart = parser.parse('2015-03-01')
+    dstop =  parser.parse('2015-03-31')
+    maxgapsec = 0.001
+    higJimmy = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/data/pad')
+    higYoda = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
+    s = rough_kpi_merge_for_march2015(higJimmy, higYoda)
+    print s
+    
+rough_kpi_for_march2015()
+raise SystemExit
+
 def demo_intervals():
     dstart = parser.parse('2015-03-17')
     dstop =  parser.parse('2015-03-19')
@@ -190,8 +249,31 @@ def demo_trim_pad_via_headers():
         for f1, f2 in pairwise(hdr_list):
             if f1[1] != f2[1]:
                 print '-' * 11
-                print f1
-                print f2
+                yoda_tup, jimmy_tup = compare_yoda_jimmy_files(f1, f2)
+                if jimmy_tup[1] in yoda_tup[1]:
+                    print 'jimmy file TOTALLY WITHIN yoda file'
+                    #print yoda_tup[1].lower_bound, 'YODA START'
+                    #print jimmy_tup[1].lower_bound, 'JIMM START'
+                    #print jimmy_tup[1].upper_bound, 'JIMM STOP'
+                    #print yoda_tup[1].upper_bound, 'YODA STOP'
+                elif jimmy_tup[1].overlaps_left( yoda_tup[1] ):
+                    print 'jimmy file LEFT OVERLAPS yoda file'
+                    print jimmy_tup[1].lower_bound, 'JIMM START'
+                    print yoda_tup[1].lower_bound, 'YODA START'
+                    print jimmy_tup[1].upper_bound, 'JIMM STOP'
+                    print yoda_tup[1].upper_bound, 'YODA STOP'                    
+                elif jimmy_tup[1].overlaps_right( yoda_tup[1] ):
+                    print 'jimmy file RIGHT OVERLAPS yoda file'
+                    print yoda_tup[1].lower_bound, 'YODA START'
+                    print jimmy_tup[1].lower_bound, 'JIMM START'
+                    print yoda_tup[1].upper_bound, 'YODA STOP'                    
+                    print jimmy_tup[1].upper_bound, 'JIMM STOP'
+                else:
+                    print 'jimmy file DOES NOT OVERLAP yoda file'
+                    #print yoda_tup[1].lower_bound, 'YODA START'
+                    #print yoda_tup[1].upper_bound, 'YODA STOP'                    
+                    #print jimmy_tup[1].lower_bound, 'JIMM START'
+                    #print jimmy_tup[1].upper_bound, 'JIMM STOP'
     
 demo_trim_pad_via_headers()
 raise SystemExit

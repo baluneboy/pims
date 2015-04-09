@@ -3,6 +3,99 @@
 import datetime
 from interval import Interval, IntervalSet
 
+class CompareOverlapInterval(Interval):
+    
+    def overlaps_left(self, other):
+        """Tells whether the given interval overlaps other AND overhangs to its left.
+        
+        Returns True if the one Interval overlaps other and overhangs on its left.
+        If they are immediately adjacent, then this returns False.  Use the adjacent_to
+        function for testing for adjacent Intervals.
+
+        >>> r1  = CompareOverlapInterval.less_than(-100)
+        >>> r2  = CompareOverlapInterval.less_than_or_equal_to(-100)
+        >>> r3  = CompareOverlapInterval.less_than(100)
+        >>> r4  = CompareOverlapInterval.less_than_or_equal_to(100)
+        >>> r5  = CompareOverlapInterval.all()
+        >>> r6  = CompareOverlapInterval.between(-100, 100, False)
+        >>> r7  = CompareOverlapInterval(-100, 100, lower_closed=False)
+        >>> r8  = CompareOverlapInterval.greater_than(-100)
+        >>> r9  = CompareOverlapInterval.equal_to(-100)
+        >>> r10 = CompareOverlapInterval(-100, 100, upper_closed=False)
+        >>> r11 = CompareOverlapInterval.between(-100, 100)
+        >>> r12 = CompareOverlapInterval.greater_than_or_equal_to(-100)
+        >>> r13 = CompareOverlapInterval.greater_than(100)
+        >>> r14 = CompareOverlapInterval.equal_to(100)
+        >>> r15 = CompareOverlapInterval.greater_than_or_equal_to(100)
+        >>> r16 = CompareOverlapInterval.between(-10, 10, False)
+        >>> r17 = CompareOverlapInterval.between( -1,  1, False)
+        >>> r18 = CompareOverlapInterval.between( -8,  1, False)
+        >>> r16.overlaps_left(r18)
+        True
+        >>> r18.overlaps_left(r16)
+        False
+        >>> r16.overlaps_left(r17)
+        True
+        >>> r17.overlaps_left(r16)
+        False
+        >>> r8.overlaps(r9)
+        False
+        >>> r12.overlaps(r6)
+        True
+        >>> r7.overlaps(r8)
+        True
+        >>> r8.overlaps(r4)
+        True
+        >>> r14.overlaps(r11)
+        True
+        >>> r10.overlaps(r13)
+        False
+        >>> r5.overlaps(r1)
+        True
+        >>> r5.overlaps(r2)
+        True
+        >>> r15.overlaps(r6)
+        False
+        >>> r3.overlaps(r1)
+        True
+        """
+        if not self.overlaps(other):
+            return False
+        if self.lower_bound < other.lower_bound:
+            result = True
+        else:
+            result = False
+        return result    
+
+    def overlaps_right(self, other):
+        """Tells whether the given interval overlaps other AND overhangs to its right.
+        
+        Returns True if the one Interval overlaps other and overhangs on its right.
+        If they are immediately adjacent, then this returns False.  Use the adjacent_to
+        function for testing for adjacent Intervals.
+
+        >>> r16 = CompareOverlapInterval.between(-10, 10, False)
+        >>> r17 = CompareOverlapInterval.between(-11,  1, False)
+        >>> r18 = CompareOverlapInterval.between( -8,  1, False)
+        >>> r19 = CompareOverlapInterval.between( -8, 12, False)       
+        >>> r20 = CompareOverlapInterval.between(-10, 12, False)               
+        >>> r17.overlaps_right(r16)
+        False
+        >>> r18.overlaps_right(r16)
+        False
+        >>> r19.overlaps_right(r16)
+        True
+        >>> r20.overlaps_right(r16)
+        True
+        """
+        if not self.overlaps(other):
+            return False
+        if self.upper_bound > other.upper_bound:
+            result = True
+        else:
+            result = False
+        return result
+
 class LoosePadIntervalSet(IntervalSet):
 
     def __init__(self, items=[], maxgapsec=1.5):

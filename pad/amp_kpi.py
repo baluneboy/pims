@@ -10,7 +10,7 @@ import datetime
 from cStringIO import StringIO
 from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime, datestr_to_datetime
 from pims.files.utils import mkdir_p, most_recent_file_with_suffix
-from pims.database.samsquery import CuMonthlyQuery, _HOST, _SCHEMA, _UNAME, _PASSWD
+from pims.database.samsquery import CuMonthlyQuery, _HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS
 from pims.excel.modification import overwrite_last_row_with_totals, kpi_sheet_fill
 from openpyxl.reader.excel import load_workbook
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
@@ -541,7 +541,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
 
     # get dataframe with CU hour count info
-    cu = CuMonthlyQuery(_HOST, _SCHEMA, _UNAME, _PASSWD, date_min, date_max)
+    cu = CuMonthlyQuery(_HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS, date_min, date_max)
     cu_querystr = cu._get_query(date_min, date_max)
     s = StringIO()
     s.write(str(cu))
