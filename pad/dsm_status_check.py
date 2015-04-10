@@ -2,6 +2,7 @@
 
 import datetime
 import pandas as pd
+from dateutil import parser
 
 from pims.database.pimsquery import db_connect
 from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimestr
@@ -18,6 +19,12 @@ def get_db_minutes(start, stop, sensor='121f03', host='manbearpig'):
     """query host's sensor table to calculate amount of packets from start to stop and return that as timedelta"""
     if not start: return None
     return get_packets_timedelta(sensor, str(start), str(stop), host)
+
+df = pd.read_csv('/misc/yoda/www/plots/user/sams/gaps/summarize_gaps.txt', sep='\s\s')
+df['date'] = df['date'].apply(parser.parse)
+out = df.groupby(['date','sensor']).max()
+out.to_csv('/tmp/out.csv')
+raise SystemExit
 
 df = pd.read_csv('/misc/yoda/www/plots/user/sams/gaps/input4dsmstatuschk.csv', sep='\s\s')
 df['start'] = df['start'].apply(doytimestr_to_datetime)

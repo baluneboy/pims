@@ -221,22 +221,35 @@ def rough_kpi_for_march2015():
     s = rough_kpi_merge_for_march2015(higJimmy, higYoda)
     print s
     
-rough_kpi_for_march2015()
-raise SystemExit
+#rough_kpi_for_march2015()
+#raise SystemExit
 
 def demo_intervals():
-    dstart = parser.parse('2015-03-17')
-    dstop =  parser.parse('2015-03-19')
+    dstart = parser.parse('2015-03-08')
+    dstop =  parser.parse('2015-04-08')
     maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
-    hig.show('headers')
+    #hig.show('headers')
     #hig.show('intervals')
-    #hig.show('gaps')
+    hig.show('gaps')
     #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
 
+#demo_intervals()
+#raise SystemExit
+
+def do_trim(session, hdr, side, overlap_sec):
+    cmd = "C = padtrim('%s', '%s', %f);" % (hdr, side, overlap_sec)
+    print cmd
+    #session.run(cmd)
+    #count = session.getvalue('C');
+    #print count, hdr
+
 def demo_trim_pad_via_headers():
-    dstart = parser.parse('2015-03-17')
-    dstop =  parser.parse('2015-03-18')
+    #import pymatlab
+    session = None #pymatlab.session_factory()
+
+    dstart = parser.parse('2015-03-12')
+    dstop =  parser.parse('2015-03-31')
     maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
     hig_jimmy = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/data/pad')
     hig_yoda = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
@@ -251,29 +264,44 @@ def demo_trim_pad_via_headers():
                 print '-' * 11
                 yoda_tup, jimmy_tup = compare_yoda_jimmy_files(f1, f2)
                 if jimmy_tup[1] in yoda_tup[1]:
-                    print 'jimmy file TOTALLY WITHIN yoda file'
+                    #print 'jimmy file TOTALLY WITHIN yoda file'
                     #print yoda_tup[1].lower_bound, 'YODA START'
                     #print jimmy_tup[1].lower_bound, 'JIMM START'
                     #print jimmy_tup[1].upper_bound, 'JIMM STOP'
                     #print yoda_tup[1].upper_bound, 'YODA STOP'
+                    pass
                 elif jimmy_tup[1].overlaps_left( yoda_tup[1] ):
                     print 'jimmy file LEFT OVERLAPS yoda file'
                     print jimmy_tup[1].lower_bound, 'JIMM START'
                     print yoda_tup[1].lower_bound, 'YODA START'
                     print jimmy_tup[1].upper_bound, 'JIMM STOP'
-                    print yoda_tup[1].upper_bound, 'YODA STOP'                    
+                    print yoda_tup[1].upper_bound, 'YODA STOP'
+                    hdr = jimmy_tup[0]
+                    side = 'left'
+                    overlap_sec = (yoda_tup[1].lower_bound - jimmy_tup[1].lower_bound).total_seconds()
+                    do_trim(session, hdr, side, overlap_sec)
                 elif jimmy_tup[1].overlaps_right( yoda_tup[1] ):
                     print 'jimmy file RIGHT OVERLAPS yoda file'
                     print yoda_tup[1].lower_bound, 'YODA START'
                     print jimmy_tup[1].lower_bound, 'JIMM START'
                     print yoda_tup[1].upper_bound, 'YODA STOP'                    
                     print jimmy_tup[1].upper_bound, 'JIMM STOP'
+                    hdr = jimmy_tup[0]
+                    side = 'right'
+                    overlap_sec = (jimmy_tup[1].upper_bound - yoda_tup[1].upper_bound).total_seconds()
+                    do_trim(session, hdr, side, overlap_sec)                    
                 else:
                     print 'jimmy file DOES NOT OVERLAP yoda file'
+                    hdr = jimmy_tup[0]
+                    side = 'neither'
+                    overlap_sec = 0.0
+                    do_trim(session, hdr, side, overlap_sec)                    
                     #print yoda_tup[1].lower_bound, 'YODA START'
                     #print yoda_tup[1].upper_bound, 'YODA STOP'                    
                     #print jimmy_tup[1].lower_bound, 'JIMM START'
                     #print jimmy_tup[1].upper_bound, 'JIMM STOP'
+    
+    #del session
     
 demo_trim_pad_via_headers()
 raise SystemExit
