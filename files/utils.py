@@ -2,6 +2,7 @@ import os
 import re
 import time
 import errno
+import shutil
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
@@ -144,6 +145,40 @@ def extract_sensor_from_headers_list(headers):
         return result
     sensors = [ get_sensor_part(x) for x in headers ]    
     return sensors
+
+def mkdir_original_for_trim(header_file):
+    """mkdir for this sensor/day from fullpath header_file
+
+    Returns string for newly created "original" subdir.
+
+    >>> header_file = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
+    >>> mkdir_original_for_trim(header_file)
+    '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original'
+    >>> hdr_file = '/misc/yoda/test/pad/year2015/month03/day22/sams2_accel_121f08/2015_03_22_23_55_23.946+2015_03_23_00_05_23.960.121f08.header'
+    >>> mkdir_original_for_trim(hdr_file)
+    '/misc/yoda/test/pad/year2015/month03/day22/sams2_accel_121f08/original'
+
+    """
+    new_path = os.path.join(os.path.dirname(header_file), 'original')
+    mkdir_p(new_path)
+    return new_path
+
+def move_pad_pair(header_file, dest_dir):
+    """move header_file and its data file to destination directory
+
+    Returns string for header_file on its new path.
+
+    >>> dest_dir = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original'
+    >>> header_file = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
+    >>> move_pad_pair(header_file, dest_dir)
+    '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
+
+    """    
+    if not os.path.isdir(dest_dir):
+        raise Exception('destination directory "%s" does not exist' % dest_dir)
+    shutil.move(header_file, dest_dir)                    # move header file
+    shutil.move(header_file.rstrip('.header'), dest_dir)  # move data file
+    return os.path.join(dest_dir, os.path.basename(header_file))
 
 def listdir_filename_pattern(dirpath, fname_pattern):
     """Listdir files that match fname_pattern."""

@@ -1,23 +1,38 @@
 #!/usr/bin/env python
 
 import os
+import re
 import sys
 import datetime
 import subprocess
 from dateutil import parser
 from collections import OrderedDict
 from interval import Interval, IntervalSet
+import numpy as np
 
 from pims.utils.pimsdateutil import datetime_to_ymd_path
-from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, format_datetime_as_pad_underscores
 from pims.pad.loose_pad_intervalset import LoosePadIntervalSet, CompareOverlapInterval
 from pims.utils.pimsdateutil import datetime_to_doytimestr, floor_minute, ceil_minute
-from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers
+from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers, mkdir_original_for_trim, move_pad_pair
 from pims.utils.iterabletools import pairwise
+from pims.ugaudio.load import padread
 
 # find header files for given year/month/day
-def find_headers(ymd_dir):
-    """find header files for given year/month/day"""
+def find_headers_without006(ymd_dir):
+    """find header files for given year/month/day
+
+    Returns list of header files like:
+    ['/misc/yoda/pub/pad/year2015/month03/day21/iss_rad_radgse/2015_03_21_00_30_24.488+2015_03_21_02_30_21.367.radgse.header', ...]
+
+    >>> ymd_dir = '/misc/yoda/test/pad/year2015/month03/day21'
+    >>> L = find_headers_without006(ymd_dir)
+    >>> L[0:2]
+    ['/misc/yoda/test/pad/year2015/month03/day21/iss_rad_radgse/2015_03_21_00_30_24.488+2015_03_21_02_30_21.367.radgse.header', '/misc/yoda/test/pad/year2015/month03/day21/iss_rad_radgse/2015_03_21_02_30_37.343+2015_03_21_04_30_34.253.radgse.header']
+    >>> len(L)
+    990
+    
+    """    
     if not os.path.exists(ymd_dir):
         print('NOTE: %s does not exist' % ymd_dir)
     #cmd = 'find ' + ymd_dir + ' -maxdepth 2 -type f -name "*header" -exec basename {} \; | grep -v 006'
@@ -29,14 +44,47 @@ def find_headers(ymd_dir):
 
 # get loose pad interval set from header filenames
 def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
-    """get loose pad interval set from header filenames"""
+    """get loose pad interval set from header filenames
+
+    Returns LoosePadIntervalSet "loosely built" from list of header_files where
+    gaps < maxgapsec are not treated as gaps.
+
+    >>> ymd_dir = '/misc/yoda/test/pad/year2015/month03/day21'
+    >>> L = find_headers_without006(ymd_dir)
+    >>> header_files = [ i for i in L if i.endswith('121f03.header') ]
+    >>> maxgapsec = 17
+    >>> interval_set = get_loose_interval_set_from_header_filenames(header_files, maxgapsec)
+    >>> len(interval_set)
+    3
+    >>> [ interval_set[0].lower_bound, interval_set[-1].upper_bound ]
+    [datetime.datetime(2015, 3, 21, 0, 4, 45, 628000), datetime.datetime(2015, 3, 22, 0, 5, 41, 967000)]
+    
+    """
     interval_set = LoosePadIntervalSet(maxgapsec=maxgapsec)
     for header_file in header_files:
         dtStartFilename, dtStopFilename = pad_fullfilestr_to_start_stop(header_file)
         interval_set.add( Interval( dtStartFilename, dtStopFilename ) )
     return interval_set
 
+# headers, intervals, and gaps per sensor-day combination
 class LooseSensorDayIntervals(object):
+    """headers, intervals, and gaps per sensor-day combination
+    
+    >>> start = parser.parse('2015-03-22')
+    >>> stop  = parser.parse('2015-03-22')
+    >>> maxgapsec = 17    
+    >>> hig = LooseSensorDayIntervals(start, stop, maxgapsec, base_dir='/misc/yoda/test/pad')
+    >>> sensday = ( '121f03', start.date() )
+    >>> len(hig.headers[sensday])
+    137
+    >>> len(hig.intervals[sensday])
+    8
+    >>> hig.gaps[sensday][0].lower_bound
+    datetime.datetime(2015, 3, 22, 0, 0)
+    >>> hig.gaps[sensday][-1].upper_bound
+    datetime.datetime(2015, 3, 22, 18, 50, 1, 15000)
+    
+    """
     
     def __init__(self, start, stop, maxgapsec, base_dir='/misc/yoda/pub/pad'):
         self.start = start
@@ -54,7 +102,7 @@ class LooseSensorDayIntervals(object):
         intervals = {}
         while d <= self.stop:
             ymd_dir = datetime_to_ymd_path(d, base_dir=self.base_dir)
-            headers_all = find_headers(ymd_dir)
+            headers_all = find_headers_without006(ymd_dir)
             sensors = list( set( extract_sensor_from_headers_list(headers_all) ) )
             for sensor in sensors:
                 header_files = [ x for x in headers_all if x.endswith(sensor + '.header') ]
@@ -165,7 +213,8 @@ class LooseSensorDayIntervals(object):
             s += '\nTOTAL HOURS = {0:<4.1f} for {1:s} on {2:s}'.format(total_sec / 3600.0, sensor, str(day))
         return s
 
-def compare_yoda_jimmy_files(tup1, tup2):
+# FIXME is this obsolete?
+def compare_yoda_jimmy_files(tup1, tup2, ok_path_parts=['/data/pad/', '/misc/yoda/pub/pad/']):
     """
     
     INPUTS:
@@ -173,7 +222,6 @@ def compare_yoda_jimmy_files(tup1, tup2):
                     or like ('year2015/month04...', '/misc/yoda/pad') # YODA  HEADER FILE
                        
     """
-    ok_path_parts = ['/data/pad/', '/misc/yoda/pub/pad/']
     if (tup1[1] not in ok_path_parts) or (tup2[1] not in ok_path_parts):
         print 'path part 1st arg is: %s' % tup1[1]
         print 'path part 2nd arg is: %s' % tup2[1]
@@ -193,6 +241,7 @@ def compare_yoda_jimmy_files(tup1, tup2):
         jimmy_tup = (hdr_file1, cmp_interval1)
     return yoda_tup, jimmy_tup
 
+# FIXME keep this in case of emergency
 def rough_kpi_merge_for_march2015(higJimmy, higYoda):
     """merge played back intervals (for SAMS) with PAD on yoda to improve estimate of PAD hours"""
     s = ''
@@ -212,6 +261,7 @@ def rough_kpi_merge_for_march2015(higJimmy, higYoda):
         s += '\n{2:s},{1:s},{0:.1f}'.format(total_sec / 3600.0, sensor, str(day))
     return s
 
+# FIXME keep this in case of emergency
 def rough_kpi_for_march2015():
     dstart = parser.parse('2015-03-01')
     dstop =  parser.parse('2015-03-31')
@@ -220,91 +270,164 @@ def rough_kpi_for_march2015():
     higYoda = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     s = rough_kpi_merge_for_march2015(higJimmy, higYoda)
     print s
-    
-#rough_kpi_for_march2015()
-#raise SystemExit
 
+# demonstrate LooseSensorDayIntervals
 def demo_intervals():
     dstart = parser.parse('2015-03-08')
     dstop =  parser.parse('2015-04-08')
-    maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
+    maxgapsec = 17.0
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     #hig.show('headers')
     #hig.show('intervals')
     hig.show('gaps')
     #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
 
-#demo_intervals()
-#raise SystemExit
+# prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path
+def preprocess_trim(yoda_headers, header_file, new_path):
+    """prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path"""
+    yoda_headers.remove(header_file)
+    old_header = move_pad_pair(header_file, new_path)
+    return old_header
 
-def do_trim(session, hdr, side, overlap_sec):
-    cmd = "C = padtrim('%s', '%s', %f);" % (hdr, side, overlap_sec)
-    print cmd
-    #session.run(cmd)
-    #count = session.getvalue('C');
-    #print count, hdr
+# get SampleRate and string contents from PAD header file
+def get_samplerate_contents(hdr_file):
+    """get SampleRate and string contents from PAD header file
+    
+    Returns tuple (fs, contents) where fs is float and contents is string with header file contents.
+    
+    >>> hdr_file = '/misc/yoda/test/pad/year2015/month03/day22/sams2_accel_121f08/2015_03_22_23_55_23.946+2015_03_23_00_05_23.960.121f08.header'
+    >>> fs, contents = get_samplerate_contents(hdr_file)
+    >>> fs
+    500.0
+    >>> len(contents)
+    817
+    
+    """
+    with open(hdr_file, 'r') as f:
+        contents = f.read()
+        m = re.match('.*\<SampleRate\>(.*)\</SampleRate\>.*', contents.replace('\n', ''))
+        if m:
+            fs = float( m.group(1) )
+        else:
+            fs = None
+    return fs, contents
 
-def demo_trim_pad_via_headers():
-    #import pymatlab
-    session = None #pymatlab.session_factory()
+# write new, trimmed PAD files (both header and data are changed)
+def trim_pad(old_hdr_file, side, sec):
+    """write new, trimmed PAD files (both header and data get changed) where
+       old_hdr_file is along elsewhere-created 'original' subdir
+    
+    >>> old_hdr_file = '/data/test/pad/year2015/month03/day22/sams2_accel_121f08/original/2015_03_22_16_09_59.266+2015_03_22_16_19_59.280.121f08.header'
+    >>> side = 'left'
+    >>> sec = 15
+    >>> trim_pad(old_hdr_file, side, sec)
+    >>> old_hdr_file = '/data/test/pad/year2015/month03/day22/sams2_accel_121f08/original/2015_03_22_16_19_59.282+2015_03_22_16_29_59.295.121f08.header'
+    >>> side = 'right'
+    >>> sec = 30
+    >>> trim_pad(old_hdr_file, side, sec)
 
-    dstart = parser.parse('2015-03-12')
-    dstop =  parser.parse('2015-03-31')
-    maxgapsec = 17.0 #3.0 * 1/500.0 # 3 data pts at 500 sa/sec
-    hig_jimmy = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/data/pad')
-    hig_yoda = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
-    for sensday, hdrs in hig_jimmy.headers.iteritems():
-        headers = tuplify_headers(hdrs) # jimmy headers
-        headers += tuplify_headers(hig_yoda.headers[sensday]) # and yoda headers
+    """
+    # cannot trim zero or less seconds
+    if sec <= 0:
+        # FIXME maybe just move file pair up one directory and issue warning?
+        raise Exception('cannot trim zero or less seconds from %s' % old_hdr_file)
+    
+    # get sample rate and file contents from old_hdr_file file
+    fs, contents = get_samplerate_contents(old_hdr_file)
+    
+    # get data, header, file times and compute new begin/end GMTs for filename
+    old_dat_file = old_hdr_file.replace('.header', '')
+    start_file, stop_file = pad_fullfilestr_to_start_stop(old_hdr_file)
+    data = padread(old_dat_file)
+    Nfile = len(data)
+    Ntrim = np.ceil(fs * sec)
+    if Ntrim >= Nfile:
+        raise Exception('cannot trim %d data points, because file only has %d points' % (Ntrim, Nfile))
+
+    # trim side sec
+    side = side.lower()
+    if side == 'left':
+        data = data[Ntrim:, :]
+        start_file = start_file + datetime.timedelta(seconds=sec)
+    elif side == 'right':
+        data = data[:-Ntrim, :]
+    else:
+        raise Exception('unhandled side to trim %s', side)
+    trimstr = ' and %s TRIM %.3f SECONDS' % (side.upper(), sec)
+    Nnew = len(data)
+    num_sec = (Nnew-1) / fs
+    stop_file = start_file + datetime.timedelta( seconds=num_sec )   
+
+    # new time vector from len(new_data)
+    N = float(len(data))
+    T = float(N/fs)
+    data[:,0] = np.linspace(0, T, N, endpoint=False)
+
+    # get new (start,stop) for filenames for use in old/original's parent dir
+    yoda_path = os.path.dirname( os.path.dirname(old_hdr_file) )
+    sensor = os.path.basename(old_dat_file).split('.')[-1]
+    startstr = format_datetime_as_pad_underscores(start_file)
+    stopstr  = format_datetime_as_pad_underscores(stop_file)
+    name_stub =  startstr + '-' + stopstr + '.' + sensor
+    new_dat_file = os.path.join(yoda_path, name_stub)
+    new_hdr_file = new_dat_file + '.header'
+    
+    # change 2 fields: TimeZero and GData
+    contents = re.sub(r'\<TimeZero\>(.*)\</TimeZero\>', r'<TimeZero>%s</TimeZero>' % startstr, contents)    
+    newdatfilestr = os.path.basename(new_dat_file)
+    contents = re.sub(r'\<GData format="binary 32 bit IEEE float little endian" file="(.*)...', r'<GData format="binary 32 bit IEEE float little endian" file="%s"/>' % newdatfilestr, contents)
+    
+    # write new PAD header file
+    with open(new_hdr_file, 'w') as f:
+        f.write(contents)
+
+    # write new PAD data file
+    data.astype('float32').tofile(new_dat_file)
+
+# 
+def process_yoda_header_files(yoda_headers, jimmy_intervals, new_path):
+    print 'start with %d yoda headers' % len(yoda_headers)
+    for i in jimmy_intervals:
+        t1 = i.lower_bound
+        t2 = i.upper_bound
+        for hdr in yoda_headers:
+            start, stop = pad_fullfilestr_to_start_stop(hdr)
+            if start >= t1 and stop <= t2:
+                print 'move to original %s' % hdr
+                old_header = preprocess_trim(yoda_headers, hdr, new_path)
+            elif start <= t2 and stop >= t2:
+                print 'left trim AFTER move to original %s' % hdr
+                old_header = preprocess_trim(yoda_headers, hdr, new_path)
+                overlap_sec = (t2 - start).total_seconds()
+                trim_pad(old_header, 'left', overlap_sec)
+            elif stop >= t1 and start <= t1:
+                print 'right trim AFTER move to original %s' % hdr
+                old_header = preprocess_trim(yoda_headers, hdr, new_path)
+                overlap_sec = (stop - t1).total_seconds()                
+                trim_pad(old_header, 'right', overlap_sec)               
+            else:
+                #print 'ignore %s' % hdr
+                pass
+        print 'now have %d yoda headers' % len(yoda_headers)
+        print '-' * 11
+
+def trim_span(start, stop, maxgapsec=17, JIMMY_DIR='/data/pad', YODA_DIR='/misc/yoda/pub/pad'):
+    hig_jimmy = LooseSensorDayIntervals(start, stop, maxgapsec, base_dir=JIMMY_DIR)
+    hig_yoda = LooseSensorDayIntervals(start, stop, maxgapsec, base_dir=YODA_DIR)
+    for sensday, intervals in hig_jimmy.intervals.iteritems():
         sensor, day = sensday
         print 'Working on %s for %s' % (sensor, day)
-        hdr_list = sorted(headers, key = lambda x: x[0])
-        for f1, f2 in pairwise(hdr_list):
-            if f1[1] != f2[1]:
-                print '-' * 11
-                yoda_tup, jimmy_tup = compare_yoda_jimmy_files(f1, f2)
-                if jimmy_tup[1] in yoda_tup[1]:
-                    #print 'jimmy file TOTALLY WITHIN yoda file'
-                    #print yoda_tup[1].lower_bound, 'YODA START'
-                    #print jimmy_tup[1].lower_bound, 'JIMM START'
-                    #print jimmy_tup[1].upper_bound, 'JIMM STOP'
-                    #print yoda_tup[1].upper_bound, 'YODA STOP'
-                    pass
-                elif jimmy_tup[1].overlaps_left( yoda_tup[1] ):
-                    print 'jimmy file LEFT OVERLAPS yoda file'
-                    print jimmy_tup[1].lower_bound, 'JIMM START'
-                    print yoda_tup[1].lower_bound, 'YODA START'
-                    print jimmy_tup[1].upper_bound, 'JIMM STOP'
-                    print yoda_tup[1].upper_bound, 'YODA STOP'
-                    hdr = jimmy_tup[0]
-                    side = 'left'
-                    overlap_sec = (yoda_tup[1].lower_bound - jimmy_tup[1].lower_bound).total_seconds()
-                    do_trim(session, hdr, side, overlap_sec)
-                elif jimmy_tup[1].overlaps_right( yoda_tup[1] ):
-                    print 'jimmy file RIGHT OVERLAPS yoda file'
-                    print yoda_tup[1].lower_bound, 'YODA START'
-                    print jimmy_tup[1].lower_bound, 'JIMM START'
-                    print yoda_tup[1].upper_bound, 'YODA STOP'                    
-                    print jimmy_tup[1].upper_bound, 'JIMM STOP'
-                    hdr = jimmy_tup[0]
-                    side = 'right'
-                    overlap_sec = (jimmy_tup[1].upper_bound - yoda_tup[1].upper_bound).total_seconds()
-                    do_trim(session, hdr, side, overlap_sec)                    
-                else:
-                    print 'jimmy file DOES NOT OVERLAP yoda file'
-                    hdr = jimmy_tup[0]
-                    side = 'neither'
-                    overlap_sec = 0.0
-                    do_trim(session, hdr, side, overlap_sec)                    
-                    #print yoda_tup[1].lower_bound, 'YODA START'
-                    #print yoda_tup[1].upper_bound, 'YODA STOP'                    
-                    #print jimmy_tup[1].lower_bound, 'JIMM START'
-                    #print jimmy_tup[1].upper_bound, 'JIMM STOP'
-    
-    #del session
-    
-demo_trim_pad_via_headers()
-raise SystemExit
+        # make "original" subdir on yoda for this sensday
+        new_path = mkdir_original_for_trim(hig_yoda.headers[sensday][0])
+        # classify & process yoda headers for this sensor/day combo
+        process_yoda_header_files(hig_yoda.headers[sensday], intervals, new_path)
+
+#start = parser.parse('2015-03-22')
+#stop =  parser.parse('2015-03-22')
+#maxgapsec = 17.0
+##trim_span(start, stop, maxgapsec=maxgapsec)
+#trim_span(start, stop, maxgapsec=maxgapsec, JIMMY_DIR='/data/test/pad', YODA_DIR='/misc/yoda/test/pad')
+#raise SystemExit
 
 # iterate over day directory (only sams2 subdirs for now)
 def main(daydir):
@@ -318,10 +441,14 @@ def main(daydir):
         count2 = process_amplitudes(sams2dir)
         print 'length of quarantined list is %d + %d = %d for %s' % (count1, count2, count1 + count2, sams2dir)
 
-if __name__ == '__main__':
+def do_main():
     if len(sys.argv) < 2:
         d2 = datetime.datetime.now().date() - datetime.timedelta(days=2)
         daydir = datetime_to_ymd_path(d2)
     else:
         daydir = sys.argv[1]
     main(daydir)
+    
+if __name__ == "__main__":
+    import doctest
+    doctest.testmod()
