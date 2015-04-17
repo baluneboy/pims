@@ -1,8 +1,13 @@
+#!/usr/bin/env python
+
 import os
 import time
+import datetime
 import pygame
 from pygame.locals import *
 
+_FONT = 'cambria' # undinaru
+_FONTSIZE = 186
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 def main():
@@ -28,45 +33,42 @@ def main():
     pygame.display.flip()
 
     # Event loop
-    while 1:
+    running = True
+    while running:
         for event in pygame.event.get():
-            if event.type == QUIT:
-                pygame.quit()
-                raise SystemExit
-            elif event.type == KEYDOWN and event.key == K_ESCAPE:
-                pygame.quit()
-                raise SystemExit
+            if event.type == QUIT or (event.type == KEYDOWN and event.key == K_ESCAPE):
+                running = False
 
-        #for f in ['calibri', 'cambria', 'cambriamath', 'kinnari', 'norasi', 'rachana', 'sawasdee', 'ubuntu', 'ubuntumono', 'undinaru', 'ungungseo']: #pygame.font.get_fonts():
-        #for f in ['ubuntu', 'ubuntumono', 'undinaru', 'ungungseo']: #pygame.font.get_fonts():
-        for f in ['undinaru', 'ubuntumono']:
-            print f
-            # Fill background
-            background = pygame.Surface(screen.get_size())
-            background = background.convert()
-            background.fill((250, 250, 250))
+        # Fill background
+        background = pygame.Surface(screen.get_size())
+        background = background.convert()
+        background.fill((250, 250, 250))
 
-            # Display some text
-            try:
-                font = pygame.font.SysFont(f, 196)
-                txt = f + ' 12:34:56'
-                text = font.render(txt, 1, (255, 0, 10))
-                textpos = text.get_rect()
-                #textpos.centerx = background.get_rect().centerx
-            except:
-                font = pygame.font.SysFont("monospace", 196)
-                txt = 'not ' + f
-                text = font.render(txt, 1, (255, 0, 10))
-                textpos = text.get_rect()
-                #textpos.centerx = background.get_rect().centerx
-            background.blit(text, textpos)
+        # Display some text
+        font = pygame.font.SysFont(_FONT, _FONTSIZE)
+        txt = 'butters    %s' % datetime.datetime.now().strftime('%H:%M:%S')
+        text = font.render(txt, 1, (255, 0, 10))
+        textpos = text.get_rect()
+        background.blit(text, textpos)
 
-            # Blit everything to the screen
-            screen.blit(background, (0, 0))
-            pygame.display.flip()
-            time.sleep(3)
+        txt = 'CIR es05  %s' % datetime.datetime.now().strftime('%H:%M:%S')
+        text = font.render(txt, 1, (255, 0, 10))
+        textpos = text.get_rect()
+        textpos.centery += _FONTSIZE
+        background.blit(text, textpos)
 
-    pygame.quit()  # Keep this IDLE friendly
+        txt = 'FIR es06  %s' % datetime.datetime.now().strftime('%H:%M:%S')
+        text = font.render(txt, 1, (255, 0, 10))
+        textpos = text.get_rect()
+        textpos.centery += 2 * _FONTSIZE
+        background.blit(text, textpos)
+        
+        # Blit everything to the screen
+        screen.blit(background, (0, 0))
+        pygame.display.flip()
+        time.sleep(1)
+
+    pygame.quit()  # keep this interpreter friendly
 
 if __name__ == '__main__':
     main()
