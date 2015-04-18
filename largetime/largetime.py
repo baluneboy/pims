@@ -10,6 +10,7 @@ from fontmgr import FontManager
 # some constants
 VERTOFFSET = 250 # vertical offset between GRAY rect bars
 SCREEN_PCT = 90 # % screen width/height that window occupies
+FONTSIZE = 196
 WHITE = (255, 255, 255)
 RED = (250, 0, 0)
 GRAY = (64, 64, 64)
@@ -34,10 +35,10 @@ def run():
 
     # a font of None means to use the default font
     font_mgr = FontManager((
-        (None, 24), (None, 48), (None, 172), 
+        (None, 24), (None, 48), (None, FONTSIZE), 
         ('arial', 24),
         ('arial', 48),
-        ('arial', 172)
+        ('arial', FONTSIZE)
     ))
 
     # event loop
@@ -73,12 +74,12 @@ def run():
         else:
             font_color = WHITE
         pygame.draw.rect(screen, GRAY, rect)    
-        font_mgr.Draw(screen, 'arial', 172, txt, rect, font_color, 'right', 'center', True)
+        font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
         rect.top += VERTOFFSET
     
         txt = 'FIR es06  %s' % datetime.datetime.now().strftime('%H:%M:%S')
         pygame.draw.rect(screen, GRAY, rect)
-        font_mgr.Draw(screen, 'arial', 172, txt, rect, WHITE, 'right', 'center', True)
+        font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, WHITE, 'right', 'center', True)
         rect.top += 75
     
         pygame.display.update()
