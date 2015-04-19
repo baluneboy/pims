@@ -9,6 +9,7 @@ DEBUG = True
 def debug_print(s):
     if DEBUG: print s
 
+# a 3-state machine for db timestamp conditions (fresh, stale, rotten)
 class TimeMachine(Machine):
     initial_state, color, time = 'rotten', 'red', None
 
@@ -16,16 +17,15 @@ class TimeMachine(Machine):
     became_rotten = False
     left_rotten = False
 
-    # when we change the default timing
-    # of transition_from/transition_to,
-    # we want to ensure that we were
-    # triggerd at the right time
+    # when we change the default timing of transition_from/transition_to, we
+    # want to ensure that we were triggerd at the right time
     was_fresh_when_becoming_rotten = False
     went_stale_when_leaving_rotten = False
 
-    def __init__(self, table, host='manbearpig'):
+    def __init__(self, table, expected_delta_sec=0.9, host='manbearpig'):
         super(TimeMachine, self).__init__()
         self.table = table
+        self.expected_delta_sec = expected_delta_sec
         self.host = host
 
     def __str__(self):
@@ -33,7 +33,7 @@ class TimeMachine(Machine):
             timestr = self.time.strftime('%H:%M:%S')
         else:
             timestr = 'HH:MM:SS'
-        return 'now time is %s (%s, %s) [%s on %s]' % (
+        return 'now the time is %s (%s, %s) [%s on %s]' % (
             timestr, self.state, self.color, self.table, self.host)
 
     def get_db_time(self):
@@ -43,12 +43,21 @@ class TimeMachine(Machine):
     def update(self):
         old_time = self.time
         new_time = self.get_db_time()
-        if not old_time:
-            self.time = new_time
-            return
         if not new_time:
             self.time = None
             self.go_rotten()
+            return
+        if not old_time:
+            self.time = new_time
+            self.go_fresh()
+            return
+        self.time = new_time
+        delta_sec = (new_time - old_time).total_seconds()
+        if delta_sec >= self.expected_delta_sec:
+            self.more_fresh()
+            return
+        else:
+            self.less_fresh()
             return
 
     @event
@@ -93,12 +102,14 @@ class TimeMachine(Machine):
         self.color = 'red'
         debug_print('    > transitioned to rotten')
         self.became_rotten = True
+        self.left_rotten = False
 
     @transition_from('rotten')
     def leaving_rotten(self):
         debug_print('  transitioned from rotten')
         # do something and last line is:
         self.left_rotten = True
+        self.became_rotten = False
 
     @transition_to('rotten', 'before')
     def before_becoming_rotten(self):
@@ -130,13 +141,19 @@ def test_transition_to():
     m = TimeMachine('es05')
     assert_true(m.state=='rotten') # test initial state
 
+    m.go_fresh()
+    assert_true(m.state=='fresh')
+    assert_true(m.color=='white')
+
     m.go_rotten()
     assert_true(m.state=='rotten')
-    assert_true(m.color=='red')
-
+    assert_true(m.color=='red')    
+    
     m.go_fresh()
     m.less_fresh()
     assert_true(m.state=='stale')
+    m.less_fresh()
+    assert_true(m.state=='rotten')    
 
 def test_transition_from():
     m = TimeMachine('es06', 'localhost')
@@ -148,7 +165,14 @@ def test_transition_from():
     assert_false(m.went_stale_when_leaving_rotten)
 
     m.go_rotten()
+    assert_true(m.was_fresh_when_becoming_rotten)
     assert_true(m.became_rotten)
+    assert_false(m.left_rotten)
+    m.update() # goes from rotten straight to fresh
+    assert_true(m.state=='fresh')
+    assert_true(m.left_rotten)
+    assert_false(m.became_rotten)
     
-    m.go_fresh()
-    assert_false(m.went_stale_when_leaving_rotten)
+    m.go_rotten()
+    m.more_fresh()
+    assert_true(m.went_stale_when_leaving_rotten)

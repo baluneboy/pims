@@ -42,8 +42,8 @@ def run():
     ))
 
     # event loop
-    RUNNING = True
-    while RUNNING:
+    running = True
+    while running:
         clock.tick(30) # run at 30 fps
         screen.fill((0, 0, 0))
     
@@ -85,7 +85,7 @@ def run():
         pygame.display.update()
         
         if QUIT in [event.type for event in pygame.event.get()]:
-            RUNNING = False
+            running = False
         
         time.sleep(0.25)
     
