@@ -5,15 +5,20 @@ import time
 import datetime
 import pygame
 from pygame.locals import QUIT
+
 from fontmgr import FontManager
+from onerowquery import query_onerow_unixtime
+
+from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
 VERTOFFSET = 250 # vertical offset between GRAY rect bars
 SCREEN_PCT = 90 # % screen width/height that window occupies
-FONTSIZE = 165
+FONTSIZE = 150
 WHITE = (255, 255, 255)
 RED = (250, 0, 0)
 GRAY = (64, 64, 64)
+BLACK = (0, 0, 0)
 
 # this centers window both horiz and vert
 os.environ['SDL_VIDEO_CENTERED'] = '1'
@@ -26,8 +31,8 @@ def run():
     
     # set display mode width and height
     infoObject = pygame.display.Info()
-    WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100 / 2 # divide by 2 for double-wide displays
-    HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100
+    WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100     # divide by 2 for double-wide displays
+    HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100 /2 # divide by 2 for double-high displays
     pygame.display.set_mode((WIDTHWIN, HEIGHTWIN))
     
     screen = pygame.display.get_surface()
@@ -47,40 +52,44 @@ def run():
         clock.tick(30) # run at 30 fps
         screen.fill((0, 0, 0))
     
-        font_mgr.Draw(screen, None, 48, 'Default font, 48', (0, 50), WHITE)
-        font_mgr.Draw(screen, None, 24, 'Default font, 24', (0, 0), WHITE)
+        font_mgr.Draw(screen, None, 48, 'Default font, 48', (0, 50), GRAY)
+        font_mgr.Draw(screen, None, 24, 'Default font, 24', (0, 0), GRAY)
     
         rect = pygame.Rect(10, 100, WIDTHWIN-20, 65)
         
         pygame.draw.rect(screen, GRAY, rect)
-        font_mgr.Draw(screen, 'arial', 24, 'Arial 24 top left', rect, WHITE, 'left', 'top')
-        rect.top += 75
+        font_mgr.Draw(screen, 'arial', 24, 'Arial 24 top left', rect, GRAY, 'left', 'top')
+        rect.top += VERTOFFSET / 2
     
-        pygame.draw.rect(screen, GRAY, rect)
-        font_mgr.Draw(screen, 'arial', 24, 'Arial 24 centered', rect, WHITE, 'center', 'center')
-        rect.top += 75
-    
-        pygame.draw.rect(screen, GRAY, rect)
-        font_mgr.Draw(screen, 'arial', 24, 'Arial 24 bottom right', rect, WHITE, 'right', 'bottom')
-        rect.top += 75
-    
-        pygame.draw.rect(screen, GRAY, rect)
-        font_mgr.Draw(screen, 'arial', 24, 'Arial 24 bottom right, anti-aliased', rect, WHITE, 'right', 'bottom', True)
-        rect.top += VERTOFFSET
-    
-        txt = 'CIR es05  %s' % datetime.datetime.now().strftime('%H:%M:%S')
-        if txt.endswith('5'):
+        table = 'es05rt'
+        utime = query_onerow_unixtime(table)
+        if not utime:
+            txt = 'CIR %s  %s' % (table.rstrip('rt'), 'HH:MM:SS')
             font_color = RED
         else:
+            txt = 'CIR %s  %s' % (table.rstrip('rt'), unix2dtm(utime).strftime('%H:%M:%S'))
             font_color = WHITE
-        pygame.draw.rect(screen, GRAY, rect)    
+        pygame.draw.rect(screen, BLACK, rect)    
+        font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
+        rect.top += VERTOFFSET
+        
+        table = 'es06rt'
+        utime = query_onerow_unixtime(table)
+        if not utime:
+            txt = 'FIR %s  %s' % (table.rstrip('rt'), 'HH:MM:SS')
+            font_color = RED            
+        else:
+            txt = 'FIR %s  %s' % (table.rstrip('rt'), unix2dtm(utime).strftime('%H:%M:%S'))
+            font_color = WHITE            
+        pygame.draw.rect(screen, BLACK, rect)    
         font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
         rect.top += VERTOFFSET
     
-        txt = 'FIR es06  %s' % datetime.datetime.now().strftime('%H:%M:%S')
-        pygame.draw.rect(screen, GRAY, rect)
+        utime = query_onerow_unixtime('121f05rt')
+        txt = 'JEM 121f05  %s' % unix2dtm(utime).strftime('%H:%M:%S')
+        pygame.draw.rect(screen, BLACK, rect)
         font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, WHITE, 'right', 'center', True)
-        rect.top += 75
+        rect.top += VERTOFFSET
     
         pygame.display.update()
         
