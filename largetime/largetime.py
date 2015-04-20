@@ -10,7 +10,7 @@ from fontmgr import FontManager
 # some constants
 VERTOFFSET = 250 # vertical offset between GRAY rect bars
 SCREEN_PCT = 90 # % screen width/height that window occupies
-FONTSIZE = 196
+FONTSIZE = 165
 WHITE = (255, 255, 255)
 RED = (250, 0, 0)
 GRAY = (64, 64, 64)
@@ -18,15 +18,15 @@ GRAY = (64, 64, 64)
 # this centers window both horiz and vert
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-# run large timestamp app mainly for FCF Ops support
+# run large timestamp app mainly for ops support
 def run():
-    """run large timestamp app mainly for FCF Ops support"""
+    """run large timestamp app mainly for ops support"""
     
     pygame.init()
     
     # set display mode width and height
     infoObject = pygame.display.Info()
-    WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100
+    WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100 / 2 # divide by 2 for double-wide displays
     HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100
     pygame.display.set_mode((WIDTHWIN, HEIGHTWIN))
     

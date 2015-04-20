@@ -9,7 +9,7 @@ DEBUG = True
 def debug_print(s):
     if DEBUG: print s
 
-# a 3-state machine for db timestamp conditions (fresh, stale, rotten)
+# a 5-state machine for db timestamp conditions (fresh, stale, morestale, moststale, rotten)
 class TimeMachine(Machine):
     initial_state, color, time = 'rotten', 'red', None
 
@@ -63,24 +63,28 @@ class TimeMachine(Machine):
     @event
     def go_rotten(self):
         debug_print(' go rotten')
-        yield ('fresh', 'stale'), 'rotten'
+        yield ('fresh', 'stale', 'morestale', 'moststale'), 'rotten'
 
     @event
     def less_fresh(self):
         debug_print(' go less fresh')
         yield 'fresh', 'stale'
-        yield 'stale', 'rotten'
+        yield 'stale', 'morestale'
+        yield 'morestale', 'moststale'
+        yield 'moststale', 'rotten'
 
     @event
     def more_fresh(self):
         debug_print(' go MORE fresh')
-        yield 'rotten', 'stale'
+        yield 'rotten', 'moststale'
+        yield 'moststale', 'morestale'
+        yield 'morestale', 'stale'
         yield 'stale', 'fresh'
 
     @event
     def go_fresh(self):
         debug_print(' go to fresh')
-        yield ('fresh', 'stale', 'rotten'), 'fresh'
+        yield ('fresh', 'stale', 'morestale', 'moststale', 'rotten'), 'fresh'
 
     @transition_to('fresh')
     def becoming_fresh(self):
@@ -126,16 +130,19 @@ def demo():
     print tm
     for i in range(4):
         tm.more_fresh()
-        print tm
+        print i, tm
     for i in range(3):
         tm.less_fresh()
-        print tm
+        print i, tm
     tm.go_fresh()
     print tm
     tm.go_rotten()
     print tm
     tm.go_rotten()
     print tm
+
+demo()
+raise SystemExit
 
 def test_transition_to():
     m = TimeMachine('es05')
