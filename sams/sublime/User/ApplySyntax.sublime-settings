@@ -228,21 +228,6 @@
             ]
         },
         {
-            // For samslist file proper
-            "name": "SamsLogs/samslist",
-            "rules": [
-                {"file_name": "^.*(/usr/tgz/samslist\\w+\\.txt)$"},
-                {"function": {"name": "is_disguised_samslist_file", "source": "ApplySyntax/is_disguised_samslist_file"}}
-            ]
-        },           
-        {
-            // For samslist summary file, NOT samslist file proper
-            "name": "SamsLogs/samslistsummary",
-            "rules": [
-                {"file_name": "^.*(/usr/tgz/summary_samslist\\w+\\.txt)$"}
-            ]
-        },                           
-        {
             // Sublime recognizes .py files, but not if they don't have an extension,
             // just a shebang
             "name": "Python/Python",

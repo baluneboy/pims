@@ -12,7 +12,7 @@ from onerowquery import query_onerow_unixtime
 from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
-VERTOFFSET = 250 # vertical offset between GRAY rect bars
+VERTOFFSET = 220 # vertical offset between GRAY rect bars
 SCREEN_PCT = 90 # % screen width/height that window occupies
 FONTSIZE = 150
 WHITE = (255, 255, 255)
