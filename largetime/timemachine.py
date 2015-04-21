@@ -41,22 +41,6 @@ class NowTimeGetter(TimeGetter):
     def get_time(self):
         return dtm2unix( datetime.datetime.now() )
 
-#table = 'es05'
-#host = 'manbearpig'
-#tg = TimeGetter(table, host=host)
-#print tg.table, tg.host, tg.get_time()
-#
-#ntg = NowTimeGetter(None, host=None)
-#print ntg.table, ntg.host, ntg.get_time()
-#
-#rtg = RapidTimeGetter(None, host=None)
-#print rtg.table, rtg.host, rtg.get_time()
-#print '-' * 22
-#for i in range(27):
-#    print rtg.get_time()
-#
-#raise SystemExit
-
 # a 3-state machine for db timestamp conditions (fresh, stale, rotten)
 class TimeMachine(Machine):
     initial_state, color, time = 'rotten', 'red', None
@@ -176,19 +160,6 @@ class TimeMachine(Machine):
         debug_print('  after transition from rotten (%s)' % self.state)
         self.went_stale_when_leaving_rotten = self.state == 'stale'
 
-def demo():
-    tg = RapidTimeGetter(None, host=None)
-    print 'START AT', tg.get_time()
-    expected_delta_sec = 0.000015
-    tm = TimeMachine(tg, expected_delta_sec=expected_delta_sec)
-    print tm
-    for i in range(33):
-        tm.update()
-        print tm
-    
-#demo()
-#raise SystemExit
-
 def test_transition_to():
     m = TimeMachine('es05')
     assert_true(m.state=='rotten') # initially rotten
@@ -250,3 +221,31 @@ def test_transition_from():
     #m.update() # goes from rotten straight to fresh
     
     assert_true(m.state=='rotten')
+
+def demo():
+    tg = RapidTimeGetter(None, host=None)
+    print 'START AT', tg.get_time()
+    tm = TimeMachine(tg, expected_delta_sec=0.9)
+    print tm
+    for i in range(33):
+        tm.update()
+        print tm
+        
+#table = 'es05'
+#host = 'manbearpig'
+#tg = TimeGetter(table, host=host)
+#print tg.table, tg.host, tg.get_time()
+#
+#ntg = NowTimeGetter(None, host=None)
+#print ntg.table, ntg.host, ntg.get_time()
+#
+#rtg = RapidTimeGetter(None, host=None)
+#print rtg.table, rtg.host, rtg.get_time()
+#print '-' * 22
+#for i in range(27):
+#    print rtg.get_time()
+#
+#raise SystemExit
+
+demo()
+raise SystemExit

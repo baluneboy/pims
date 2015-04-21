@@ -24,15 +24,21 @@ BLACK = (0, 0, 0)
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # run large timestamp app mainly for ops support
-def run():
+def run(host):
     """run large timestamp app mainly for ops support"""
     
     pygame.init()
     
     # set display mode width and height
     infoObject = pygame.display.Info()
-    WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100     # divide by 2 for double-wide displays
-    HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100 /2 # divide by 2 for double-high displays
+    if host == 'butters':
+        wden, hden = 1, 2
+    elif host == 'jimmy':
+        wden, hden = 2, 1
+    else:
+        wden, hden = 1, 1
+    WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100 / wden  # divide by 2 for double-wide displays
+    HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100 / hden # divide by 2 for double-high displays
     pygame.display.set_mode((WIDTHWIN, HEIGHTWIN))
     
     screen = pygame.display.get_surface()
@@ -101,4 +107,6 @@ def run():
     pygame.quit()
 
 if __name__ == '__main__':
-    run()
+    import socket
+    host = socket.gethostname()
+    run(host)
