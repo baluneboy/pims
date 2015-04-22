@@ -66,7 +66,15 @@ def run(host):
         pygame.draw.rect(screen, GRAY, rect)
         font_mgr.Draw(screen, 'arial', 24, 'Arial 24 top left', rect, GRAY, 'left', 'top')
         rect.top += VERTOFFSET / 2
-    
+
+        #
+        # table (label) >> time_getter
+        # utime, textcolor [, rectcolor?] << timemachine(time_getter)
+        # timestr << utime
+        # 
+
+        ##################################################
+        # CIR
         table = 'es05rt'
         utime = query_onerow_unixtime(table)
         if not utime:
@@ -78,7 +86,9 @@ def run(host):
         pygame.draw.rect(screen, BLACK, rect)    
         font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
         rect.top += VERTOFFSET
-        
+
+        ##################################################
+        # FIR        
         table = 'es06rt'
         utime = query_onerow_unixtime(table)
         if not utime:
@@ -91,6 +101,8 @@ def run(host):
         font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
         rect.top += VERTOFFSET
     
+        ##################################################
+        # JEM
         utime = query_onerow_unixtime('121f05rt')
         txt = 'JEM 121f05  %s' % unix2dtm(utime).strftime('%H:%M:%S')
         pygame.draw.rect(screen, BLACK, rect)

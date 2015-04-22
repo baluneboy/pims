@@ -13,8 +13,10 @@ DEBUG = 1
 def debug_print(s):
     if DEBUG: print s
 
+# get real-time db table unix time (like from es05rt table)
 class TimeGetter(object):
-
+    """get real-time db table unix time (like from es05rt table)"""
+    
     def __init__(self, table, host='manbearpig'):
         self.table = table
         self.host = host
@@ -22,8 +24,10 @@ class TimeGetter(object):
     def get_time(self):
         return None
 
+# dummy unix time getter that utiliizes sequence of deltas (sec) via generator
 class RapidTimeGetter(TimeGetter):
-
+    """dummy unix time getter that utiliizes sequence of deltas (sec) via generator"""
+    
     def __init__(self, *args, **kwargs):
         super(RapidTimeGetter, self).__init__(*args, **kwargs)
         self._init_time = dtm2unix(datetime.datetime(2015,1,1))
@@ -35,14 +39,18 @@ class RapidTimeGetter(TimeGetter):
         if delta is None:
             return None
         return self._init_time + delta
-    
+
+# dummy unix time getter that returns "now"
 class NowTimeGetter(TimeGetter):
+    """dummy unix time getter that returns "now"""
     
     def get_time(self):
         return dtm2unix( datetime.datetime.now() )
 
-# a 3-state machine for db timestamp conditions (fresh, stale, rotten)
+# a 3-state machine for db unix times (fresh, stale, rotten)
 class TimeMachine(Machine):
+    """a 3-state machine for db unix times (fresh, stale, rotten)"""
+    
     initial_state, color, time = 'rotten', 'red', None
 
     # these are for asserting things
@@ -160,6 +168,19 @@ class TimeMachine(Machine):
         debug_print('  after transition from rotten (%s)' % self.state)
         self.went_stale_when_leaving_rotten = self.state == 'stale'
 
+class LargeTimeMachine(TimeMachine):
+    rect_color = None
+    
+    @transition_to('rotten', 'before')    
+    def before_becoming_rotten(self):
+        super(LargeTimeMachine, self).before_becoming_rotten()        
+        debug_print('  oh boy, here we are again')
+
+    # TODO find out why we do not include @event decorator here
+    def less_fresh(self):
+        super(LargeTimeMachine, self).less_fresh()
+        debug_print(' AND I MEAN BIG TIME')
+    
 def test_transition_to():
     m = TimeMachine('es05')
     assert_true(m.state=='rotten') # initially rotten
@@ -224,9 +245,7 @@ def test_transition_from():
 
 def demo():
     tg = RapidTimeGetter(None, host=None)
-    print 'START AT', tg.get_time()
-    tm = TimeMachine(tg, expected_delta_sec=0.9)
-    print tm
+    tm = LargeTimeMachine(tg, expected_delta_sec=0.9)
     for i in range(33):
         tm.update()
         print tm
