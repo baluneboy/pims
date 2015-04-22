@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="f05f1941-0a75-4a78-9e6f-e9a97854053c" kpf_version="5" name="activesensors.komodoproject">
+<file id="03f50227-52f2-43c3-80cb-21598cc21579" idref="f05f1941-0a75-4a78-9e6f-e9a97854053c" name="dbstatuspats.py" url="patterns/dbstatuspats.py">
+</file>
+<file id="19b86c1f-1087-46ea-91cb-a644c2112c70" idref="f05f1941-0a75-4a78-9e6f-e9a97854053c" name="dbstatushtml.py" url="realtime/dbstatushtml.py">
+</file>
+<file id="d60149a7-fbea-4f58-a58f-ac0f5b961a8c" idref="f05f1941-0a75-4a78-9e6f-e9a97854053c" name="dbstatus_activesensors.py" url="realtime/dbstatus_activesensors.py">
+</file>
+</project>

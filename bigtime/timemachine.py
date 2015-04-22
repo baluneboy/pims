@@ -4,11 +4,12 @@ import datetime
 from itertools import cycle
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from pims.utils.pimsdateutil import unix2dtm
+from onerowquery import query_onerow_unixtime
 
+from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
 
-DEBUG = 1
+DEBUG = 0
 
 def debug_print(s):
     if DEBUG: print s
@@ -22,7 +23,7 @@ class TimeGetter(object):
         self.host = host
 
     def get_time(self):
-        return None
+        return query_onerow_unixtime(self.table, host=self.host)
 
 # dummy unix time getter that utiliizes sequence of deltas (sec) via generator
 class RapidTimeGetter(TimeGetter):
@@ -39,6 +40,7 @@ class RapidTimeGetter(TimeGetter):
         if delta is None:
             return None
         return self._init_time + delta
+<<<<<<< HEAD:largetime/timemachine.py
 
 # dummy unix time getter that returns "now"
 class NowTimeGetter(TimeGetter):
@@ -46,6 +48,8 @@ class NowTimeGetter(TimeGetter):
     
     def get_time(self):
         return dtm2unix( datetime.datetime.now() )
+=======
+>>>>>>> 5ed17d65200ee579337d448b8f06e9ca9099ae6d:bigtime/timemachine.py
 
 # a 3-state machine for db unix times (fresh, stale, rotten)
 class TimeMachine(Machine):
@@ -182,7 +186,8 @@ class LargeTimeMachine(TimeMachine):
         debug_print(' AND I MEAN BIG TIME')
     
 def test_transition_to():
-    m = TimeMachine('es05')
+    tg = RapidTimeGetter(None, host=None)
+    m = TimeMachine(tg)
     assert_true(m.state=='rotten') # initially rotten
     assert_true(m.color=='red')
     
@@ -223,7 +228,8 @@ def test_transition_to():
     assert_true(m.became_rotten)
     
 def test_transition_from():
-    m = TimeMachine('es06', 'localhost')
+    tg = RapidTimeGetter(None, host=None)
+    m = TimeMachine(tg)
     assert_false(m.left_rotten)
     assert_false(m.went_stale_when_leaving_rotten)
 
@@ -243,8 +249,9 @@ def test_transition_from():
     
     assert_true(m.state=='rotten')
 
-def demo():
+def test_transitions():
     tg = RapidTimeGetter(None, host=None)
+<<<<<<< HEAD:largetime/timemachine.py
     tm = LargeTimeMachine(tg, expected_delta_sec=0.9)
     for i in range(33):
         tm.update()
@@ -268,3 +275,12 @@ def demo():
 
 demo()
 raise SystemExit
+=======
+    m = TimeMachine(tg)
+    assert_false(m.left_rotten)
+    assert_false(m.went_stale_when_leaving_rotten)
+
+    m.more_fresh() # now stale
+    assert_true(m.left_rotten)
+    assert_true(m.went_stale_when_leaving_rotten)    
+>>>>>>> 5ed17d65200ee579337d448b8f06e9ca9099ae6d:bigtime/timemachine.py

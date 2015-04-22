@@ -400,6 +400,14 @@ def dtm2unix(d):
     """convert a datetime object to unix time (seconds since 01-Jan-1970)"""
     return (d - datetime.datetime(1970,1,1)).total_seconds()
 
+# FIXME this is UNTESTED
+def dtm2sdn(dt):
+    """convert a datetime object to matlab serial date number"""
+    mdn = dt + datetime.timedelta(days=366)
+    frac_sec = (dt-datetime.datetime(dt.year, dt.month, dt.day,0,0,0)).seconds / (24.0 * 60.0 * 60.0)
+    frac_usec = dt.microsecond / (24.0 * 60.0 * 60.0 * 1.0e6)
+    return mdn.toordinal() + frac_sec + frac_usec
+
 # convert input time from string to unixtime float
 def parse_packetfeeder_input_time(s, sec_plot_span):
     """

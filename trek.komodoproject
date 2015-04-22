@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="4725b542-54ad-4344-b13e-f1cd531913c8" kpf_version="5" name="trek.komodoproject">
+<file id="55893e85-5711-4820-8a1e-a5ad3327b917" idref="4725b542-54ad-4344-b13e-f1cd531913c8" name="trekcleanup.py" url="realtime/trekcleanup.py">
+</file>
+<file id="92f7ef2d-32cb-49dc-a33a-5311a8caf5f9" idref="4725b542-54ad-4344-b13e-f1cd531913c8" name="utils.py" url="files/utils.py">
+</file>
+</project>

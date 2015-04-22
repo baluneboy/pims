@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="2f7c33ce-8bde-425d-be62-2bfcfdf1bf03" kpf_version="5" name="dbgaps.komodoproject">
+<file id="1a17fdab-1e9c-40f8-9f4d-80c4b562109a" idref="2f7c33ce-8bde-425d-be62-2bfcfdf1bf03" name="flimsy_dbgapdetect_script.py" url="realtime/flimsy_dbgapdetect_script.py">
+</file>
+<file id="1a874e8a-ce2a-4ea2-9423-c4e447926cf9" idref="2f7c33ce-8bde-425d-be62-2bfcfdf1bf03" name="pimsquery.py" url="database/pimsquery.py">
+</file>
+<file id="4d81d835-f995-4d55-b99b-4c2b425f5fe7" idref="2f7c33ce-8bde-425d-be62-2bfcfdf1bf03" name="dbgapdetect_headerfooter.py" url="realtime/dbgapdetect_headerfooter.py">
+</file>
+<file id="7361690b-f987-4814-9770-2bf6b6eec394" idref="2f7c33ce-8bde-425d-be62-2bfcfdf1bf03" name="samsquery.py" url="database/samsquery.py">
+</file>
+<file id="bf1de905-120b-45df-bee7-8238cde0e82c" idref="2f7c33ce-8bde-425d-be62-2bfcfdf1bf03" name="less_flimsy_dbgapdetect.py" url="realtime/less_flimsy_dbgapdetect.py">
+</file>
+</project>

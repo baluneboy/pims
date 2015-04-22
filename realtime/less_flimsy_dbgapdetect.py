@@ -39,14 +39,14 @@ defaults = {
     ('121f04',      'mr-hankey',    'pims',     '8'),
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
-    ('es03',        'manbearpig',   'pims',     '8'),
-    ('es05',        'ike',          'pims',     '8'),
-    ('es06',        'butters',      'pims',     '8'),
+    ('es03',        'manbearpig',   'pims',     '7.84'),
+    ('es05',        'ike',          'pims',     '7.84'),
+    ('es06',        'butters',      'pims',     '7.84'),
     ('cu_packet',   'yoda',         'samsnew',  '1')
     ],          
 'packets_per_sec':  '8',    # expected value for this sensor for this gap check period
 'min_pct':          '0',    # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
-'hours_ago':        '18',   # start checking this many hours ago
+'hours_ago':        '23',   # start checking this many hours ago
 }
 parameters = defaults.copy()
 
@@ -59,6 +59,10 @@ class DatabaseHourlyGapsHoursAgo(object):
         self.sensor = sensor
         self.host = host
         self.packets_per_sec = packets_per_sec
+        # FIXME next "if" ignores "defaults" tuple object [which itself gets overcome by packets_per_sec just below it]
+        #       Plus, it overrides input param...not good, but quick and useful for now.
+        if self.sensor.startswith('es'):
+            self.packets_per_sec = 7.84
         self.hours_ago = hours_ago
         self.expect_packet_count = self.packets_per_sec * 3600.0 # count for one hour's worth          
         self.min_pct = min_pct
@@ -100,7 +104,8 @@ class DatabaseHourlyGapsHoursAgo(object):
         query =  'SELECT FROM_UNIXTIME(time) as "hour", '
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
         #query += 'COUNT(*) as "pkts" from %s ' % self.sensor
-        query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s<br>%%", ' % self.sensor
+        #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s<br>%%", ' % self.sensor
+        query += 'ROUND(100*COUNT(*)/%f/3600.0) as "%s<br>%%", ' % (self.packets_per_sec, self.sensor)
         query += 'COUNT(*) as "%s<br>pkts" from %s ' % (self.sensor, self.sensor)
         query += 'WHERE FROM_UNIXTIME(time) >= "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
         query += 'AND FROM_UNIXTIME(time) < "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')

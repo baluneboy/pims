@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="e2ca77b8-d0ac-4868-9f0b-c53def87f6bf" kpf_version="5" name="filter_via_file.komodoproject">
+<file id="6c94b321-ad0d-479d-b96b-6c9eee070464" idref="e2ca77b8-d0ac-4868-9f0b-c53def87f6bf" name="filterviafile.py" url="pad/filterviafile.py">
+</file>
+<file id="a2a444af-3ad1-4f83-a18f-a43324c012e1" idref="e2ca77b8-d0ac-4868-9f0b-c53def87f6bf" name="filter.py" url="signal/filter.py">
+</file>
+</project>
