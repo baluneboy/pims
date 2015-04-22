@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="6340720f-7c89-42a7-80c8-a512c9c03c4d" kpf_version="5" name="bigtime.komodoproject">
+<file id="6a8a1c97-0c1e-4f61-b416-0e17d8faa874" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="fontmgr.py" url="bigtime/fontmgr.py">
+</file>
+<file id="6e2eb1aa-2ccf-4ba5-8766-cf8edaa0900e" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="timemachine.py" url="bigtime/timemachine.py">
+</file>
+<file id="9908562a-f85d-4376-a651-eeed033362a5" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="bigtime.py" url="bigtime/bigtime.py">
+</file>
+<file id="a969c77c-685a-4932-9bdd-79185730c3d9" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="pimsquery.py" url="database/pimsquery.py">
+</file>
+</project>
