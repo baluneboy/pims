@@ -23,9 +23,9 @@ BLACK = (0, 0, 0)
 # this centers window both horiz and vert
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
-# run large timestamp app mainly for ops support
+# run big timestamp app mainly for ops support
 def run(host):
-    """run large timestamp app mainly for ops support"""
+    """run big timestamp app mainly for ops support"""
     
     pygame.init()
     
