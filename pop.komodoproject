@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="e8578a3b-7d99-482c-8ab3-9435578327a4" kpf_version="5" name="pop.komodoproject">
+<file id="204935cf-bb75-4d63-8ada-77419147f9a2" idref="e8578a3b-7d99-482c-8ab3-9435578327a4" name="mike_pandas_superfine_stats_plot.py" url="pop/mike_pandas_superfine_stats_plot.py">
+</file>
+<file id="3c9d8adc-8090-420e-972c-0a258c2b11f5" idref="e8578a3b-7d99-482c-8ab3-9435578327a4" name="simple_example.py" url="pop/examples/simple_example.py">
+</file>
+<file id="776e2aef-dfef-43bd-a0da-110042962480" idref="e8578a3b-7d99-482c-8ab3-9435578327a4" name="edgedetection.py" url="pop/edgedetection.py">
+</file>
+<preference-set idref="e8578a3b-7d99-482c-8ab3-9435578327a4">
+  <boolean id="dedentOnColon">0</boolean>
+  <string id="editAutoIndentStyle">smart</string>
+  <boolean id="editBackspaceDedents">1</boolean>
+  <boolean id="editElectricBrace">1</boolean>
+  <boolean id="indentStringsAfterParens">0</boolean>
+  <long id="indentWidth">4</long>
+  <boolean id="showIndentationGuides">1</boolean>
+  <long id="tabWidth">4</long>
+  <boolean id="useSmartTabs">1</boolean>
+  <boolean id="useTabs">0</boolean>
+</preference-set>
+</project>

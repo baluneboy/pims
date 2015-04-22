@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="6e2d15b5-3715-4eba-862e-bc00498d8c9e" kpf_version="5" name="packetfeeder.komodoproject">
+<file id="3249b9e7-fd0d-42bf-a1d0-f24b93e799d4" idref="6e2d15b5-3715-4eba-862e-bc00498d8c9e" name="stripchart.py" url="gui/stripchart.py">
+</file>
+<file id="d514d12f-14c9-48c8-abd8-3d93f4755a56" idref="6e2d15b5-3715-4eba-862e-bc00498d8c9e" name="packetfeeder.py" url="pad/packetfeeder.py">
+</file>
+<file id="f3d8af11-bf4d-4fbf-ab96-1c37349edc44" idref="6e2d15b5-3715-4eba-862e-bc00498d8c9e" name="rtsetup.py" url="realtime/rtsetup.py">
+</file>
+</project>
