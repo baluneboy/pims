@@ -4,11 +4,12 @@ import datetime
 from itertools import cycle
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from pims.utils.pimsdateutil import unix2dtm
+from onerowquery import query_onerow_unixtime
 
+from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
 
-DEBUG = 1
+DEBUG = 0
 
 def debug_print(s):
     if DEBUG: print s
@@ -20,7 +21,7 @@ class TimeGetter(object):
         self.host = host
 
     def get_time(self):
-        return None
+        return query_onerow_unixtime(self.table, host=self.host)
 
 class RapidTimeGetter(TimeGetter):
 
@@ -35,11 +36,6 @@ class RapidTimeGetter(TimeGetter):
         if delta is None:
             return None
         return self._init_time + delta
-    
-class NowTimeGetter(TimeGetter):
-    
-    def get_time(self):
-        return dtm2unix( datetime.datetime.now() )
 
 # a 3-state machine for db timestamp conditions (fresh, stale, rotten)
 class TimeMachine(Machine):
@@ -161,7 +157,8 @@ class TimeMachine(Machine):
         self.went_stale_when_leaving_rotten = self.state == 'stale'
 
 def test_transition_to():
-    m = TimeMachine('es05')
+    tg = RapidTimeGetter(None, host=None)
+    m = TimeMachine(tg)
     assert_true(m.state=='rotten') # initially rotten
     assert_true(m.color=='red')
     
@@ -202,7 +199,8 @@ def test_transition_to():
     assert_true(m.became_rotten)
     
 def test_transition_from():
-    m = TimeMachine('es06', 'localhost')
+    tg = RapidTimeGetter(None, host=None)
+    m = TimeMachine(tg)
     assert_false(m.left_rotten)
     assert_false(m.went_stale_when_leaving_rotten)
 
@@ -223,38 +221,11 @@ def test_transition_from():
     assert_true(m.state=='rotten')
 
 def test_transitions():
-    m = TimeMachine('es06', host='localhost')
+    tg = RapidTimeGetter(None, host=None)
+    m = TimeMachine(tg)
     assert_false(m.left_rotten)
     assert_false(m.went_stale_when_leaving_rotten)
 
     m.more_fresh() # now stale
     assert_true(m.left_rotten)
     assert_true(m.went_stale_when_leaving_rotten)    
-    
-def demo():
-    tg = RapidTimeGetter(None, host=None)
-    print 'START AT', tg.get_time()
-    tm = TimeMachine(tg, expected_delta_sec=0.9)
-    print tm
-    for i in range(33):
-        tm.update()
-        print tm
-        
-#table = 'es05'
-#host = 'manbearpig'
-#tg = TimeGetter(table, host=host)
-#print tg.table, tg.host, tg.get_time()
-#
-#ntg = NowTimeGetter(None, host=None)
-#print ntg.table, ntg.host, ntg.get_time()
-#
-#rtg = RapidTimeGetter(None, host=None)
-#print rtg.table, rtg.host, rtg.get_time()
-#print '-' * 22
-#for i in range(27):
-#    print rtg.get_time()
-#
-#raise SystemExit
-
-demo()
-raise SystemExit

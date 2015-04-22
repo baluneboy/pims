@@ -156,11 +156,13 @@ class LooseSensorDayIntervals(object):
                     t1 = floor_minute(g.lower_bound)
                     t2 = ceil_minute( g.upper_bound)
                     master_gaps.add( Interval(t1, t2) )
+        gap_count = 0
         for g in master_gaps:
+            gap_count += 1
             day = int( g.lower_bound.date().strftime('%j') )
             g1str = datetime_to_doytimestr(g.lower_bound)[0:-7]
             g2str = datetime_to_doytimestr(g.upper_bound)[0:-7]
-            print 'day{0:0>3}_partX  {1:<18s} {2:<18s}'.format(day, g1str, g2str)
+            print 'day{0:0>3}part{1:03d}  {2:<18s} {3:<18s}'.format(day, gap_count, g1str, g2str)
 
     def _get_countstr(self, sensor, day):
         num_headers = len( self.headers[(sensor, day)] )
@@ -273,17 +275,17 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-04-09')
-    dstop =  parser.parse('2015-04-19')
+    dstart = parser.parse('2015-04-01')
+    dstop =  parser.parse('2015-04-15')
     maxgapsec = 17.0
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     #hig.show('headers')
     #hig.show('intervals')
-    hig.show('gaps')
-    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+    #hig.show('gaps')
+    hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
 
-#demo_intervals()
-#raise SystemExit
+demo_intervals()
+raise SystemExit
 
 # prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path
 def preprocess_trim(yoda_headers, header_file, new_path):

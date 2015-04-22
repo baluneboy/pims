@@ -3,11 +3,13 @@
 import os
 import time
 import datetime
+import socket
+from collections import OrderedDict
 import pygame
 from pygame.locals import QUIT
 
 from fontmgr import FontManager
-from onerowquery import query_onerow_unixtime
+from timemachine import RapidTimeGetter, TimeGetter, TimeMachine
 
 from pims.utils.pimsdateutil import unix2dtm
 
@@ -24,16 +26,22 @@ BLACK = (0, 0, 0)
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # run big timestamp app mainly for ops support
-def run(host):
+def run(time_machines):
     """run big timestamp app mainly for ops support"""
+    
+    # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
+    if len(time_machines) != 3:
+        raise Exception('expected 3 timemachine objects as input')
+    
+    disp_host = socket.gethostname()    
     
     pygame.init()
     
     # set display mode width and height
     infoObject = pygame.display.Info()
-    if host == 'butters':
+    if disp_host == 'butters':
         wden, hden = 1, 2
-    elif host == 'jimmy':
+    elif disp_host == 'jimmy':
         wden, hden = 2, 1
     else:
         wden, hden = 1, 1
@@ -67,36 +75,19 @@ def run(host):
         pygame.draw.rect(screen, GRAY, rect)
         font_mgr.Draw(screen, 'arial', 24, 'Arial 24 top left', rect, GRAY, 'left', 'top')
         rect.top += VERTOFFSET / 2
-    
-        table = 'es05rt'
-        utime = query_onerow_unixtime(table)
-        if not utime:
-            txt = 'CIR %s  %s' % (table.rstrip('rt'), 'HH:MM:SS')
-            font_color = RED
-        else:
-            txt = 'CIR %s  %s' % (table.rstrip('rt'), unix2dtm(utime).strftime('%H:%M:%S'))
-            font_color = WHITE
-        pygame.draw.rect(screen, BLACK, rect)    
-        font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
-        rect.top += VERTOFFSET
         
-        table = 'es06rt'
-        utime = query_onerow_unixtime(table)
-        if not utime:
-            txt = 'FIR %s  %s' % (table.rstrip('rt'), 'HH:MM:SS')
-            font_color = RED            
-        else:
-            txt = 'FIR %s  %s' % (table.rstrip('rt'), unix2dtm(utime).strftime('%H:%M:%S'))
-            font_color = WHITE            
-        pygame.draw.rect(screen, BLACK, rect)    
-        font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, font_color, 'right', 'center', True)
-        rect.top += VERTOFFSET
-    
-        utime = query_onerow_unixtime('121f05rt')
-        txt = 'JEM 121f05  %s' % unix2dtm(utime).strftime('%H:%M:%S')
-        pygame.draw.rect(screen, BLACK, rect)
-        font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, WHITE, 'right', 'center', True)
-        rect.top += VERTOFFSET
+        for tm in time_machines:
+            tm.update()
+            utime = tm.time
+            label = tm.prefix + ' ' + tm.time_getter.table.rstrip('rt')
+            if utime is None:
+                timestr = 'HH:MM:SS'
+            else:
+                timestr = unix2dtm(utime).strftime('%H:%M:%S')
+            txt = '%s  %s' % (label, timestr)
+            pygame.draw.rect(screen, BLACK, rect)
+            font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, WHITE, 'right', 'center', True)
+            rect.top += VERTOFFSET
     
         pygame.display.update()
         
@@ -108,6 +99,21 @@ def run(host):
     pygame.quit()
 
 if __name__ == '__main__':
-    import socket
-    host = socket.gethostname()
-    run(host)
+    
+    tups = [
+        # table     prefix   db host
+        ('es05rt',   'CIR', 0.9, 'manbearpig'),
+        ('es06rt',   'FIR', 0.9, 'manbearpig'),
+        ('121f05rt', 'JEM', 0.9, 'manbearpig'),
+    ]
+    
+    time_machines = []
+    for tup in tups:
+        # FIXME with more pythonic unpacking?
+        table, prefix, expected_delta_sec, dbhost = tup[0], tup[1], tup[2], tup[3]
+        tg = TimeGetter(table, host=dbhost)
+        tm = TimeMachine(tg, expected_delta_sec=expected_delta_sec)
+        tm.prefix = prefix
+        time_machines.append(tm)
+
+    run(time_machines)
