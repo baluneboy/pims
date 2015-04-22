@@ -46,7 +46,7 @@ defaults = {
     ],          
 'packets_per_sec':  '8',    # expected value for this sensor for this gap check period
 'min_pct':          '0',    # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
-'hours_ago':        '18',   # start checking this many hours ago
+'hours_ago':        '23',   # start checking this many hours ago
 }
 parameters = defaults.copy()
 

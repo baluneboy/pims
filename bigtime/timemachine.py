@@ -222,6 +222,15 @@ def test_transition_from():
     
     assert_true(m.state=='rotten')
 
+def test_transitions():
+    m = TimeMachine('es06', host='localhost')
+    assert_false(m.left_rotten)
+    assert_false(m.went_stale_when_leaving_rotten)
+
+    m.more_fresh() # now stale
+    assert_true(m.left_rotten)
+    assert_true(m.went_stale_when_leaving_rotten)    
+    
 def demo():
     tg = RapidTimeGetter(None, host=None)
     print 'START AT', tg.get_time()

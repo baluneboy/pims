@@ -40,6 +40,7 @@ def run(host):
     WIDTHWIN = SCREEN_PCT * infoObject.current_w / 100 / wden  # divide by 2 for double-wide displays
     HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100 / hden # divide by 2 for double-high displays
     pygame.display.set_mode((WIDTHWIN, HEIGHTWIN))
+    pygame.display.set_caption('bigtime')    
     
     screen = pygame.display.get_surface()
     clock = pygame.time.Clock()
