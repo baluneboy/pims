@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+import time
 import datetime
 from itertools import cycle
+from collections import deque
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
 from onerowquery import query_onerow_unixtime
@@ -30,26 +32,22 @@ class RapidTimeGetter(TimeGetter):
     """dummy unix time getter that utiliizes sequence of deltas (sec) via generator"""
     
     def __init__(self, *args, **kwargs):
+        if 'shift' in kwargs:
+            self.shift = kwargs.pop('shift')
+        else:
+            self.shift = 0
         super(RapidTimeGetter, self).__init__(*args, **kwargs)
         self._init_time = dtm2unix(datetime.datetime(2015,1,1))
-        deltas = [ None, None, None, 0, 1, 2, 3, 3, 3, 4, 5, 6, 4, 4, 4, 5 ]
+        deltas = deque([ None, None, None, 0, 1, 2, 3, 3, 3, 4, 5, 6, 4, 4, 4, 5 ])
+        deltas.rotate(self.shift)
         self._pool = cycle(deltas)
     
     def get_time(self):
+        time.sleep(0.25)
         delta = self._pool.next()
         if delta is None:
             return None
         return self._init_time + delta
-<<<<<<< HEAD:largetime/timemachine.py
-
-# dummy unix time getter that returns "now"
-class NowTimeGetter(TimeGetter):
-    """dummy unix time getter that returns "now"""
-    
-    def get_time(self):
-        return dtm2unix( datetime.datetime.now() )
-=======
->>>>>>> 5ed17d65200ee579337d448b8f06e9ca9099ae6d:bigtime/timemachine.py
 
 # a 3-state machine for db unix times (fresh, stale, rotten)
 class TimeMachine(Machine):
@@ -251,31 +249,6 @@ def test_transition_from():
 
 def test_transitions():
     tg = RapidTimeGetter(None, host=None)
-<<<<<<< HEAD:largetime/timemachine.py
-    tm = LargeTimeMachine(tg, expected_delta_sec=0.9)
-    for i in range(33):
-        tm.update()
-        print tm
-        
-#table = 'es05'
-#host = 'manbearpig'
-#tg = TimeGetter(table, host=host)
-#print tg.table, tg.host, tg.get_time()
-#
-#ntg = NowTimeGetter(None, host=None)
-#print ntg.table, ntg.host, ntg.get_time()
-#
-#rtg = RapidTimeGetter(None, host=None)
-#print rtg.table, rtg.host, rtg.get_time()
-#print '-' * 22
-#for i in range(27):
-#    print rtg.get_time()
-#
-#raise SystemExit
-
-demo()
-raise SystemExit
-=======
     m = TimeMachine(tg)
     assert_false(m.left_rotten)
     assert_false(m.went_stale_when_leaving_rotten)
@@ -283,4 +256,3 @@ raise SystemExit
     m.more_fresh() # now stale
     assert_true(m.left_rotten)
     assert_true(m.went_stale_when_leaving_rotten)    
->>>>>>> 5ed17d65200ee579337d448b8f06e9ca9099ae6d:bigtime/timemachine.py
