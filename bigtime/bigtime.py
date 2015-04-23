@@ -14,8 +14,9 @@ from timemachine import RapidTimeGetter, TimeGetter, TimeMachine
 from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
-VERTOFFSET = 220 # vertical offset between gray rect bars
-SCREEN_PCT =  90 # % screen width/height that window occupies
+SLEEP = 0.5           # seconds between event loop updates
+VERTOFFSET = 220      # vertical offset between gray rect bars
+SCREEN_PCT =  90      # % screen width/height that window occupies
 FONTSIZE = 150
 COLORS = {
     'white':  (255, 255, 255),
@@ -26,6 +27,7 @@ COLORS = {
 }
 
 # this centers window both horiz and vert
+# ...but this gets changed in run function
 os.environ['SDL_VIDEO_CENTERED'] = '1'
 
 # run big timestamp app mainly for ops support
@@ -44,10 +46,14 @@ def run(time_machines):
     infoObject = pygame.display.Info()
     if disp_host == 'butters':
         wden, hden = 1, 2
+        xwin, ywin = 0, 100       
     elif disp_host == 'jimmy':
         wden, hden = 2, 1
+        xwin, ywin = 0, 0
     else:
         wden, hden = 1, 1
+        xwin, ywin = 0, 0
+    os.environ['SDL_VIDEO_WINDOW_POS'] = '%d,%d' % (xwin, ywin)
     WIDTHWIN  = SCREEN_PCT * infoObject.current_w / 100 / wden # divide by 2 for double-wide displays
     HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100 / hden # divide by 2 for double-high displays
     pygame.display.set_mode((WIDTHWIN, HEIGHTWIN))
@@ -70,20 +76,19 @@ def run(time_machines):
         clock.tick(30) # run at 30 fps
         screen.fill((0, 0, 0))
 
-        font_mgr.Draw(screen, None, 48, 'Default font, 48', (0, 50), COLORS['gray'])
-        font_mgr.Draw(screen, None, 24, 'Default font, 24', (0, 0), COLORS['gray'])
-
         rect = pygame.Rect(10, 100, WIDTHWIN-20, 65)
 
-        pygame.draw.rect(screen, COLORS['gray'], rect)
-        font_mgr.Draw(screen, 'arial', 24, 'Arial 24 top left', rect, COLORS['gray'], 'left', 'top')
-        rect.top += VERTOFFSET / 2
+        # host system clock gray text in black rect
+        txt = 'ignore this line, it is just the system clock of %s %s' % (disp_host, datetime.datetime.now().strftime('%H:%M:%S'))
+        pygame.draw.rect(screen, COLORS['black'], rect)
+        font_mgr.Draw(screen, 'arial', 24, txt, rect, COLORS['gray'], 'right', 'center', True)
+        rect.top += VERTOFFSET / 4
 
-        #
-        # table (label) >> time_getter
-        # utime, textcolor [, rectcolor?] << timemachine(time_getter)
-        # timestr << utime
-        #
+        # spare gray text in gray rect
+        txt = 'unused spare gray text inside gray bar'
+        pygame.draw.rect(screen, COLORS['gray'], rect)
+        font_mgr.Draw(screen, 'arial', 24, txt, rect, COLORS['gray'], 'right', 'center', True)
+        rect.top += VERTOFFSET / 1.5
 
         for tm in time_machines:
             tm.update()
@@ -104,9 +109,30 @@ def run(time_machines):
         if QUIT in [event.type for event in pygame.event.get()]:
             running = False
 
-        time.sleep(0.25)
+        time.sleep(SLEEP)
 
     pygame.quit()
+
+def demo_on_park():
+
+    bigs = [
+        #    table  prefix  EDS      db host
+        # -----------------------------------
+        ('es05rt',   'CIR', 0.9, 'manbearpig'),
+        ('es06rt',   'FIR', 0.9, 'manbearpig'),
+        ('121f05rt', 'JEM', 0.9, 'manbearpig'),
+    ]
+
+    shift = 0
+    time_machines = []
+    for table, prefix, expected_delta_sec, dbhost in bigs:
+        tg = RapidTimeGetter(table, host=dbhost, shift=shift)
+        tm = TimeMachine(tg, expected_delta_sec=SLEEP/3)
+        tm.prefix = prefix
+        time_machines.append(tm)
+        shift += 1
+
+    run(time_machines)
 
 if __name__ == '__main__':
 
@@ -118,14 +144,11 @@ if __name__ == '__main__':
         ('121f05rt', 'JEM', 0.9, 'manbearpig'),
     ]
 
-    #shift = 0
     time_machines = []
     for table, prefix, expected_delta_sec, dbhost in bigs:
-        tg = RapidTimeGetter(table, host=dbhost) #, shift=shift)
-        #tg = TimeGetter(table, host=dbhost)
-        tm = TimeMachine(tg, expected_delta_sec=expected_delta_sec)
-        tm.prefix = prefix
+        tg = TimeGetter(table, host=dbhost)
+        tm = TimeMachine(tg, expected_delta_sec=SLEEP/3) # TODO find true expected delta instead of empirical value
+        tm.prefix = prefix # TODO pythonic handling of extraneous attributes
         time_machines.append(tm)
-        #shift += 1
 
     run(time_machines)

@@ -89,6 +89,7 @@ class TimeMachine(Machine):
             self.more_fresh()
             return
         delta_sec = new_time - old_time
+        #print self.time_getter.table, delta_sec
         if delta_sec >= self.expected_delta_sec:
             self.more_fresh()
         else:
