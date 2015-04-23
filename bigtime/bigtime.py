@@ -15,7 +15,7 @@ from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
 SLEEP = 0.5           # seconds between event loop updates
-VERTOFFSET = 220      # vertical offset between gray rect bars
+VERTOFFSET = 240      # vertical offset between gray rect bars
 SCREEN_PCT =  90      # % screen width/height that window occupies
 FONTSIZE = 150
 COLORS = {
@@ -36,7 +36,7 @@ def run(time_machines):
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
     if len(time_machines) != 3:
-        raise Exception('expected 3 timemachine objects as input')
+        raise Exception('expected exactly 3 timemachine objects as input')
 
     disp_host = socket.gethostname()
 
@@ -136,18 +136,19 @@ def demo_on_park():
 
 if __name__ == '__main__':
 
+    # TODO find true expected delta instead of empirical value
     bigs = [
-        #    table  prefix  EDS      db host
-        # -----------------------------------
-        ('es05rt',   'CIR', 0.9, 'manbearpig'),
-        ('es06rt',   'FIR', 0.9, 'manbearpig'),
-        ('121f05rt', 'JEM', 0.9, 'manbearpig'),
+        #    table  prefix  ExpDeltaSec   db host
+        # -------------------------------------------
+        ('es05rt',   'CIR', SLEEP/3,  'manbearpig'),
+        ('es06rt',   'FIR', SLEEP/3,  'manbearpig'),
+        ('121f05rt', 'JEM', SLEEP/3,  'manbearpig'),
     ]
 
     time_machines = []
     for table, prefix, expected_delta_sec, dbhost in bigs:
         tg = TimeGetter(table, host=dbhost)
-        tm = TimeMachine(tg, expected_delta_sec=SLEEP/3) # TODO find true expected delta instead of empirical value
+        tm = TimeMachine(tg, expected_delta_sec=expected_delta_sec)
         tm.prefix = prefix # TODO pythonic handling of extraneous attributes
         time_machines.append(tm)
 
