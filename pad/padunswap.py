@@ -26,10 +26,11 @@ def get_header_files_for_swap(start, stop, pattern):
         day1 += timedelta(days=1)
     return header_files
 
-
-
 if __name__ == '__main__':
-    # 2014-12-05/18:19:19 2015-03-13/14:36:01 sams2_accel_121f0[28].*
+    # NOTE: SWAP TO HAPPEN FROM
+    # 2014-12-05/18:19:19  TO
+    # 2015-03-13/14:36:01
+    # FOR sams2_accel_121f0[28].*
     start = parser.parse( sys.argv[1] )
     stop  = parser.parse( sys.argv[2] )
     pattern = sys.argv[3]
