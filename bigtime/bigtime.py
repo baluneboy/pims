@@ -17,7 +17,7 @@ from pims.utils.pimsdateutil import unix2dtm
 SLEEP = 0.5           # seconds between event loop updates
 VERTOFFSET = 240      # vertical offset between gray rect bars
 SCREEN_PCT =  90      # % screen width/height that window occupies
-FONTSIZE = 150
+FONTSIZE = 145
 COLORS = {
     'white':  (255, 255, 255),
     'yellow': (255, 255,  50),
@@ -45,17 +45,17 @@ def run(time_machines):
     # set display mode width and height
     infoObject = pygame.display.Info()
     if disp_host == 'butters':
-        wden, hden = 1, 2
+        wden, hden = 0.9, 2
         xwin, ywin = 0, 100       
     elif disp_host == 'jimmy':
-        wden, hden = 2, 1
+        wden, hden = 1.8, 1
         xwin, ywin = 0, 0
     else:
         wden, hden = 1, 1
         xwin, ywin = 0, 0
     os.environ['SDL_VIDEO_WINDOW_POS'] = '%d,%d' % (xwin, ywin)
-    WIDTHWIN  = SCREEN_PCT * infoObject.current_w / 100 / wden # divide by 2 for double-wide displays
-    HEIGHTWIN = SCREEN_PCT * infoObject.current_h / 100 / hden # divide by 2 for double-high displays
+    WIDTHWIN  = int(SCREEN_PCT * infoObject.current_w / 100 / wden) # divide by 2 for double-wide displays
+    HEIGHTWIN = int(SCREEN_PCT * infoObject.current_h / 100 / hden) # divide by 2 for double-high displays
     pygame.display.set_mode((WIDTHWIN, HEIGHTWIN))
     pygame.display.set_caption('bigtime')
 
@@ -96,10 +96,10 @@ def run(time_machines):
             color = tm.color
             label = tm.prefix + ' ' + tm.time_getter.table.rstrip('rt')
             if utime is None:
-                timestr = 'hh:mm:ss'
+                timestr = 'doy/hh:mm:ss'
             else:
-                timestr = unix2dtm(utime).strftime('%H:%M:%S')
-            txt = '%s  %s' % (label, timestr)
+                timestr = unix2dtm(utime).strftime('%j/%H:%M:%S')
+            txt = '%s %s' % (label, timestr)
             pygame.draw.rect(screen, COLORS['black'], rect)
             font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, COLORS[color], 'right', 'center', True)
             rect.top += VERTOFFSET

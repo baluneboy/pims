@@ -168,10 +168,10 @@ def move_pad_pair(header_file, dest_dir):
 
     Returns string for header_file on its new path.
 
-    >>> dest_dir = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original'
-    >>> header_file = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
-    >>> move_pad_pair(header_file, dest_dir)
-    '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
+    #>>> dest_dir = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original'
+    #>>> header_file = '/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
+    #>>> move_pad_pair(header_file, dest_dir)
+    #'/misc/yoda/test/pad/year2015/month03/day20/sams2_accel_121f02/original/2015_03_20_00_01_27.307+2015_03_20_00_11_27.321.121f02.header'
 
     """    
     if not os.path.isdir(dest_dir):
@@ -198,6 +198,24 @@ def filter_filenames(dirpath, predicate):
     for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:
             abspath = os.path.join(root, filename)
+            if predicate(abspath):
+                yield abspath
+
+def filter_dirnames(dirpath, predicate):
+    """
+    >>> subdirPattern = 'sams2_accel_121f0[28].*'
+    >>> dirpath = r'/misc/yoda/pub/pad/year2015/month01/day01'
+    >>> predicate = re.compile(os.path.join(dirpath, subdirPattern)).match
+    >>> for dirname in filter_dirnames(dirpath, predicate): print dirname
+    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f02006
+    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f08
+    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f08006
+    """
+    for root, dirnames, filenames in os.walk(dirpath):
+        for dirname in dirnames:
+            abspath = os.path.join(root, dirname)
+            #print abspath
             if predicate(abspath):
                 yield abspath
 

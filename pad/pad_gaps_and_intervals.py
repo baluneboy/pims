@@ -275,14 +275,15 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-04-01')
-    dstop =  parser.parse('2015-04-15')
+    dstart = parser.parse('2015-04-17')
+    dstop =  parser.parse('2015-04-17')
     maxgapsec = 17.0
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     #hig.show('headers')
     #hig.show('intervals')
     #hig.show('gaps')
-    hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+    hig.show_dsm(['121f03', '121f04', '121f05'])
 
 demo_intervals()
 raise SystemExit
