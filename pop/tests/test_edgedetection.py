@@ -7,7 +7,7 @@ from numpy.testing import assert_array_equal
 
 class PadTestCase(unittest.TestCase):
     """
-    Test suite for ugaudio.signal.
+    Test suite for WHAT GOES HERE.
     """
 
     def setUp(self):
