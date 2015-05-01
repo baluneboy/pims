@@ -142,7 +142,7 @@ if __name__ == '__main__':
         # -------------------------------------------
         ('es05rt',   'CIR', SLEEP/3,  'manbearpig'),
         ('es06rt',   'FIR', SLEEP/3,  'manbearpig'),
-        ('121f05rt', 'JEM', SLEEP/3,  'manbearpig'),
+        ('121f05rt', '',    SLEEP/3,  'manbearpig'),
     ]
 
     time_machines = []
