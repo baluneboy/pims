@@ -157,13 +157,20 @@ class LooseSensorDayIntervals(object):
                     t1 = floor_minute(g.lower_bound)
                     t2 = ceil_minute( g.upper_bound)
                     master_gaps.add( Interval(t1, t2) )
+                    
+        prev_day = None
         gap_count = 0
         for g in master_gaps:
             gap_count += 1
-            day = int( g.lower_bound.date().strftime('%j') )
+            this_day = int( g.lower_bound.date().strftime('%j') )
             g1str = datetime_to_doytimestr(g.lower_bound)[0:-7]
             g2str = datetime_to_doytimestr(g.upper_bound)[0:-7]
-            print 'day{0:0>3}part{1:03d}  {2:<18s} {3:<18s}'.format(day, gap_count, g1str, g2str)
+            if prev_day is None:
+                prev_day = this_day
+            if prev_day != this_day:
+                print ''
+            print 'day{0:0>3}part{1:03d}  {2:<18s} {3:<18s}'.format(this_day, gap_count, g1str, g2str)
+            prev_day = this_day
 
     def _get_countstr(self, sensor, day):
         num_headers = len( self.headers[(sensor, day)] )
@@ -276,17 +283,24 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-04-20')
-    dstop =  parser.parse('2015-04-27')
+    dstart = parser.parse('2015-03-10')
+    dstop =  parser.parse('2015-03-31')
     maxgapsec = 17.0
+
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
+    #print 'YODA GAPS'
+    #hig.show('gaps')
+    
+    #print 'JIMMY INTERVALS'
+    #jig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/data/pad')
+    #jig.show('intervals')
+
     #hig.show('headers')
     #hig.show('intervals')
-    hig.show('gaps')
-    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08'])
+    hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08', 'es05', 'es06'])
 
-#demo_intervals()
-#raise SystemExit
+demo_intervals()
+raise SystemExit
 
 # prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path
 def preprocess_trim(yoda_headers, header_file, new_path):
