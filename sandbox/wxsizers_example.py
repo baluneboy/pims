@@ -17,7 +17,8 @@ class ShortWindow(wx.PyWindow):
     """
     A short window that is used for sizer items for smalltime info.
     """
-    def __init__(self, parent, text, pos=wx.DefaultPosition, size=wx.DefaultSize):
+    #def __init__(self, parent, text, pos=wx.DefaultPosition, size=wx.DefaultSize):
+    def __init__(self, parent, text, pos=(894, 505), size=wx.DefaultSize):
         wx.PyWindow.__init__(self, parent, -1,
                              #style=wx.RAISED_BORDER
                              #style=wx.SUNKEN_BORDER
@@ -27,7 +28,8 @@ class ShortWindow(wx.PyWindow):
         if size != wx.DefaultSize:
             self.bestsize = size
         else:
-            self.bestsize = (360, 30)
+            self.bestsize = (310, 34)
+            self.bestpos = (894, 505)
         self.SetSize(self.GetBestSize())
         
         self.Bind(wx.EVT_PAINT, self.OnPaint)
@@ -84,9 +86,17 @@ class MainFrame(wx.Frame):
         self.MakeModal(False)
         self.Destroy()
 
+def align_upper_right(win):
+    dw, dh = wx.DisplaySize()
+    w, h = win.GetSize()
+    x = dw - w
+    y = dh - h
+    win.SetPosition((x, y))
+
 def demo(worker):
     app = wx.PySimpleApp()
     app.TopWindow = MainFrame(None, 'title', make_my_box, worker)
+    app.TopWindow.SetPosition((200, 0))    
     app.TopWindow.Show()
     app.MainLoop()
 

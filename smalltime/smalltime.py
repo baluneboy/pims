@@ -21,10 +21,10 @@ def demo():
         #('es03rt',   'MSG', 0.9, 'manbearpig'),
         ('es05rt',   'CIR', 0.9, 'manbearpig'),
         ('es06rt',   'FIR', 0.9, 'manbearpig'),
-        #('121f08rt', 'JEM', 0.9, 'manbearpig'),
+        ('121f08rt', 'JEM', 0.9, 'manbearpig'),
         ('121f05rt', 'JEM', 0.9, 'manbearpig'),
         ('121f04rt', 'ER1', 0.9, 'manbearpig'),
-        #('121f03rt', 'JEM', 0.9, 'manbearpig'),
+        ('121f03rt', 'JEM', 0.9, 'manbearpig'),
         ('121f02rt', 'COL', 0.9, 'manbearpig'),
     ]
 
