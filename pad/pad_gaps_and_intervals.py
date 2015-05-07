@@ -26,7 +26,7 @@ def find_headers_without006(ymd_dir):
     Returns list of header files like:
     ['/misc/yoda/pub/pad/year2015/month03/day21/iss_rad_radgse/2015_03_21_00_30_24.488+2015_03_21_02_30_21.367.radgse.header', ...]
 
-    >>> ymd_dir = '/misc/yoda/test/pad/year2015/month03/day21'
+    >>> ymd_dir = '/misc/yoda/test/pad/year2015/month04/day29'
     >>> L = find_headers_without006(ymd_dir)
     >>> L[0:2]
     ['/misc/yoda/test/pad/year2015/month03/day21/iss_rad_radgse/2015_03_21_00_30_24.488+2015_03_21_02_30_21.367.radgse.header', '/misc/yoda/test/pad/year2015/month03/day21/iss_rad_radgse/2015_03_21_02_30_37.343+2015_03_21_04_30_34.253.radgse.header']
@@ -37,11 +37,19 @@ def find_headers_without006(ymd_dir):
     if not os.path.exists(ymd_dir):
         print('NOTE: %s does not exist' % ymd_dir)
     #cmd = 'find ' + ymd_dir + ' -maxdepth 2 -type f -name "*header" -exec basename {} \; | grep -v 006'
-    cmd = 'find ' + ymd_dir + ' -maxdepth 2 -type f -name "*header" | grep -v 006'
+    cmd = 'find ' + ymd_dir + ' -maxdepth 2 -type f -name "*header" | grep -v 006.header'
     p = subprocess.Popen(cmd, shell=True, stderr=subprocess.PIPE, stdout=subprocess.PIPE)
     out, err = p.communicate()
     splitout = out.split('\n')[:-1] # split on newlines & get rid of very last trailing newline
     return splitout
+
+#ymd_dir = '/misc/yoda/pub/pad/year2015/month04/day29'
+#headers_all = find_headers_without006(ymd_dir)
+#F03 = [ x for x in headers_all if x.endswith('121f03' + '.header') ]
+#for f in F03:
+#    print f
+#print len(F03)
+#raise SystemExit
 
 # get loose pad interval set from header filenames
 def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
@@ -283,13 +291,15 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-03-10')
-    dstop =  parser.parse('2015-03-31')
+    dstart = parser.parse('2015-04-24')
+    dstop =  parser.parse('2015-04-25')
     maxgapsec = 17.0
 
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     #print 'YODA GAPS'
-    #hig.show('gaps')
+    #hig.show('headers')
+    hig.show('gaps')
+    #hig.show('intervals')
     
     #print 'JIMMY INTERVALS'
     #jig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/data/pad')
@@ -297,7 +307,7 @@ def demo_intervals():
 
     #hig.show('headers')
     #hig.show('intervals')
-    hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08', 'es05', 'es06'])
+    #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08', 'es05', 'es06'])
 
 demo_intervals()
 raise SystemExit

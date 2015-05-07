@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" kpf_version="5" name="smalltime.komodoproject">
+<file id="a024af0b-7ff6-4f96-9b7e-829e3cf6cacb" idref="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" name="smalltime.py" url="smalltime/smalltime.py">
+</file>
+<file id="a5ac6d37-7e13-47ac-b07e-5b576b9820c7" idref="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" name="timemachine.py" url="bigtime/timemachine.py">
+</file>
+</project>
