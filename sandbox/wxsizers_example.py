@@ -27,7 +27,7 @@ class SmallWindow(wx.PyWindow):
     """
     A small window that is used to show SAMS rt db table timestamp.
     """
-    def __init__(self, parent, text, pos=wx.DefaultPosition, size=wx.DefaultSize):
+    def __init__(self, parent, text, color, pos=wx.DefaultPosition, size=wx.DefaultSize):
         
         wx.PyWindow.__init__(self, parent, -1,
                              #style=wx.RAISED_BORDER
@@ -35,23 +35,45 @@ class SmallWindow(wx.PyWindow):
                              style=wx.SIMPLE_BORDER
                              )
         
+        self.color = color
         self.text = text
         if size != wx.DefaultSize:
             self.bestsize = size
         else:
             self.bestsize = (194, 33)
         self.SetSize(self.GetBestSize())
-        
+
+        self.SetBackgroundColour(self.color)
+
         self.Bind(wx.EVT_PAINT, self.OnPaint)
         self.Bind(wx.EVT_SIZE, self.OnSize)
         self.Bind(wx.EVT_LEFT_UP, self.OnCloseParent)
 
-    def OnPaint(self, evt):
+    def ShouldInheritColours(self):
+        return False
+
+    def OLDOnPaint(self, evt):
         sz = self.GetSize()
         dc = wx.PaintDC(self)
         w,h = dc.GetTextExtent(self.text)
         dc.Clear()
         dc.DrawText(self.text, (sz.width-w)/2, (sz.height-h)/2)
+
+    def OnPaint(self, evt):
+        sz = self.GetSize()
+        dc = wx.PaintDC(self)
+        w,h = dc.GetTextExtent(self.text)
+        
+        # Initialize the wx.BufferedPaintDC, assigning a background
+        # colour and a foreground colour (to draw the text)
+        backColour = self.GetBackgroundColour()
+        backBrush = wx.Brush(backColour, wx.SOLID)
+        dc.SetBackground(backBrush)
+        dc.Clear()
+        dc.SetTextForeground(wx.BLACK)
+        dc.DrawText(self.text, (sz.width-w)/2, (sz.height-h)/2)
+        
+        #dc.SetFont(self.GetFont())
 
     def OnSize(self, evt):
         self.Refresh()
@@ -66,14 +88,14 @@ class SmallWindow(wx.PyWindow):
     
 def make_box_of_small_windows(win):
     box = wx.BoxSizer(wx.HORIZONTAL)
-    box.Add(SmallWindow(win, "one"), 0, wx.EXPAND)
-    box.Add(SmallWindow(win, "two"), 0, wx.EXPAND)
-    box.Add(SmallWindow(win, "es06 333/55:66:99"), 1, wx.EXPAND)
-    box.Add(SmallWindow(win, "four"), 1, wx.EXPAND)
-    box.Add(SmallWindow(win, "five"), 1, wx.EXPAND)
-    box.Add(SmallWindow(win, "six"), 1, wx.EXPAND)
-    box.Add(SmallWindow(win, "seven"), 1, wx.EXPAND)
-    box.Add(SmallWindow(win, "eight"), 1, wx.EXPAND)
+    box.Add(SmallWindow(win, "one", wx.RED), 0, wx.EXPAND)
+    box.Add(SmallWindow(win, "two", wx.GREEN), 0, wx.EXPAND)
+    box.Add(SmallWindow(win, "es06 333/55:66:99", wx.RED), 1, wx.EXPAND)
+    box.Add(SmallWindow(win, "four", wx.RED), 1, wx.EXPAND)
+    box.Add(SmallWindow(win, "five", wx.RED), 1, wx.EXPAND)
+    box.Add(SmallWindow(win, "six", wx.RED), 1, wx.EXPAND)
+    box.Add(SmallWindow(win, "seven", wx.RED), 1, wx.EXPAND)
+    box.Add(SmallWindow(win, "eight", wx.RED), 1, wx.EXPAND)
 
     return box
 
