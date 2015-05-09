@@ -6,7 +6,7 @@ from itertools import cycle
 from collections import deque
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from onerowquery import query_onerow_unixtime
+from onerowquery import query_onerow_unixtime, table_exists
 
 from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
@@ -23,8 +23,15 @@ class TimeGetter(object):
     def __init__(self, table, host='manbearpig'):
         self.table = table
         self.host = host
+        if table_exists(self.table, self.host):
+            self._get_time_func = self._get_time
+        else:
+            self._get_time_func = lambda : None
 
     def get_time(self):
+        return self._get_time_func() # time func resolved during init
+    
+    def _get_time(self):
         return query_onerow_unixtime(self.table, host=self.host)
 
 # dummy unix time getter that utiliizes sequence of deltas (sec) via generator
