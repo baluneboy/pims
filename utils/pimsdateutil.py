@@ -117,6 +117,23 @@ def timestr_to_datetime(timestr):
         raise ValueError('%s is a bad timestr' % timestr)
     return d
 
+def samsops_timestamp_to_datetime(timestr):
+    """
+    Return datetime representation of a timestamp string from samsops schemas.
+    
+    Examples
+    --------
+    
+    >>> samsmon_timestamp_to_datetime('2015-06-02 11:50:35')
+    datetime.datetime(2015, 6, 2, 11, 50, 35)
+    
+    """
+    try:
+        d = datetime.datetime.strptime(timestr,'%Y-%m-%d %H:%M:%S')
+    except ValueError, e:
+        raise ValueError('%s is a bad timestr' % timestr)
+    return d
+
 # convert string like 2014:077:00:02:00 to datetime object
 def doytimestr_to_datetime(timestr):
     """convert string like 2014:077:00:02:00 to datetime object

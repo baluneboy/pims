@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" kpf_version="5" name="smalltime.komodoproject">
+<file id="04212580-421c-405b-8c26-b8d9aedfd045" idref="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" name="heartbeat.py" url="smalltime/heartbeat.py">
+</file>
 <file id="1630175a-d1c9-4c2f-91db-a9bf64de54e0" idref="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" name="wxsizers_example.py" url="sandbox/wxsizers_example.py">
 </file>
 <file id="a024af0b-7ff6-4f96-9b7e-829e3cf6cacb" idref="1ab9e657-eeb5-4620-9b3c-98749ecc22e2" name="smalltime.py" url="smalltime/smalltime.py">

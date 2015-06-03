@@ -11,21 +11,21 @@ import time
 from pims.bigtime.timemachine import RapidTimeGetter, TimeGetter, TimeMachine
 from pims.utils.pimsdateutil import unix2dtm
 
-SLEEP = 0.5
+SLEEP = 1.0
 
 def demo():
 
     smalls = [
         #    table  prefix  EDS      db host
         # -----------------------------------
-        #('es03rt',   'MSG', 0.9, 'manbearpig'),
+        ('es03rt',   'MSG', 0.9, 'manbearpig'),
         ('es05rt',   'CIR', 0.9, 'manbearpig'),
         ('es06rt',   'FIR', 0.9, 'manbearpig'),
-        ('121f08rt', 'JEM', 0.9, 'manbearpig'),
-        ('121f05rt', 'JEM', 0.9, 'manbearpig'),
-        ('121f04rt', 'ER1', 0.9, 'manbearpig'),
-        ('121f03rt', 'JEM', 0.9, 'manbearpig'),
-        ('121f02rt', 'COL', 0.9, 'manbearpig'),
+        ('121f08rt', 'F08', 0.9, 'manbearpig'),
+        ('121f05rt', 'F05', 0.9, 'manbearpig'),
+        ('121f04rt', 'F04', 0.9, 'manbearpig'),
+        ('121f03rt', 'F03', 0.9, 'manbearpig'),
+        ('121f02rt', 'F02', 0.9, 'manbearpig'),
     ]
 
     time_machines = []

@@ -6,7 +6,7 @@ from itertools import cycle
 from collections import deque
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from onerowquery import query_onerow_unixtime, table_exists
+from onerowquery import query_onerow_unixtime, table_exists, query_timestamp_kludge
 
 from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
@@ -33,6 +33,17 @@ class TimeGetter(object):
     
     def _get_time(self):
         return query_onerow_unixtime(self.table, host=self.host)
+
+# get yoda samsmon db ee_packet table timestamp
+class EeTimeGetter(TimeGetter):
+    """get yoda samsmon db ee_packet table timestamp"""
+
+    def __init__(self, *args, **kwargs):
+        self.ee_id = kwargs.pop('ee_id')
+        super(EeTimeGetter, self).__init__(*args, **kwargs)
+
+    def _get_time(self):
+        return query_timestamp_kludge(self.ee_id, self.table, host=self.host)    
 
 # dummy unix time getter that utiliizes sequence of deltas (sec) via generator
 class RapidTimeGetter(TimeGetter):
@@ -137,8 +148,9 @@ class TimeMachine(Machine):
 
     @transition_to('stale')
     def becoming_stale(self):
-        # do something
-        self.color = 'yellow'
+        # FIXME had to change color from yellow to white due to es06 white/yellow flicker
+        #self.color = 'yellow'
+        self.color = 'white'
         debug_print('    > transitioned to stale')
         self.became_stale = True
         self.left_stale = False

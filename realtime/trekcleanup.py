@@ -61,5 +61,5 @@ def main():
 
 if __name__ == "__main__":
     s = main()
-    with open('/media/trek21/temprecs/log.txt', 'a') as f:
+    with open('/media/trek21/Logs/TReK21RecordingCleanup.txt', 'a') as f:
         f.write(s)

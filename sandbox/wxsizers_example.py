@@ -117,9 +117,7 @@ def run(tables, worker):
     app.MainLoop()
 
 if __name__ == "__main__":
-    #tables = ['121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt', 'es03rt', 'es05rt', 'es06rt']
-    #run(tables, sample_external_long_running)
-    #
+    
     rt_tables = [
         #    table   db host
         # -------------------------
@@ -132,6 +130,10 @@ if __name__ == "__main__":
         ('es05rt',   'manbearpig'),
         ('es06rt',   'manbearpig'),
     ]
+    
+    FAKE_tables = ['121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt', 'es03rt', 'es05rt', 'es06rt']
+    run(FAKE_tables, sample_external_long_running)
+    raise SystemExit
 
     time_getters = []
     for table, dbhost in rt_tables:

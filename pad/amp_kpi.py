@@ -202,6 +202,89 @@ def msg_cir_fir_sto2dataframe(stofile):
 
     return df
 
+# read POLAR NRT List Request output (sto, tab delimited) file into dataframe
+def polar_sto2dataframe(stofile):
+    """read ascii POLAR sto file into dataframe"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    # use Ken's nomenclature to rename column labels    
+    msid_map = {
+        'UGZG25RT2005U': 'UGZG25RT2005U',
+        'UGZG25RT2033U': 'UGZG25RT2033U',
+        'UGZG25RT2145U': 'UGZG25RT2145U',
+        'UGZG25RT2146U': 'UGZG25RT2146U',
+        'UGZG25RT2147U': 'UGZG25RT2147U',
+        'UGZG25RT2148J': 'UGZG25RT2148J',
+        'UGZG25RT2149C': 'UGZG25RT2149C',
+        'UGZG25RT2150C': 'UGZG25RT2150C',
+        'UGZG25RT2151C': 'UGZG25RT2151C',
+        'UGZG25RT2152U': 'UGZG25RT2152U',
+        'UGZG25RT2153V': 'UGZG25RT2153V',
+        'UGZG25RT2154V': 'UGZG25RT2154V',
+        'UGZG25RT2155U': 'UGZG25RT2155U',
+        'UGZG25RT2156U': 'UGZG25RT2156U',
+        'UGZG25RT2157U': 'UGZG25RT2157U',
+        'UGZG25RT2158U': 'UGZG25RT2158U',
+        'UGZG25RT2159U': 'UGZG25RT2159U',
+        'UGZG25RT2160U': 'UGZG25RT2160U',
+        'UGZG25RT2161J': 'UGZG25RT2161J',
+        'UGZG25RT2162U': 'UGZG25RT2162U',
+        'UGZG25RT2163F': 'POLAR_Fan_Freq',
+        'UGZG25RT2164U': 'UGZG25RT2164U',
+        'UGZG25RT2165U': 'UGZG25RT2165U',
+        'UGZG25RT2166U': 'UGZG25RT2166U',
+        'UGZG25RT2167U': 'UGZG25RT2167U',
+        'UGZG25RT2168U': 'UGZG25RT2168U',
+        'UGZG25RT2169U': 'UGZG25RT2169U',
+        'UGZG25RT2170U': 'UGZG25RT2170U',
+        'UGZG25RT2171U': 'UGZG25RT2171U',
+        'UGZG25RT2172T': 'UGZG25RT2172T',
+        'UGZG25RT2177T': 'UGZG25RT2177T',
+        'UGZG25RT2180U': 'UGZG25RT2180U',
+        'UGZG25RT2185U': 'UGZG25RT2185U',
+        'UGZG25RT2186J': 'UGZG25RT2186J',
+        'UGZG25RT2187U': 'UGZG25RT2187U',
+        'UGZG25RT2188U': 'UGZG25RT2188U',
+        'UGZG25RT2189U': 'UGZG25RT2189U',
+        'UGZG25RT2190J': 'UGZG25RT2190J',
+        'UGZG25RT2191J': 'UGZG25RT2191J',
+        'UGZG25RT2192U': 'UGZG25RT2192U',
+        'UGZG25RT2193U': 'UGZG25RT2193U',
+        'UGZG25RT2194U': 'UGZG25RT2194U',
+        'UGZG25RT2195J': 'UGZG25RT2195J',
+        'UGZG25RT2196U': 'UGZG25RT2196U',
+        'UGZG25RT2197U': 'UGZG25RT2197U',
+        'UGZG25RT2198U': 'UGZG25RT2198U',
+        'UGZG25RT2199J': 'UGZG25RT2199J',
+        }
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+
+    return df
 
 # read NRT List Request output (sto, tab delimited) file into dataframe
 def emcs_sto2dataframe(stofile):
@@ -631,6 +714,14 @@ def main(csvfile, resource_csvfile):
     csvout = csvfile.replace('.csv','_monthly_hours.csv')
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
+
+def process_polar():
+    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_POLAR_Effect_on_60Hz_RMS/polar.sto'
+    df = polar_sto2dataframe(stofile)
+    df.to_csv( stofile.replace('.sto', '.csv') )
+    
+#process_polar()
+#raise SystemExit
 
 if __name__ == '__main__':
     

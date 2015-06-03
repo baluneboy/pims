@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
 import re
+import sys
 import subprocess
 import datetime
 from dateutil.relativedelta import relativedelta
@@ -290,7 +291,7 @@ EE = {
 }
 
 # Workaround for db table where Dump2 is clobbering RealTime
-def workaroundRTtable(htmlFile):
+def workaroundRTtable(htmlFile='/misc/yoda/www/plots/user/sams/eetemp.html'):
     """Workaround for db table where Dump2 is clobbering RealTime"""
 
     HEADER = '''<!DOCTYPE html>
@@ -490,5 +491,30 @@ def demo_conditional_cell_formatting():
     with open("/tmp/trash4.html", "w") as html_file:
         html_file.write( s.replace('nan', '') )
 
+# delete records older than 1 day from samsmon db table
+def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
+    """delete records older than 1 day from samsmon db table"""
+    con = mysql_con_yoda(db=schema)
+    cursor = con.cursor()
+    query = 'delete from %s.%s where %s < date_sub(now(), INTERVAL 1 DAY);' % (schema, table, time_columnstr)
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.close()
+    con.close()
+
+# iterate over samsmon tables to delete records older than 1 day from each
+def prune_samsmon():
+    """iterate over samsmon tables to delete records older than 1 day from each"""    
+    tables = [
+        ('ee_packet',    'timestamp'),
+        ('gse_packet',   'ku_timestamp'),
+        ('cu_packet',    'timestamp'),
+        ('ICU_messages', 'date')
+    ]
+    for table, time_columnstr in tables:
+        prune_samsmon_table(table, time_columnstr)
+
 if __name__ == "__main__":
-    workaroundRTtable('/misc/yoda/www/plots/user/sams/eetemp.html')    
+    eval( sys.argv[1] + '()' )
+    #workaroundRTtable()
+    #prune_samsmon()
