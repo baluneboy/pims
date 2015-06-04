@@ -9,15 +9,15 @@ import pygame
 from pygame.locals import QUIT
 
 from fontmgr import FontManager
-from timemachine import RapidTimeGetter, TimeGetter, EeTimeGetter, TimeMachine
+from timemachine import RapidTimeGetter, TimeGetter, EeTimeGetter, KuTimeGetter, TimeMachine
 
 from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
 SLEEP = 0.7           # seconds between event loop updates
-VERTOFFSET = 200      # vertical offset between gray rect bars (default 200)
+VERTOFFSET = 50      # vertical offset between gray rect bars (default 200)
 SCREEN_PCT =  90      # screen width/height that window occupies
-FONTSIZE = 145        # bigtime font size (default 145)
+FONTSIZE = 24        # bigtime font size (default 145)
 COLORS = {
     'white':  (255, 255, 255),
     'yellow': (255, 255,  50),
@@ -35,8 +35,8 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 11:
-        raise Exception('expected exactly 11 timemachine objects as input')
+    if len(time_machines) != 12:
+        raise Exception('expected exactly 12 timemachine objects as input')
 
     disp_host = socket.gethostname()
 
@@ -117,27 +117,12 @@ def run(time_machines):
                 logstr = dtm.strftime('%Y:%j:%H:%M:%S')
             txt = '%s %s' % (label, timestr)
             
-            if not tm.prefix.startswith('122'):
+            if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
+                pass
+            else:
                 pygame.draw.rect(screen, COLORS['black'], rect)
                 font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, COLORS[color], 'right', 'center', True)
                 rect.top += VERTOFFSET
-
-#2015-06-02 host_jimmy
-#--------------------------------------------
-#begin
-#2015:153:12:17:00 host_jimmy
-#yyyy:ddd:hh:mm:ss es03rt MSG
-#yyyy:ddd:hh:mm:ss es05rt CIR
-#2015:149:23:45:02 es06rt FIR
-#2015:153:12:17:34 121f02rt 
-#2015:153:12:17:34 121f03rt 
-#2015:153:12:17:34 121f04rt 
-#2015:153:12:17:34 121f05rt 
-#2015:153:12:17:34 121f08rt 
-#2015:153:12:17:34 ee_packet 122-f02
-#2015:153:12:17:33 ee_packet 122-f03
-#2015:153:12:17:33 ee_packet 122-f04
-#end
             
             if f:
                 if not tm.prefix.startswith('122'):
@@ -186,23 +171,24 @@ if __name__ == '__main__':
     bigs = [
         #    table  prefix  ExpDeltaSec   db host        time getter
         # -----------------------------------------------------------
-        ('es03rt',    'MSG',     SLEEP/6,  'manbearpig',  TimeGetter),
-        ('es05rt',    'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
-        ('es06rt',    'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f02rt',  'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f03rt',  'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f04rt',  'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f05rt',  'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f08rt',  'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('ee_packet', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('es03rt',     'MSG',     SLEEP/6,  'manbearpig',  TimeGetter),
+        ('es05rt',     'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
+        ('es06rt',     'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f02rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f03rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f04rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f05rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f08rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('ee_packet',  '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet',  '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet',  '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('gse_packet', 'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
     ]
 
     time_machines = []
     for table, prefix, expected_delta_sec, dbhost, tgetfun in bigs:
         if prefix.startswith('122'):
-            tg = tgetfun(table, host=dbhost, ee_id=prefix)
+            tg = tgetfun(table, host=dbhost, ee_id=prefix)           
         else:
             tg = tgetfun(table, host=dbhost)
         tm = TimeMachine(tg, expected_delta_sec=expected_delta_sec)

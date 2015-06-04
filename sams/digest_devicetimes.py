@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 
+import os
 import sys
 import datetime
+from itertools import combinations
 
 from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimestr
 
@@ -9,9 +11,9 @@ from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimes
 
 # input parameters
 defaults = {
-'tshs':         'es03rt,es05rt,es06rt',    # comma-sep values for non-grouped devices (TSHs)
-'groups':       '122-f02+121f03rt+121f04rt,122-f03+121f05rt,122-f04+121f02rt+121f08rt', # comma-sep values for plus groups
-'gmtoffset':    '0',                       # hour offset from this system clock time and GMT (like -4 for Eastern time)
+#                comma-sep values for plus groups    
+'groups':       '122-f02+122-f03+122-f04,122-f02+121f03rt+121f04rt,122-f03+121f05rt,122-f04+121f02rt+121f08rt',
+'gmtoffset':    '0', # hour offset from this system clock's time and GMT (like -4 or -5 for Eastern time)
 }
 parameters = defaults.copy()
 
@@ -24,23 +26,23 @@ def parametersOK():
     if parameters['gmtoffset'] not in [0, -4, -5]:
         print 'Unexpected gmtoffset %d' % parameters['gmtoffset']
         return False
-    
-    # split tshs string into list
-    parameters['tshs'] = parameters['tshs'].split(',')
 
-    # split groups string into list
+    ## split groups string into list
+    #tmplist = parameters['groups'].split(',')
+    #parameters['groups'] = []
+    #for grp in [ g.split('+') for g in tmplist ]:
+    #    d = {}
+    #    d[grp[0]] = grp[1:]
+    #    parameters['groups'].append(d)
+
+    # split out the groups into lists
     tmplist = parameters['groups'].split(',')
-    parameters['groups'] = []
-    for grp in [ g.split('+') for g in tmplist ]:
-        d = {}
-        d[grp[0]] = grp[1:]
-        parameters['groups'].append(d)
+    parameters['groups'] = [ g.split('+') for g in tmplist]
 
     return True # all OK; otherwise, return False somewhere above
 
 def printUsage():
     """print short description of how to run the program"""
-    print version
     print 'usage: %s [options]' % os.path.abspath(__file__)
     print '       options (and default values) are:'
     for i in defaults.keys():
@@ -51,6 +53,11 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
     
     host_now = datetime.datetime.now() + datetime.timedelta(hours=parameters['gmtoffset'])
     
+    # build delta_dict: {  deviceN:  (timestr, datetime_of_timestr, deltasec_bigtime_host, deltasec_this_machine) }
+    # ...could be like: { '122-f03': ('2015:154:12:07:16', datetime.datetime(2015, 6, 3, 12, 7, 16), -284.0, -276.62259) }
+    # ...could be like: { 'butters': ('2015:154:12:12:00', datetime.datetime(2015, 6, 3, 12, 12   ),    0.0,    7.37741) }
+    # ...could be like: { 'es03rt':  ('yyyy:ddd:hh:mm:ss', None,                                       None,       None)  }
+    delta_dict = {}
     with open(txt_file, 'r') as f:
         parsing = False
         for line in f.readlines():
@@ -67,21 +74,82 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
                         dtm_host = dtm
                     delta_host = (dtm - dtm_host).total_seconds()
                     my_delta = (dtm - host_now).total_seconds()
-                    print '%s %s %.1f %.1f' % (datetime_to_doytimestr(dtm)[:-7], device, delta_host, my_delta)
+                    #print '%s %s %.1f %.1f' % (datetime_to_doytimestr(dtm)[:-7], device, delta_host, my_delta)
+                    delta_dict[device] = (datetime_to_doytimestr(dtm)[:-7], dtm, delta_host, my_delta)
                 except:
-                    print timestr, device, None, None
+                    #print timestr, device, None, None
+                    delta_dict[device] = (timestr, None, None, None)
                     
             if line.startswith('begin'):
                 parsing = True
+                
+    #for k, v in delta_dict.iteritems():
+    #    print k, v
+
+    grp_count = 0
+    grp_time = datetime.datetime.now()
+    #err_devs = []
+    for g in parameters['groups']:
+        grp_count += 1
+        combo_count = 0
+        for c in combinations(g, 2):
+            combo_count += 1
+            print 'Group', grp_count, 'Combo', combo_count, ':', c
+            print c[0], delta_dict[c[0]]
+            print c[1], delta_dict[c[1]]
+            print 'delta for (device1 - device2) = %.1f seconds' % (delta_dict[c[0]][1] - delta_dict[c[1]][1]).total_seconds()
+            print 'delta for (device1 - bt_host) = %.1f seconds' % (delta_dict[c[0]][2])
+            print 'delta for (device1 - my_host) = %.1f seconds' % (delta_dict[c[0]][3])
+            print
+            
+            delta_dev1_dev2 = (delta_dict[c[0]][1] - delta_dict[c[1]][1]).total_seconds()
+            delta_dev1_bthost = delta_dict[c[0]][2]
+            
+            flagstr = 'ERROR'
+            if abs(delta_dev1_dev2) < 2:
+                if (12 < delta_dev1_bthost) and (delta_dev1_bthost < 17):
+                    flagstr = 'OKAY'
+                else:
+                    flagstr = 'WARN'
+                    
+            #now,group,combo,device1,device2,delta_dev1_dev2,delta_dev1_bthost,delta_dev1_myhost,delta_dev2_bthost,delta_dev2_myhost,timestr1,dtm1,timestr2,dtm2,flagstr               
+            row = '\n%s,%d,%d,%s,%s,%.1f,%.1f,%.1f,%.1f,%.1f,%s,%s,%s,%s,%s' % (
+                grp_time.strftime('%Y-%m-%d %H:%M:%S'),
+                grp_count,
+                combo_count,
+                c[0],
+                c[1],
+                delta_dev1_dev2,
+                delta_dev1_bthost,
+                delta_dict[c[0]][3],
+                delta_dict[c[1]][2],
+                delta_dict[c[1]][3],
+                delta_dict[c[0]][0],
+                delta_dict[c[0]][1],
+                delta_dict[c[1]][0],
+                delta_dict[c[1]][1],
+                flagstr
+            )
+            append2csv(row)
+
+        print '-' * 11
+
+def append2csv(row, csv_file='/misc/yoda/www/plots/user/sams/status/devicedigest.csv'):
+    fd = open(csv_file, 'a')
+    fd.write(row)
+    fd.close()
 
 def show_params():
-    print 'TSHs'
-    print parameters['tshs']
-    print 'Groups'
+    print 'GMT Offset = %d' % parameters['gmtoffset']
+    grp_count = 0
+    print 'GROUPS'
     for g in parameters['groups']:
-        print g
-    print 'GMT Offset'
-    print parameters['gmtoffset']    
+        grp_count += 1
+        combo_count = 0
+        for c in combinations(g, 2):
+            combo_count += 1
+            print 'Group', grp_count, 'Combo', combo_count, ':', c
+        print '-' * 11
 
 def main(argv):
     """describe what this routine does here"""
@@ -95,7 +163,7 @@ def main(argv):
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
-            show_params()
+            #show_params()
             digest_file()
             return 0
     printUsage()  

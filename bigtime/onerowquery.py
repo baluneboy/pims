@@ -53,6 +53,21 @@ def query_timestamp_kludge(ee_id, table='ee_packet', schema='samsmon', host='yod
         utime = dtm2unix( result[0][0] )
     return utime    
 
+# return unixtime query result from ku_timestamp gse_packet db table or None (if empty)
+def query_ku_timestamp(table='gse_packet', schema='samsmon', host='yoda'):
+    """return unixtime query result from ku_timestamp gse_packet db table or None (if empty)"""
+    utime = None
+    con = mysql_con_yoda(db=schema)
+    cursor = con.cursor()
+    query = 'select ku_timestamp from %s.%s order by ku_timestamp desc limit 1;' % (schema, table)
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.close()
+    con.close()
+    if result:
+        utime = dtm2unix( result[0][0] )
+    return utime  
+
 def demo():
     from pims.utils.pimsdateutil import unix2dtm
     for table in ['es03rt', 'es05rt', 'es06rt', '121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt']:
