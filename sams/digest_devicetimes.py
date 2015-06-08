@@ -4,15 +4,14 @@ import os
 import sys
 import datetime
 from itertools import combinations
+import pandas as pd
 
 from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimestr
-
-#digest_devicetimes tshs=es03rt,es05rt,es06rt groups=122-f02+121f03rt+121f04rt,122-f03+121f05rt,122-f04+121f02rt+121f08rt gmtoffset=0
 
 # input parameters
 defaults = {
 #                comma-sep values for plus groups    
-'groups':       '122-f02+122-f03+122-f04,122-f02+121f03rt+121f04rt,122-f03+121f05rt,122-f04+121f02rt+121f08rt',
+'groups':       '122-f02+122-f03+122-f04+Ku_AOS,122-f02+121f03rt+121f04rt,122-f03+121f05rt,122-f04+121f02rt+121f08rt',
 'gmtoffset':    '0', # hour offset from this system clock's time and GMT (like -4 or -5 for Eastern time)
 }
 parameters = defaults.copy()
@@ -26,14 +25,6 @@ def parametersOK():
     if parameters['gmtoffset'] not in [0, -4, -5]:
         print 'Unexpected gmtoffset %d' % parameters['gmtoffset']
         return False
-
-    ## split groups string into list
-    #tmplist = parameters['groups'].split(',')
-    #parameters['groups'] = []
-    #for grp in [ g.split('+') for g in tmplist ]:
-    #    d = {}
-    #    d[grp[0]] = grp[1:]
-    #    parameters['groups'].append(d)
 
     # split out the groups into lists
     tmplist = parameters['groups'].split(',')
@@ -106,8 +97,8 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
             delta_dev1_bthost = delta_dict[c[0]][2]
             
             flagstr = 'ERROR'
-            if abs(delta_dev1_dev2) < 2:
-                if (12 < delta_dev1_bthost) and (delta_dev1_bthost < 17):
+            if abs(delta_dev1_dev2) < 3:
+                if (9 < delta_dev1_bthost) and (delta_dev1_bthost < 18):
                     flagstr = 'OKAY'
                 else:
                     flagstr = 'WARN'
@@ -138,6 +129,13 @@ def append2csv(row, csv_file='/misc/yoda/www/plots/user/sams/status/devicedigest
     fd = open(csv_file, 'a')
     fd.write(row)
     fd.close()
+
+def csv_to_lastfew_dataframe(n = 4, csv_file='/misc/yoda/www/plots/user/sams/status/devicedigest.csv'):
+    df = pd.read_csv(csv_file)
+    lastfew = sorted(pd.unique(df['now']))[-n:]
+    df_recentfew = df[df['now'].isin(lastfew)]
+    df_recentfew = df_recentfew.sort(['now', 'group', 'combo'], ascending=[False, True, True])
+    return df_recentfew
 
 def show_params():
     print 'GMT Offset = %d' % parameters['gmtoffset']

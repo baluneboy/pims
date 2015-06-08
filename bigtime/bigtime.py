@@ -15,9 +15,9 @@ from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
 SLEEP = 0.7           # seconds between event loop updates
-VERTOFFSET = 50      # vertical offset between gray rect bars (default 200)
+VERTOFFSET = 200      # vertical offset between gray rect bars (default 200)
 SCREEN_PCT =  90      # screen width/height that window occupies
-FONTSIZE = 24        # bigtime font size (default 145)
+FONTSIZE = 145        # bigtime font size (default 145)
 COLORS = {
     'white':  (255, 255, 255),
     'yellow': (255, 255,  50),
@@ -125,10 +125,10 @@ def run(time_machines):
                 rect.top += VERTOFFSET
             
             if f:
-                if not tm.prefix.startswith('122'):
-                    msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
-                else:
+                if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
                     msg = '\n%s %s %s' % (logstr, tm.prefix, tm.time_getter.table)
+                else:
+                    msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
                 f.write(msg)
 
         if f:
