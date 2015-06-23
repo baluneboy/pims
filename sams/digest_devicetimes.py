@@ -124,13 +124,18 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
             append2csv(row)
 
         print '-' * 11
+        
+    # keep last few entries
+    df = csv_to_lastfew_dataframe()
+    df.to_csv('/misc/yoda/www/plots/user/sams/status/digest.csv', index=False)
 
-def append2csv(row, csv_file='/misc/yoda/www/plots/user/sams/status/devicedigest.csv'):
-    fd = open(csv_file, 'a')
-    fd.write(row)
-    fd.close()
+def append2csv(row, csv_files=['/misc/yoda/www/plots/user/sams/status/devicedigest.csv', '/misc/yoda/www/plots/user/sams/status/digest.csv']):
+    for csv_file in csv_files:
+        fd = open(csv_file, 'a')
+        fd.write(row)
+        fd.close()
 
-def csv_to_lastfew_dataframe(n = 4, csv_file='/misc/yoda/www/plots/user/sams/status/devicedigest.csv'):
+def csv_to_lastfew_dataframe(n=4, csv_file='/misc/yoda/www/plots/user/sams/status/digest.csv'):
     df = pd.read_csv(csv_file)
     lastfew = sorted(pd.unique(df['now']))[-n:]
     df_recentfew = df[df['now'].isin(lastfew)]

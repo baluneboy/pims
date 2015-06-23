@@ -5,9 +5,11 @@ import os
 import sys
 import csv
 import numpy as np
+import scipy.io as spio
 import pandas as pd
 import datetime
 from cStringIO import StringIO
+
 from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime, datestr_to_datetime
 from pims.files.utils import mkdir_p, most_recent_file_with_suffix
 from pims.database.samsquery import CuMonthlyQuery, _HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS
@@ -200,6 +202,56 @@ def msg_cir_fir_sto2dataframe(stofile):
     df.TSH_ES05_CIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES05_CIR_Power_Status.values ]
     df.TSH_ES06_FIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES06_FIR_Power_Status.values ]
 
+    return df
+
+# read MERLIN3 NRT List Request output (sto, tab delimited) file into dataframe
+def merlin3_sto2dataframe(stofile):
+    """read ascii MERLIN3 sto file into dataframe"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    # use Ken's nomenclature to rename column labels    
+    msid_map = {
+        'UGZG20RT2005U': 'Sequence_Counter',
+        'UGZG20RT2024U': 'MERLIN3_Time',
+        'UGZG20RT2040J': 'Temperature_Control_Mode',
+        'UGZG20RT2042J': 'Experiment_Volume_Fan',
+        'UGZG20RT2073T': 'Set_Point_Temperature',
+        'UGZG20RT2081T': 'Current_Set_Point_Temp',
+        'UGZG20RT2077R': 'Current_Ramp_Rate',
+        'UGZG20RT2158J': 'External_Fan_Mode',    
+        }
+    
+    dout = {}
+    dout['casGMT'] = df['GMT'].values
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+        dout[v] = df[v].values
+
+    spio.savemat('/tmp/merlin3.mat', dout)
     return df
 
 # read POLAR NRT List Request output (sto, tab delimited) file into dataframe
@@ -716,12 +768,80 @@ def main(csvfile, resource_csvfile):
     print 'wrote %s' % csvout
 
 def process_polar():
-    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_POLAR_Effect_on_60Hz_RMS/polar.sto'
+    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_POLAR_Effect_on_60Hz_RMS/polar_day110.sto'
     df = polar_sto2dataframe(stofile)
     df.to_csv( stofile.replace('.sto', '.csv') )
     
 #process_polar()
 #raise SystemExit
+
+def process_merlin3():
+    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
+    df = merlin3_sto2dataframe(stofile)
+    df.to_csv( stofile.replace('.sto', '.csv') )
+    
+#process_merlin3()
+#raise SystemExit    
+
+# read NRT List Request output (sto, tab delimited) file into dataframe
+def sto2dataframe(stofile, msid_map):
+    """read ascii sto file into dataframe"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+
+    return df
+
+# read stofile and convert to matlab mat file
+def sto2mat(stofile, msid_map):
+    """
+    1. read sto file into dataframe
+    2. use msid_map dictionary to map MSIDs to matlab variable names
+    3. get rid of other columns (where msid_map key is same as value)
+    4. convert dataframe to matlab mat file (same name as sto file with mat extension)
+    """
+    df = sto2dataframe(stofile, msid_map)
+    return df
+
+stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
+msid_map = {
+    'UGZG20RT2005U': 'Sequence_Counter',
+    'UGZG20RT2024U': 'MERLIN3_Time',
+    'UGZG20RT2040J': 'Temperature_Control_Mode',
+    'UGZG20RT2042J': 'Experiment_Volume_Fan',
+    'UGZG20RT2073T': 'Set_Point_Temperature',
+    'UGZG20RT2081T': 'Current_Set_Point_Temp',
+    'UGZG20RT2077R': 'Current_Ramp_Rate',
+    'UGZG20RT2158J': 'External_Fan_Mode',    
+    }
+df = sto2mat(stofile, msid_map)
+print df
+raise SystemExit
 
 if __name__ == '__main__':
     

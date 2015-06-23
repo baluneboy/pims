@@ -149,8 +149,8 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     # FIXME if sensor suffix is "one", then scale a bit smaller to maybe 0.83?
     def _get_pdfjam_cmd(self):
         xoffset, yoffset = -4.25, 1.0
-        #scale = 0.86
-        scale = 0.78
+        scale = 0.86
+        #scale = 0.78
         orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
