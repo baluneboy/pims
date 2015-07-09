@@ -655,22 +655,28 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
 
-    ### MSG1 ###
+    ### MSG OUTLET #1 ###
     # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
     df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
     
     # normalize to change CLOSED to one, and OPENED to zero
     df_msg1.MSG_Outlet1_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg1.MSG_Outlet1_Status.values ]    
     
+    # replace NaNs wit zeros
+    df_msg1.fillna(0)
+    
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
 
-    ### MSG2 ###
+    ### MSG OUTLET #2 ###
     # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
     df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
     
     # normalize to change CLOSED to one, and OPENED to zero
     df_msg2.MSG_Outlet2_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg2.MSG_Outlet2_Status.values ]    
+    
+    # replace NaNs wit zeros
+    df_msg2.fillna(0)
     
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
@@ -839,9 +845,9 @@ msid_map = {
     'UGZG20RT2077R': 'Current_Ramp_Rate',
     'UGZG20RT2158J': 'External_Fan_Mode',    
     }
-df = sto2mat(stofile, msid_map)
-print df
-raise SystemExit
+#df = sto2mat(stofile, msid_map)
+#print df
+#raise SystemExit
 
 if __name__ == '__main__':
     

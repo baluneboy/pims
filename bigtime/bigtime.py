@@ -28,9 +28,9 @@ COLORS = {
 }
 
 FORMATTERS = {
-    'GMT':    lambda x: '%18s' % x,
-    'Device': lambda x: '%10s' % x,
-    'Type':   lambda x: '%6s'  % x,    
+    'GMT':    lambda x: '%17s' % x,
+    'Device': lambda x: '%8s' % x,
+    'Type':   lambda x: '%4s'  % x,    
 }
 
 #FF0000 is RED
@@ -43,9 +43,8 @@ HEADER = '''
             SAMS Device Times
         </title>
         <style>
-            .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 16px; }
-            .host tbody tr { background-color: #000000; color: #FFFFFF; white-space: pre; font-family: monospace; font-size: 16px; }
-            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 16px; }
+            .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 14px; }
+            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }
         </style>
     </head>
     <body>
