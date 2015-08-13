@@ -62,8 +62,8 @@ subdirPattern = 'sams2_accel_121f0[28].*'
 dirpath = r'/misc/yoda/pub/pad/year2015/month01/day01'
 predicate = re.compile(os.path.join(dirpath, subdirPattern)).match
 for dirname in filter_dirnames(dirpath, predicate):
-    print 'mkdir %s/beforeswapfix' % dirname
-    print 'mv %s/* %s/beforeswapfix/' % (dirname, dirname)
+    print 'mkdir %s/beforefixswap' % dirname
+    print 'mv %s/* %s/beforefixswap/' % (dirname, dirname)
 raise SystemExit
 
 def show_headers_tally():

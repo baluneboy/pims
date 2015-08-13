@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="6340720f-7c89-42a7-80c8-a512c9c03c4d" kpf_version="5" name="bigtime.komodoproject">
+<file id="07c73d4a-5a6b-4d11-a329-6e0a88061b1c" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="debug_helper.py" url="bigtime/debug_helper.py">
+</file>
 <file id="22698ffa-7f74-4df0-9bc5-02de92eb9b0e" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="samsquery.py" url="database/samsquery.py">
 </file>
 <file id="6a8a1c97-0c1e-4f61-b416-0e17d8faa874" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="fontmgr.py" url="bigtime/fontmgr.py">

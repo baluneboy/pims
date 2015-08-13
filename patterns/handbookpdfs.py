@@ -9,6 +9,7 @@ __all__ = [
     '_OSSBTMFROADMAPPDF_PATTERN',
     '_RADGSEROADMAPNUP1X2PDF_PATTERN',    
     '_SPGXROADMAPPDF_PATTERN',
+    '_SPGXPLOTPDF_PATTERN',
     '_INTSTATPDF_PATTERN',
     '_PLOTTYPES',
     '_ABBREVS',
@@ -17,6 +18,7 @@ __all__ = [
     '_CHIMPDF_PATTERN',
     '_CVFSROADMAPPDF_PATTERN',
     '_RVTXPDF_PATTERN',
+    '_SUFFIX_CALLOUTS',
     ]
 
 #/tmp/pth/1qualify_notes.pdf
@@ -24,19 +26,33 @@ __all__ = [
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<notes>.*)\.pdf\Z
 _HANDBOOKPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
 
+##---------------------------
+#_SUFFIX_CALLOUTS = (
+#    ".*/"                                       # path at the start, then
+#    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
+#    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+#    "_"                                         # underscore, then
+#    "(?P<notes>.*)"                             # notes, then
+#    "_xoff_(?P<xoffset>[-+]?\d*\.\d+|\d+)"      # xoffset in cm, then
+#    "_yoff_(?P<yoffset>[-+]?\d*\.\d+|\d+)"      # yoffset in cm, then
+#    "_scale_(?P<scale>[-+]?\d*\.\d+|\d+)"       # scale, then
+#    "_ori_(?P<orient>portrait|landscape)"       # orientation portrait or landscape, then    
+#    "\.pdf\Z"                                   # extension to finish
+#    )
+
 #/tmp/pth/3qualify_2013_09_01_121f05006_irmsy_entire_month.pdf
 #-------------------------------------------------------------
 #.*(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>[\d_\.]*)_(?P<sensor>.*)_(?P<plot_type>imm|irms)(?P<axis>.)_(?P<notes>.*)\.pdf
 _INTSTATPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>[\d_\.]*)"                     # timestr, then    
@@ -53,7 +69,7 @@ _INTSTATPDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>radgse)_roadmapnup1x2(?P<notes>.*)\.pdf\Z
 _RADGSEROADMAPNUP1X2PDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -69,7 +85,7 @@ _RADGSEROADMAPNUP1X2PDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>ossbtmf)_roadmap(?P<notes>.*)\.pdf\Z
 _OSSBTMFROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -85,7 +101,7 @@ _OSSBTMFROADMAPPDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_roadmaps(?P<sample_rate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf\Z
 _SPGXROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -99,12 +115,30 @@ _SPGXROADMAPPDF_PATTERN = (
     "\.pdf\Z"                                   # extension to finish
     )
 
+#/tmp/4qualify_2015_05_14_13_30_00_121f05_spgs_airlock_hatch_activities
+#--------------------------------------------------------------------
+#
+_SPGXPLOTPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
+    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
+    "_"                                         # underscore, then
+    "(?P<timestr>.*)"                           # timestr, then    
+    "_"                                         # underscore, then
+    "(?P<sensor>.*)"                            # sensor, then
+    "_(?P<plot_type>spg)"                       # underscore spg, then
+    "(?P<axis>.)"                               # axis, then
+    "_"                                         # underscore, then
+    "(?P<notes>.*)"                             # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
 #/tmp/1qualify_2013_10_01_16_00_00.000_121f02ten_spgs_roadmaps500.pdf
 #--------------------------------------------------------------------
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_roadmaps(?P<sample_rate>[0-9]*[p\.]?[0-9]+)(?P<notes>.*)\.pdf\Z
 _PCSAROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -123,7 +157,7 @@ _PCSAROADMAPPDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>rvt)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
 _RVTXPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -141,7 +175,7 @@ _RVTXPDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
 _PSD3ROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -157,7 +191,7 @@ _PSD3ROADMAPPDF_PATTERN = (
 #-----------------------------------------------------------------------------
 _GVT3PDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -174,7 +208,7 @@ _GVT3PDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>chi)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
 _CHIMPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -191,7 +225,7 @@ _CHIMPDF_PATTERN = (
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<timestr>.*)_(?P<sensor>.*)_(?P<plot_type>\w*)(?P<axis>.)_(?P<notes>.*)\.pdf\Z
 _CVFSROADMAPPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1})"                           # a digit, then
+    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
     "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
     "_"                                         # underscore, then
     "(?P<timestr>.*)"                           # timestr, then    
@@ -249,14 +283,15 @@ def demo_hbfpat():
     input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Cygnus_Capture_Install/4quantify_2013_09_28_16_radgse_roadmapnup1x2.pdf'
     m = re.match( re.compile(_RADGSEROADMAPNUP1X2PDF_PATTERN), input_value)
 
-    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf'
-    m = re.match( re.compile(_SPGXROADMAPPDF_PATTERN), input_value)
-
     input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf'
     m = re.match( re.compile(_INTSTATPDF_PATTERN), input_value)
     
+    input_value = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Cygnus_Fan/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf'
+    m = re.match( re.compile(_SPGXROADMAPPDF_PATTERN), input_value)
+    
     if m is None:
-        raise ValueError('Invalid literal for PATTERN: %r' % input_value)
+        #raise ValueError('Invalid literal for PATTERN: %r' % input_value)
+        pass
     else:
         print 'timestr: %s' % m.group('timestr')
         print 'plot_type: %s' % m.group('plot_type')
@@ -273,22 +308,21 @@ def is_unique_handbook_pdf_match(fname):
     
     # use eval to get actual patterns from their __all__ names
     pats = [eval(x) for x in __all__ if x.endswith('PDF_PATTERN')]
+    #pats.append(eval('_SUFFIX_CALLOUTS'))
     
     # define predicate to quantify num matches (hopefully unique patterns!)
     is_matched = lambda pat : bool(re.match(pat, fname))
     num_matches = quantify(pats, is_matched)
-    
-    #print fname, num_matches
+       
+    #print num_matches, fname
     if num_matches == 1:
         return True
     else:
-        #print num_matches
+        #print num_matches, fname
         return False
 
 if __name__ == "__main__":
-    
-    #demo_hbfpat(); raise SystemExit
-
+       
     files = [
         '/tmp/9quantify_2014_09_25_08_30_00_121f08006_chim_compare_rodent_research_install.pdf',
         '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
@@ -301,6 +335,8 @@ if __name__ == "__main__":
         '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
         '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
         '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
+        '/tmp/1quantify_2015_05_12_09_00_00_0bbd_gvt3_airlock_hatch_activities_xoff_-4.22_yoff_1.00_scale_0.77_ori_landscape.pdf',
+        '/tmp//misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_BioLab_Centrifuge_Rotor/1qualify_2015_08_03_13_00_00_121f08_spgs_roadmaps500_biolab_centrifuge_rotor_test.pdf',
         ]
 
     for f in files:

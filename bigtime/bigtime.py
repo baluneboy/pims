@@ -10,7 +10,7 @@ from pygame.locals import QUIT
 import pandas as pd
 
 from fontmgr import FontManager
-from timemachine import RapidTimeGetter, TimeGetter, EeTimeGetter, KuTimeGetter, TimeMachine
+from timemachine import RapidTimeGetter, TimeGetter, EeTimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
 
 from pims.utils.pimsdateutil import unix2dtm
 
@@ -64,8 +64,8 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 12:
-        raise Exception('expected exactly 12 timemachine objects as input')
+    if len(time_machines) != 14:
+        raise Exception('expected exactly 14 timemachine objects as input')
 
     disp_host = socket.gethostname()
 
@@ -104,6 +104,7 @@ def run(time_machines):
     # event loop
     running = True
     while running:
+                
         clock.tick(30) # run at 30 fps
         screen.fill((0, 0, 0))
 
@@ -167,7 +168,7 @@ def run(time_machines):
                 dict_row = {}
                 dict_row['GMT'] = logstr
                 if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
-                    devi, dtab = tm.time_getter.table.split('_')
+                    devi, dtab = tm.time_getter.table.split('_')[0:2]
                     msg = '\n%s %s %s' % (logstr, tm.prefix, devi.upper())
                     dict_row['Device'] = tm.prefix
                     dict_row['Type'] = devi.upper()                
@@ -247,18 +248,21 @@ if __name__ == '__main__':
     bigs = [
         #    table  prefix  ExpDeltaSec   db host        time getter
         # -----------------------------------------------------------
-        ('gse_packet', 'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
-        ('ee_packet',  '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet',  '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet',  '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('es03rt',     'MSG',     SLEEP/6,  'chef',        TimeGetter),
-        ('es05rt',     'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
-        ('es06rt',     'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f02rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f03rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f04rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f05rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f08rt',   'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('gse_packet',   'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
+        ('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('es03rt',       'MSG',     SLEEP/6,  'chef',        TimeGetter),
+        ('es05rt',       'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
+        ('es06rt',       'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f02rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f03rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f04rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f05rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('121f08rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
+        ('hirap',        'MAM',     SLEEP/6,  'towelie',     HirapTimeGetter),
+        ('oss',          'MAM',     SLEEP/6,  'stan',        HirapTimeGetter),
+        #('xx00rt',       'XXX',     SLEEP/6,  'chef',        TimeGetter),        
     ]
 
     time_machines = []

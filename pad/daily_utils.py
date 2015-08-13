@@ -52,16 +52,22 @@ def show_pad_hours_for_day(date_str, subdirs):
         print '{0:>5.1f} {1:s}'.format(total_sec / 3600.0, subdir)
 
 if __name__ == "__main__":
+    
+    day_range = DayRange(one,two)
+    
     date_str = sys.argv[1]
+    
     if len(sys.argv) == 3:
         my_set = sys.argv[2]
     else:
         my_set = 'all'
+        
     if my_set == 'all':
         my_subdirs = SENSOR_SUBDIRS
     elif my_set == '006':
         my_subdirs = [ sd for sd in SENSOR_SUBDIRS if sd.endswith('006') ]
     elif my_set == 'cut':
         my_subdirs = [ sd for sd in SENSOR_SUBDIRS if not sd.endswith('006') ]
+    
     #show_pad_hours_for_day('2015-07-02', SENSOR_SUBDIRS)
     show_pad_hours_for_day(date_str, my_subdirs)

@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import re
+import sys
+
 from pims.patterns.dirnames import _HEADER_PATTERN
 
 def match_header_filename(full_name, pattern=_HEADER_PATTERN):
@@ -54,8 +56,28 @@ def match_header_filename(full_name, pattern=_HEADER_PATTERN):
     
     """
     return re.search( re.compile(pattern), full_name )
-  
-if __name__ == "__main__":
-    import doctest
-    doctest.testmod(verbose=True)
+
+def pad_start_stop(fname):
+    from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, format_datetime_as_pad_underscores    
+    start, stop = pad_fullfilestr_to_start_stop(fname)
+    return start, stop
+
+def pad_stop(fname):
+    start, stop = pad_start_stop(fname)
+    return stop
+
+def remedy_start(fname):
+    import datetime
+    start, stop = pad_start_stop(fname)   
+    remedy_start = stop + datetime.timedelta(seconds=1)
+    return remedy_start
     
+if __name__ == "__main__":
+    if len(sys.argv) == 1:
+        import doctest
+        doctest.testmod(verbose=True)
+    elif len(sys.argv) == 3:
+        from pims.utils.pimsdateutil import format_datetime_as_pad_underscores    
+        fname = sys.argv[2]
+        gmt = eval( sys.argv[1] + "('" + fname + "')" )
+        print format_datetime_as_pad_underscores(gmt)

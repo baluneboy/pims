@@ -194,6 +194,8 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UEZE04RT1394C': 'ER4_Drawer2_Current',
         'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
         'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE06RT1578J': 'ER6_Locker3_Status',
+        'UEZE06RT1389C': 'ER6_Locker3_Current',        
         }
     for k, v in msid_map.iteritems():
         df.rename(columns={k: v}, inplace=True)
@@ -834,18 +836,38 @@ def sto2mat(stofile, msid_map):
     df = sto2dataframe(stofile, msid_map)
     return df
 
-stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
-msid_map = {
-    'UGZG20RT2005U': 'Sequence_Counter',
-    'UGZG20RT2024U': 'MERLIN3_Time',
-    'UGZG20RT2040J': 'Temperature_Control_Mode',
-    'UGZG20RT2042J': 'Experiment_Volume_Fan',
-    'UGZG20RT2073T': 'Set_Point_Temperature',
-    'UGZG20RT2081T': 'Current_Set_Point_Temp',
-    'UGZG20RT2077R': 'Current_Ramp_Rate',
-    'UGZG20RT2158J': 'External_Fan_Mode',    
-    }
+#stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
+#msid_map = {
+#    'UGZG20RT2005U': 'Sequence_Counter',
+#    'UGZG20RT2024U': 'MERLIN3_Time',
+#    'UGZG20RT2040J': 'Temperature_Control_Mode',
+#    'UGZG20RT2042J': 'Experiment_Volume_Fan',
+#    'UGZG20RT2073T': 'Set_Point_Temperature',
+#    'UGZG20RT2081T': 'Current_Set_Point_Temp',
+#    'UGZG20RT2077R': 'Current_Ramp_Rate',
+#    'UGZG20RT2158J': 'External_Fan_Mode',    
+#    }
+#
+#
+#stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MAMS_Shutdown/mamshousekeeping.sto'  
+#msid_map = {
+#    'UVZV02RT1103U':    'MAMS_H&S_CYCLE_CNTR',
+#    'UVZV02RT1010J':    'MAMS_CURRENT',
+#    'UVZV02RT1004J':    'BCTA_CURRENT',
+#    'UVZV02RT1009J':    'POWER_SUPPLY_TEMP',
+#    'UVZV02RT1006J':    'OSS_BASE_TEMP',
+#    'UVZV02RT1005J':    'OSS_SENSOR_TEMP',
+#    'UVZV02RT1011J':    'OG_MOTOR_TEMP',
+#    'UVZV02RT1012J':    'FRONT_PANEL_TEMP',
+#    'UVZV02RT1001J':    'HIRAP_X_TEMP',
+#    'UVZV02RT1002J':    'HIRAP_Y_TEMP',
+#    'UVZV02RT1003J':    'HIRAP_Z_TEMP',
+#    'UVZV02RT1007J':    'MPCS_TEMP_1',
+#    'UVZV02RT1008J':    'MOIS_TEMP',
+#    'UVZV02RT1091J':    'MAMS_ECW_WORD',   
+#    }
 #df = sto2mat(stofile, msid_map)
+#df.to_csv( stofile.replace('.sto', '.csv') )
 #print df
 #raise SystemExit
 

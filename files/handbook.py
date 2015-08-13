@@ -59,6 +59,13 @@ class HandbookPdf(RecognizedFile):
 
     def _get_plot_type(self): return hbpat._PLOTTYPES['']
     
+    def match_suffix_callouts(self):
+        # if filename suffix matches callouts, then return True; otherwise False
+        return bool(re.match(_SUFFIX_CALLOUTS, self.name))
+
+    def get_offset_scale_orient(self):
+        raise SystemExit
+
 class OssBtmfRoadmapPdf(HandbookPdf):
     """
     OSSBTMF Roadmap PDF handbook file like this example:
@@ -148,15 +155,23 @@ class SpgxRoadmapPdf(OssBtmfRoadmapPdf):
     
     # FIXME if sensor suffix is "one", then scale a bit smaller to maybe 0.83?
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -4.25, 1.0
-        scale = 0.86
-        #scale = 0.78
-        orient = 'landscape'
+        if self.match_suffix_callouts():
+            xoffset, yoffset, scale, orient = self.get_offset_scale_orient()
+        else:
+            xoffset, yoffset = -4.25, 1.0
+            scale = 0.86
+            #scale = 0.78
+            orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
    
     def _get_plot_type(self): return hbpat._PLOTTYPES['spg']
     
     def _get_axis(self): return self._match.group('axis')
+
+class SpgxPlotPdf(SpgxRoadmapPdf):
+    
+    def __init__(self, name, pattern=hbpat._SPGXPLOTPDF_PATTERN, show_warnings=False):
+        super(SpgxPlotPdf, self).__init__(name, pattern, show_warnings=show_warnings)
 
 class RvtxPdf(SpgxRoadmapPdf):
     
@@ -181,13 +196,17 @@ class Psd3RoadmapPdf(SpgxRoadmapPdf):
     """
     def __init__(self, name, pattern=hbpat._PSD3ROADMAPPDF_PATTERN, show_warnings=False):
         super(Psd3RoadmapPdf, self).__init__(name, pattern, show_warnings=show_warnings)
+        print self.match_suffix_callouts()
 
     def _get_plot_type(self): return hbpat._PLOTTYPES['psd']
 
     def _get_pdfjam_cmd(self):
-        xoffset, yoffset = -4.25, 1.0
-        scale = 0.82
-        orient = 'landscape'
+        if self.match_suffix_callouts():
+            xoffset, yoffset, scale, orient = self.get_offset_scale_orient()
+        else:        
+            xoffset, yoffset = -4.25, 1.0
+            scale = 0.82
+            orient = 'landscape'
         return HandbookPdfjamCommand(self.name, xoffset=xoffset, yoffset=yoffset, scale=scale, orient=orient)
 
 class Gvt3Pdf(SpgxRoadmapPdf):
@@ -243,7 +262,6 @@ class IntStatPdf(SpgxRoadmapPdf):
    
     def _get_plot_type(self): return hbpat._PLOTTYPES['ist']
 
-# FIXME do some log.info
 class HandbookPdfjamCommand(PdfjamCommand):
     """A custom pdfjam command handler."""
     def __init__(self, *args, **kwargs):
@@ -256,12 +274,11 @@ class HandbookPdfjamCommand(PdfjamCommand):
         pth, fn = os.path.split(tmp)
         return os.path.join(pth, self.subdir, fn)
 
-class OutputFileExistsError(Exception):
-    pass
-class OdtFileError(Exception):
-    pass
-class UnoconvError(Exception):
-    pass
+class OutputFileExistsError(Exception): pass
+
+class OdtFileError(Exception): pass
+
+class UnoconvError(Exception): pass
 
 # FIXME do some log.info
 class HandbookPdftkCommand(PdftkCommand):
@@ -462,7 +479,8 @@ class HandbookEntry(object):
             return err_msg
        
         try:
-            self.pdf_files = self._get_handbook_files()        
+            self.pdf_files = self._get_handbook_files()
+            print self.pdf_files; raise SystemExit
             self.log.process.info( 'Attempting to process %d pages from files in %s' % ( len(self.pdf_files), self.source_dir ) )
             self.graceful_mkdir_build()
             for f in self.pdf_files:
@@ -727,7 +745,8 @@ if __name__ == '__main__':
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Columbus_GLACIER-3')
     #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Bogus_Entry')
-    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Attitude_Catalog')
+    #hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_Attitude_Catalog')
+    hbe = HandbookEntry(source_dir='/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Just_Testing_Script')
     
     if True: # True for process_pages (the first stage), False for process_build (the last stage)
         
