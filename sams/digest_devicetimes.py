@@ -3,10 +3,14 @@
 import os
 import sys
 import datetime
+import subprocess
 from itertools import combinations
 import pandas as pd
 
 from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimestr
+
+MAX_ABS_DELTA_KU = 2
+SOUND_DEVICES = ['122-f02', '122-f03', '122-f04', '121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt']
 
 # input parameters
 defaults = {
@@ -39,7 +43,7 @@ def printUsage():
     for i in defaults.keys():
         print '\t%s=%s' % (i, defaults[i])
 
-def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'):
+def OLD_COMBO_STYLE_digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'):
     """digest device times file"""
     
     host_now = datetime.datetime.now() + datetime.timedelta(hours=parameters['gmtoffset'])
@@ -60,7 +64,7 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
                 timestr, device, suffix = line.rstrip('\n').split(' ')
                 try:
                     dtm = doytimestr_to_datetime(timestr)
-                    if suffix == 'host':
+                    if suffix.lower() == 'host':
                         host = device
                         dtm_host = dtm
                     delta_host = (dtm - dtm_host).total_seconds()
@@ -125,9 +129,84 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
 
         print '-' * 11
         
-    # keep last few entries
-    df = csv_to_lastfew_dataframe()
+    ## keep last few entries
+    #df = csv_to_lastfew_dataframe()
+    
+    # write to csv
     df.to_csv('/misc/yoda/www/plots/user/sams/status/digest.csv', index=False)
+
+def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'):
+    """digest device times file"""
+    
+    host_now = datetime.datetime.now() + datetime.timedelta(hours=parameters['gmtoffset'])
+    
+    #########################################################
+    ### FIRST PASS GETS HOST DELTA AND JUST KU DELTA AS NONE
+    #                                                                                      None INITIALLY for last in tuple
+    #                                                                                      V
+    # build delta_dict: {  deviceN:  (timestr, datetime_of_timestr, deltasec_bigtime_host, deltasec_ku) }
+    # ...could be like: { '122-f03': ('2015:154:12:07:16', datetime.datetime(2015, 6, 3, 12, 7, 16), -284.0, None) }
+    # ...could be like: { 'butters': ('2015:154:12:12:00', datetime.datetime(2015, 6, 3, 12, 12   ),    0.0, None) }
+    delta_dict = {}
+    with open(txt_file, 'r') as f:
+        parsing = False
+        for line in f.readlines():
+            
+            if line.startswith('end'):
+                parsing = False
+                
+            # this relies on bigtime (butters) host entry being first in order to get delta_host info
+            if parsing:
+                timestr, device, suffix = line.rstrip('\n').split(' ')
+                try:
+                    dtm = doytimestr_to_datetime(timestr)
+                    if suffix.lower() == 'host':
+                        host = device
+                        dtm_host = dtm
+                    delta_host = (dtm - dtm_host).total_seconds()
+                    delta_ku = None
+                    #print '%s %s %.1f %.1f' % (datetime_to_doytimestr(dtm)[:-7], device, delta_host, delta_ku)
+                    delta_dict[device] = (datetime_to_doytimestr(dtm)[:-7], dtm, delta_host, delta_ku)
+                except:
+                    #print timestr, device, None, None
+                    delta_dict[device] = (timestr, None, None, None)
+                    
+            if line.startswith('begin'):
+                parsing = True
+
+    #########################################################
+    ### SECOND PASS GETS KU DELTA VALUES
+    #
+    ku_time = delta_dict['Ku_AOS'][1]
+
+    # dummy record for machine [jimmy] that is doing digesting
+    delta_ku = (host_now - ku_time).total_seconds()
+    delta_host = (host_now - dtm_host).total_seconds()
+    #print "digester", datetime_to_doytimestr(host_now)[:-7], delta_host, delta_ku,
+    row = "\n%s,%s,%.1f,%.1f" % ("digester", datetime_to_doytimestr(host_now)[:-7], delta_host, delta_ku)
+    
+    # now iterate to get other delta_ku's
+    any_bad_delta_ku = False
+    for key in sorted(delta_dict):
+        dtm = delta_dict[key][1]
+        delta_ku = (dtm - ku_time).total_seconds()
+        if abs(delta_ku) > MAX_ABS_DELTA_KU and (key in SOUND_DEVICES):
+            any_bad_delta_ku = True
+        delta_host = delta_dict[key][2]
+        #print key, datetime_to_doytimestr(dtm)[:-7], delta_host, delta_ku,
+        row += "\n%s,%s,%.1f,%.1f" % (key, datetime_to_doytimestr(dtm)[:-7], delta_host, delta_ku)
+        
+    append2csv(row, csv_files=['/misc/yoda/www/plots/user/sams/status/digest.csv'])
+    
+    # if any bad delta ku, then play very alarmed sound; otherwise, mild europa
+    if any_bad_delta_ku:
+        p = subprocess.Popen(['play', '/home/pims/Music/very_alarmed.mp3'])
+    else:
+        now = datetime.datetime.now()
+        if now.minute == 0:
+            p = subprocess.Popen(['play', '/home/pims/Music/mild_europa.mp3'])
+        elif now.minute == 30:
+            p = subprocess.Popen(['play', '/home/pims/Music/halfhourchime.mp3'])
 
 def append2csv(row, csv_files=['/misc/yoda/www/plots/user/sams/status/devicedigest.csv', '/misc/yoda/www/plots/user/sams/status/digest.csv']):
     for csv_file in csv_files:
@@ -173,3 +252,4 @@ def main(argv):
 
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
+    

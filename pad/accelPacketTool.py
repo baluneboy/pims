@@ -425,7 +425,8 @@ def main(argv):
         #print pd.Timestamp( np.datetime64('2012-05-01T01:00:00.000000') )
         #df_cat['ccsds_sec_delta'] = df_cat['ccsds_time_delta'].map(tdelta2sec)
         
-        print df_cat
+        #print df_cat
+        df_cat.to_csv('/tmp/es03.csv', index=False, header=True)
 
         return 0
 

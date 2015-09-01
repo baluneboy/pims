@@ -3,6 +3,7 @@ import re
 import time
 import errno
 import shutil
+import pandas as pd
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
@@ -58,6 +59,18 @@ def tail(f, n, offset=0):
         if len(lines) >= to_read or pos == 0:
             return lines[-to_read:offset and -offset or None]
         avg_line_length *= 1.3
+
+def reshape_csv_file(csv_file, shape_tuple):
+    # reshape the data
+    df = pd.read_csv(csv_file)
+    data = df.values
+    a = data.reshape(shape_tuple)
+    df_new = pd.DataFrame(a)
+    
+    # write new shaped data to new csv file
+    new_file = csv_file + '.RESHAPED.csv'
+    df_new.to_csv(new_file, index=False, header=False)
+    print 'wrote ' + new_file
 
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:
