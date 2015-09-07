@@ -5,6 +5,8 @@
 </file>
 <file id="22698ffa-7f74-4df0-9bc5-02de92eb9b0e" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="samsquery.py" url="database/samsquery.py">
 </file>
+<file id="68bbe192-ebf0-425e-8339-6cb82f1b683c" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="devicetimes_updater.py" url="bigtime/devicetimes_updater.py">
+</file>
 <file id="6a8a1c97-0c1e-4f61-b416-0e17d8faa874" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="fontmgr.py" url="bigtime/fontmgr.py">
 </file>
 <file id="6e2eb1aa-2ccf-4ba5-8766-cf8edaa0900e" idref="6340720f-7c89-42a7-80c8-a512c9c03c4d" name="timemachine.py" url="bigtime/timemachine.py">
