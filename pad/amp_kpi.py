@@ -5,9 +5,11 @@ import os
 import sys
 import csv
 import numpy as np
+import scipy.io as spio
 import pandas as pd
 import datetime
 from cStringIO import StringIO
+
 from pims.utils.pimsdateutil import hours_in_month, doytimestr_to_datetime, datestr_to_datetime
 from pims.files.utils import mkdir_p, most_recent_file_with_suffix
 from pims.database.samsquery import CuMonthlyQuery, _HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS
@@ -192,6 +194,8 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UEZE04RT1394C': 'ER4_Drawer2_Current',
         'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
         'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE06RT1578J': 'ER6_Locker3_Status',
+        'UEZE06RT1389C': 'ER6_Locker3_Current',        
         }
     for k, v in msid_map.iteritems():
         df.rename(columns={k: v}, inplace=True)
@@ -200,6 +204,56 @@ def msg_cir_fir_sto2dataframe(stofile):
     df.TSH_ES05_CIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES05_CIR_Power_Status.values ]
     df.TSH_ES06_FIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES06_FIR_Power_Status.values ]
 
+    return df
+
+# read MERLIN3 NRT List Request output (sto, tab delimited) file into dataframe
+def merlin3_sto2dataframe(stofile):
+    """read ascii MERLIN3 sto file into dataframe"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    # use Ken's nomenclature to rename column labels    
+    msid_map = {
+        'UGZG20RT2005U': 'Sequence_Counter',
+        'UGZG20RT2024U': 'MERLIN3_Time',
+        'UGZG20RT2040J': 'Temperature_Control_Mode',
+        'UGZG20RT2042J': 'Experiment_Volume_Fan',
+        'UGZG20RT2073T': 'Set_Point_Temperature',
+        'UGZG20RT2081T': 'Current_Set_Point_Temp',
+        'UGZG20RT2077R': 'Current_Ramp_Rate',
+        'UGZG20RT2158J': 'External_Fan_Mode',    
+        }
+    
+    dout = {}
+    dout['casGMT'] = df['GMT'].values
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+        dout[v] = df[v].values
+
+    spio.savemat('/tmp/merlin3.mat', dout)
     return df
 
 # read POLAR NRT List Request output (sto, tab delimited) file into dataframe
@@ -603,22 +657,28 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
 
-    ### MSG1 ###
+    ### MSG OUTLET #1 ###
     # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
     df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
     
     # normalize to change CLOSED to one, and OPENED to zero
     df_msg1.MSG_Outlet1_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg1.MSG_Outlet1_Status.values ]    
     
+    # replace NaNs wit zeros
+    df_msg1.fillna(0)
+    
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
 
-    ### MSG2 ###
+    ### MSG OUTLET #2 ###
     # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
     df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
     
     # normalize to change CLOSED to one, and OPENED to zero
     df_msg2.MSG_Outlet2_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg2.MSG_Outlet2_Status.values ]    
+    
+    # replace NaNs wit zeros
+    df_msg2.fillna(0)
     
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
@@ -716,11 +776,99 @@ def main(csvfile, resource_csvfile):
     print 'wrote %s' % csvout
 
 def process_polar():
-    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_POLAR_Effect_on_60Hz_RMS/polar.sto'
+    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_POLAR_Effect_on_60Hz_RMS/polar_day110.sto'
     df = polar_sto2dataframe(stofile)
     df.to_csv( stofile.replace('.sto', '.csv') )
     
 #process_polar()
+#raise SystemExit
+
+def process_merlin3():
+    stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
+    df = merlin3_sto2dataframe(stofile)
+    df.to_csv( stofile.replace('.sto', '.csv') )
+    
+#process_merlin3()
+#raise SystemExit    
+
+# read NRT List Request output (sto, tab delimited) file into dataframe
+def sto2dataframe(stofile, msid_map):
+    """read ascii sto file into dataframe"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+
+    return df
+
+# read stofile and convert to matlab mat file
+def sto2mat(stofile, msid_map):
+    """
+    1. read sto file into dataframe
+    2. use msid_map dictionary to map MSIDs to matlab variable names
+    3. get rid of other columns (where msid_map key is same as value)
+    4. convert dataframe to matlab mat file (same name as sto file with mat extension)
+    """
+    df = sto2dataframe(stofile, msid_map)
+    return df
+
+#stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
+#msid_map = {
+#    'UGZG20RT2005U': 'Sequence_Counter',
+#    'UGZG20RT2024U': 'MERLIN3_Time',
+#    'UGZG20RT2040J': 'Temperature_Control_Mode',
+#    'UGZG20RT2042J': 'Experiment_Volume_Fan',
+#    'UGZG20RT2073T': 'Set_Point_Temperature',
+#    'UGZG20RT2081T': 'Current_Set_Point_Temp',
+#    'UGZG20RT2077R': 'Current_Ramp_Rate',
+#    'UGZG20RT2158J': 'External_Fan_Mode',    
+#    }
+#
+#
+#stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MAMS_Shutdown/mamshousekeeping.sto'  
+#msid_map = {
+#    'UVZV02RT1103U':    'MAMS_H&S_CYCLE_CNTR',
+#    'UVZV02RT1010J':    'MAMS_CURRENT',
+#    'UVZV02RT1004J':    'BCTA_CURRENT',
+#    'UVZV02RT1009J':    'POWER_SUPPLY_TEMP',
+#    'UVZV02RT1006J':    'OSS_BASE_TEMP',
+#    'UVZV02RT1005J':    'OSS_SENSOR_TEMP',
+#    'UVZV02RT1011J':    'OG_MOTOR_TEMP',
+#    'UVZV02RT1012J':    'FRONT_PANEL_TEMP',
+#    'UVZV02RT1001J':    'HIRAP_X_TEMP',
+#    'UVZV02RT1002J':    'HIRAP_Y_TEMP',
+#    'UVZV02RT1003J':    'HIRAP_Z_TEMP',
+#    'UVZV02RT1007J':    'MPCS_TEMP_1',
+#    'UVZV02RT1008J':    'MOIS_TEMP',
+#    'UVZV02RT1091J':    'MAMS_ECW_WORD',   
+#    }
+#df = sto2mat(stofile, msid_map)
+#df.to_csv( stofile.replace('.sto', '.csv') )
+#print df
 #raise SystemExit
 
 if __name__ == '__main__':

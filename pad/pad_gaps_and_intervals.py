@@ -291,8 +291,8 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-03-14')
-    dstop =  parser.parse('2015-03-31')
+    dstart = parser.parse('2015-07-25')
+    dstop =  parser.parse('2015-07-26')
     maxgapsec = 17.0
 
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
@@ -467,15 +467,15 @@ def trim_span(start, stop, maxgapsec=17, JIMMY_DIR='/data/pad', YODA_DIR='/misc/
         # classify & process yoda headers for this sensor/day combo
         process_yoda_header_files(hig_yoda.headers[sensday], intervals, new_path)
 
-def my_demo():
-    start = parser.parse('2015-03-20')
-    stop =  parser.parse('2015-03-21')
-    maxgapsec = 17.0
-    #trim_span(start, stop, maxgapsec=maxgapsec)
-    trim_span(start, stop, maxgapsec=maxgapsec, JIMMY_DIR='/data/tmp/pad', YODA_DIR='/data/perm/pad')
-
-my_demo()
-raise SystemExit
+#def my_demo():
+#    start = parser.parse('2015-03-20')
+#    stop =  parser.parse('2015-03-21')
+#    maxgapsec = 17.0
+#    #trim_span(start, stop, maxgapsec=maxgapsec)
+#    trim_span(start, stop, maxgapsec=maxgapsec, JIMMY_DIR='/data/tmp/pad', YODA_DIR='/data/perm/pad')
+#
+#my_demo()
+#raise SystemExit
 
 # iterate over day directory (only sams2 subdirs for now)
 def main(daydir):

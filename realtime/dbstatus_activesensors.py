@@ -13,7 +13,7 @@ from pims.database.pimsquery import db_connect
 # table names (i.e. sensors) to ignore that would otherwise get displayed note
 # that these might not have sensor sample rate or location, so it's not an
 # active sensor
-_IGNORE = [ 'es05rt', 'es06rt', '121f05rt', '121f08badtime', '121f08goodtime', 'Abias',
+_IGNORE = [ 'es03rt', 'es05rt', 'es06rt', '121f05rt', '121f08badtime', '121f08goodtime', 'Abias',
 			'Abiasavg', 'Bbias', 'Bbiasavg', 'besttmf', 'Cbias', 'Cbiasavg',
 			'cmg', 'finalbias_combine', 'gse', 'hirap_bogus', 'housek',
 			'mcor_121f03', 'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
@@ -46,7 +46,7 @@ def get_samplerate(p):
 
 if __name__ == '__main__':
 	pimsComputers = ['chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
-	pimsComputers.remove('manbearpig')
+	#pimsComputers.remove('manbearpig')
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
 
@@ -117,4 +117,5 @@ if __name__ == '__main__':
 					rate = '%.1f' % get_samplerate(packet)
 					
 					# output text
+					if (c == 'manbearpig') and (sensor != 'es03'): continue
 					print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, sensor, count, minTime, maxTime, age, rate, loc)

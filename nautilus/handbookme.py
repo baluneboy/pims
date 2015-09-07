@@ -55,16 +55,18 @@ def main(curdir):
     # Verify curdir matches pattern (this works even in build subdir, which is a good thing)
     match = re.search( re.compile(_HANDBOOKDIR_PATTERN), curdir )
 
-    # THIS IS WHERE WE DO BRANCHING BASED ON...
-    # whether we are in the "build" subdir or the source_dir
+    ########################################################################################
+    # this is where we do branching based on if we are in "build" subdir or source_dir
     if match:
         #alert( match.string )
-        if match.string.endswith('build'):
-            #alert( 'we are in build directory, so finalize')
-            msg, hbe = finalize( os.path.dirname(curdir) )
-        else:
-            #alert( 'we are in source_dir, so create build')
+        if not match.string.endswith('build'):
+            #------------------------------------------------------
+            #alert( 'WE ARE IN SOURCE_DIR, SO DO INITIAL BUILD')
             msg, hbe = do_build(curdir)
+        else:
+            #------------------------------------------------------
+            #alert( 'WE ARE IN BUILD DIRECTORY, SO FINALIZE')
+            msg, hbe = finalize( os.path.dirname(curdir) )
     else:
         msg = 'ABORT: ignore non-hb dir'
         hbe = None

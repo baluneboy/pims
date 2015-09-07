@@ -11,6 +11,12 @@ _YODAPATH  = "/misc/yoda"
 _PLOTSPATH = "/misc/yoda/www/plots"
 
 ###############################################################################################################################
+#sams2_accel_121f05006
+_SENSOR_SUBDIR_PATTERN = (
+    "\A(?P<system>.*)_(?P<category>accel|rad)_(?P<sensor>.*)\Z"
+    )
+
+###############################################################################################################################
 #/misc/yoda/pub/pad/year2013/month11/day01/sams2_accel_121f05/2013_11_01_23_52_29.944-2013_11_02_00_02_29.959.121f05.header
 #/misc/yoda/pub/pad/year2015/month03/day29/iss_rad_radgse/2015_03_29_09_39_21.609+2015_03_29_11_39_17.480.radgse.header
 _PADPATH_PATTERN = "(?P<ymdpath>%s/pub/pad/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _YODAPATH

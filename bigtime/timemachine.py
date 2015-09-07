@@ -6,7 +6,7 @@ from itertools import cycle
 from collections import deque
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from onerowquery import query_onerow_unixtime, table_exists, query_timestamp_kludge, query_ku_timestamp
+from onerowquery import query_onerow_unixtime, table_exists, query_timestamp, query_ku_timestamp, query_hirap
 
 from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
@@ -34,6 +34,11 @@ class TimeGetter(object):
     def _get_time(self):
         return query_onerow_unixtime(self.table, host=self.host)
 
+class HirapTimeGetter(TimeGetter):
+    
+    def _get_time(self):
+        return query_hirap(self.table, host=self.host)
+
 # get yoda samsmon db ee_packet table timestamp
 class EeTimeGetter(TimeGetter):
     """get yoda samsmon db ee_packet table timestamp"""
@@ -43,7 +48,7 @@ class EeTimeGetter(TimeGetter):
         super(EeTimeGetter, self).__init__(*args, **kwargs)
 
     def _get_time(self):
-        return query_timestamp_kludge(self.ee_id, self.table, host=self.host)    
+        return query_timestamp(self.ee_id, self.table, host=self.host)    
 
 # get yoda samsmon db gse_packet table latest ku_timestamp
 class KuTimeGetter(TimeGetter):
