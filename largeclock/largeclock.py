@@ -29,7 +29,11 @@ def get_config():
             # attempt to read local config file
             #script_path = get_script_path()
             #config_file = os.path.join(script_path, "largeclock.cfg")
-            config_file = r"C:\\largeclock\\largeclock.cfg"
+            if os.name is 'posix':
+                script_path = get_script_path()
+                config_file = os.path.join(script_path, "largeclock.cfg")
+            else:
+                config_file = r"C:\\largeclock\\largeclock.cfg"               
             config = ConfigParser.ConfigParser()
             config.read(config_file)
             font_size = int( config.get('font', 'size') )
@@ -40,8 +44,8 @@ def get_config():
         except:
             font_size = 180 # font size
             w, h = 1500, 200 # width and height of Tk root window
-            _default = '%H:%M:%S'
-            _custom = '%Y-%m-%d %H:%M:%S'
+            _default='%Y-%m-%d, %j/%H:%M:%S'
+            _custom='%Y:%j:%H:%M:%S'
     else:
         font_size = int(sys.argv[1])
         w = int(sys.argv[2])
