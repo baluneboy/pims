@@ -1,11 +1,93 @@
 #!/usr/bin/env python
 
-import operator
-import pandas as pd
-from pims.lib.typedlist import TypedList
+import datetime
+#import operator
+#import pandas as pd
+#from pims.lib.typedlist import TypedList
+#from pims.lib.transformeddict import TransformedDict
 from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimestr
 
-class DeviceTime(object):
+class DeviceDict(dict):
+
+    def __init__(self, *args, **kwargs):
+        self.timestamp = datetime.datetime.now()
+        self.filename = kwargs.pop('filename', None)
+        self.begin = kwargs.pop('begin', None)
+        if self.filename:
+            super(DeviceDict, self).__init__()
+            self.from_file()
+        else:
+            super(DeviceDict, self).__init__(*args)
+    
+    def __sub__(self, other):
+        return len(self) - len(other)
+
+    def get_host_time(self):
+        the_time = [ value for key, value in self.items() if key[1].lower().startswith('host') ]
+        if len(the_time) == 1:
+            return the_time
+        else:
+            return None
+
+    def get_ku_time(self):
+        the_time = [ value for key, value in self.items() if key[0].lower().startswith('ku_aos') ]
+        if len(the_time) == 1:
+            return the_time
+        else:
+            return None
+
+    def from_file(self):
+        delims = {'begin': 'middle', # from begin to middle
+                  'middle': 'end'}   # from middle to end
+        endstr = delims[self.begin]
+        with open(self.filename, 'r') as f:
+            parsing = False
+            for line in f.readlines():
+                
+                if line.startswith(endstr):
+                    parsing = False
+
+                if parsing:
+                    timestr, device, category = line.rstrip('\n').split(' ')
+                    dtm = doytimestr_to_datetime(timestr)
+                    self[(device, category)] = dtm
+
+                if line.startswith(self.begin):
+                    parsing = True
+
+#x = DeviceDict( {'one': 1, "two": 2 })
+#for k, v in x.iteritems():
+#    print x.timestamp, k, v, x.filename, x.begin
+#raise SystemExit
+
+#s = DeviceDict([
+#    ('121f03rt', (datetime.datetime.now(), 'SE')),
+#    ('122-f02', (datetime.datetime.now(), 'EE')),
+#    ])
+#s['hirap'] = (datetime.datetime.now(), 'MAMS')
+#for k, v in s.iteritems():
+#    print s.timestamp, k, v, s.filename, s.begin
+#raise SystemExit
+
+txt_file = '/tmp/sensortimesTest.txt'
+dd1 = DeviceDict(filename=txt_file, begin='begin')
+dd2 = DeviceDict(filename=txt_file, begin='middle')
+
+devices = set(dd1.keys()).union(set(dd2.keys()))
+
+for devdict in [dd1, dd2]:
+    for k, v in devdict.iteritems():
+        print devdict.timestamp, v, k
+    print '- - - - - - - - - - - - - -'
+
+print devices
+
+print dd1.get_host_time()
+print dd2.get_ku_time()
+
+raise SystemExit
+
+class OBSOLETE_DeviceTime(object):
     
     def __init__(self, timestr, device, category):
         self.timestr = timestr
@@ -19,42 +101,64 @@ class DeviceTime(object):
         s += ' %s' % self.category
         return s
 
-class DeviceList(TypedList):
+class OBSOLETE_DeviceList(TypedList):
     
+    _delims = {'begin': 'middle',
+               'middle': 'end'}
+       
     def __init__(self, *args, **kwargs):
-        if 'filename' in kwargs:
-            self.filename = kwargs.pop('filename')
+        self.devices = set()
+        self.filename = kwargs.pop('filename', None)
+        self.begin = kwargs.pop('begin', None)
+        if self.filename:
             super(DeviceList, self).__init__(DeviceTime)
-            self._get_file_devtimes()
+            self._append_from_file()
         else:
             self.filename = None
             super(DeviceList, self).__init__(DeviceTime, *args)
+
+    def __setitem__(self, i, v):
+        self.check(v)
+        self.list[i] = v
+        self.devices.add( v.device )
+
+    def insert(self, i, v):
+        self.check(v)
+        self.list.insert(i, v)
+        self.devices.add( v.device )
         
-    def _get_file_devtimes(self):
-        devtime1 = DeviceTime('2015:251:17:35:00', 'butters', 'HOST')
-        devtime2 = DeviceTime('2015:251:17:35:15', 'Ku_AOS', 'GSE')
-        devtime3 = DeviceTime('2015:251:17:35:16', '122-f02', 'EE')
-        self.append(devtime1)
-        self.append(devtime2)
-        self.append(devtime3)
-            
+    def _append_from_file(self):
+        self.end = self._delims[self.begin]
+        with open(self.filename, 'r') as f:
+            parsing = False
+            for line in f.readlines():
+                
+                if line.startswith(self.end):
+                    parsing = False
+
+                if parsing:
+                    timestr, device, category = line.rstrip('\n').split(' ')
+                    self.append( DeviceTime(timestr, device, category) )
+
+                if line.startswith(self.begin):
+                    parsing = True
+    
     def __str__(self):
         s = '%s with %d members of %s' % (self.__class__.__name__, len(self), self.oktypes)
         for devtime in self:
             s += '\n%s' % str(devtime)
         return s
 
-devlist = DeviceList(filenamez='/tmp/sensortimesTest.txt') # empty container for many DeviceTime(s)
-#devtime1 = DeviceTime('2015:251:17:35:00', 'butters', 'HOST')
-#devtime2 = DeviceTime('2015:251:17:35:15', 'Ku_AOS', 'GSE')
-#devtime3 = DeviceTime('2015:251:17:35:16', '122-f02', 'EE')
-#devlist.append(devtime1)
-#devlist.append(devtime2)
-#devlist.append(devtime3)
-print devlist
-raise SystemExit
+###device_list1 = DeviceList(filename='/tmp/sensortimesTest.txt', begin='begin') # empty container for many DeviceTime(s)
+###device_list2 = DeviceList(filename='/tmp/sensortimesTest.txt', begin='middle') # empty container for many DeviceTime(s)
+###print device_list1
+###print device_list2
+###print sorted( device_list2.devices.union(device_list1.devices) )
+####device_list1.to_dict(1)
+####device_list2.to_dict(2)
+###raise SystemExit
 
-class TimeTuple(tuple):
+class OBSOLETE_TimeTuple(tuple):
 
     def __init__(self, b):
         super(TimeTuple, self).__init__(tuple(b))
