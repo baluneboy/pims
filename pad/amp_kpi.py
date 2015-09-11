@@ -17,6 +17,8 @@ from pims.excel.modification import overwrite_last_row_with_totals, kpi_sheet_fi
 from openpyxl.reader.excel import load_workbook
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
+# FIXME mkdir as needed and write output xlsx to like /misc/yoda/www/plots/batch/padtimes/sams_monthly/2014 << YYYY subdir
+
 ############################################################################################
 # PRELIMINARY STEPS:
 #

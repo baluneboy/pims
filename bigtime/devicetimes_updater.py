@@ -25,17 +25,25 @@ class DeviceDict(dict):
     def get_host_time(self):
         the_time = [ value for key, value in self.items() if key[1].lower().startswith('host') ]
         if len(the_time) == 1:
-            return the_time
+            return the_time[0]
         else:
             return None
 
     def get_ku_time(self):
         the_time = [ value for key, value in self.items() if key[0].lower().startswith('ku_aos') ]
         if len(the_time) == 1:
-            return the_time
+            return the_time[0]
         else:
             return None
-
+    
+    def get_dh_dk(self):
+        host_time = self.get_host_time()
+        ku_time = self.get_ku_time()
+        for k, v in self.iteritems():
+            dh = (v - host_time).total_seconds()
+            dk = (v - ku_time).total_seconds()
+            self[k] = (v, dh, dk)
+            
     def from_file(self):
         delims = {'begin': 'middle', # from begin to middle
                   'middle': 'end'}   # from middle to end
@@ -55,36 +63,24 @@ class DeviceDict(dict):
                 if line.startswith(self.begin):
                     parsing = True
 
-#x = DeviceDict( {'one': 1, "two": 2 })
-#for k, v in x.iteritems():
-#    print x.timestamp, k, v, x.filename, x.begin
-#raise SystemExit
+def demo_deltas():
+    txt_file = '/tmp/sensortimesTest.txt'
+    dd1 = DeviceDict(filename=txt_file, begin='begin')
+    dd2 = DeviceDict(filename=txt_file, begin='middle')
+    
+    for devdict in [dd1, dd2]:
+        devdict.get_dh_dk()
+        for k, v in devdict.iteritems():
+            print devdict.timestamp, v, k
+        print '- - - - - - - - - - - - - -'
+    
+    devices = list( set(dd1.keys()).union(set(dd2.keys())) )
+    for dev in devices:
+        if dd1.has_key(dev) and dd2.has_key(dev):
+            dt = (dd2[dev][0] - dd1[dev][0]).total_seconds()
+            print dev, dd2[dev][1], dd2[dev][2], dt
 
-#s = DeviceDict([
-#    ('121f03rt', (datetime.datetime.now(), 'SE')),
-#    ('122-f02', (datetime.datetime.now(), 'EE')),
-#    ])
-#s['hirap'] = (datetime.datetime.now(), 'MAMS')
-#for k, v in s.iteritems():
-#    print s.timestamp, k, v, s.filename, s.begin
-#raise SystemExit
-
-txt_file = '/tmp/sensortimesTest.txt'
-dd1 = DeviceDict(filename=txt_file, begin='begin')
-dd2 = DeviceDict(filename=txt_file, begin='middle')
-
-devices = set(dd1.keys()).union(set(dd2.keys()))
-
-for devdict in [dd1, dd2]:
-    for k, v in devdict.iteritems():
-        print devdict.timestamp, v, k
-    print '- - - - - - - - - - - - - -'
-
-print devices
-
-print dd1.get_host_time()
-print dd2.get_ku_time()
-
+demo_deltas()
 raise SystemExit
 
 class OBSOLETE_DeviceTime(object):

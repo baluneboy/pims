@@ -31,6 +31,17 @@ def most_recent_file_with_suffix(pth, suffix):
     files.sort(key=lambda x: os.path.getmtime(x))
     return os.path.join(pth, files[-1])
 
+# get file lines between two delimiter strings
+def get_lines_between(beginstr, endstr, filename, include_newlines=True):
+    """get file lines between two delimiter strings"""
+    if include_newlines:
+        beginstr += '\n'
+        endstr = '\n' + endstr
+    with open(filename, 'r') as f:
+        temp = f.read()
+        s = temp.split(beginstr)[1].split(endstr)[0]
+    return s
+
 # prepend to text file
 def prepend_tofile(s, txtfile):
     """prepend to text file"""
