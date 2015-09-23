@@ -24,11 +24,26 @@ __all__ = [
 #/tmp/pth/1qualify_notes.pdf
 #---------------------------
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<notes>.*)\.pdf\Z
+#.*/(?P<page>\d{2})(?P<subtitle>qualify|quantify)_(?P<start>[0-9_\.]+)_(?P<sensor>[a-z0-9]+)_(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_(?P<notes>.*)\.pdf
+_OLD_HANDBOOKPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<page>\d{2})"                           # a digit OR A to Z single char, then
+    "(?P<subtitle>qualify|quantify)_"           # enum for subtitle underscore, then
+    "(?P<start>[0-9_\.]+)_"                     # start time underscore, then
+    "(?P<sensor>[a-z0-9]+)_"                    # sensor underscore, then
+    "(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_"  # plot abbreviation underscore, then
+    "(?P<notes>.*)"                             # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+#---------------------------
+#.*/(?P<start>[0-9_\.]+)_(?P<sensor>[a-z0-9]+)_(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_(?P<notes>.*)\.pdf
 _HANDBOOKPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
-    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
-    "_"                                         # underscore, then
+    "(?P<start>[0-9_\.]+)_"                     # start time underscore, then
+    "(?P<sensor>[a-z0-9]+?)"                    # sensor, then << non-greedy trailing question mark FTW
+    "(?P<sensorsuffix>ten|one|006|)_"           # suffix (or empty) underscore, then
+    "(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_"  # plot abbreviation underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )

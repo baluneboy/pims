@@ -205,7 +205,7 @@ def move_pad_pair(header_file, dest_dir):
     return os.path.join(dest_dir, os.path.basename(header_file))
 
 def listdir_filename_pattern(dirpath, fname_pattern):
-    """Listdir files that match fname_pattern."""
+    """Get list of files that match fname_pattern."""
     if not os.path.exists(dirpath):
         return None
     files = [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
