@@ -1,10 +1,9 @@
 #!/usr/bin/env python
 
 import os
-import pygtk; pygtk.require('2.0')
+import re
 import gtk
 import time
-import re
 import threading
 import subprocess
 import pandas as pd
@@ -18,13 +17,25 @@ from pims.files.utils import listdir_filename_pattern
 from pims.files.pdfs.pdfjam import PdfjamCommand
 from pims.utils.pimsdateutil import handbook_pdf_startstr_to_datetime
 from pims.pad.padheader import PadHeaderDict
-#from pims.files.pdfs.pdftk import convert_odt2pdf
 
+# map abbrev key to tuple of descriptive text, Qualify or Quantify, and offsets/scale list
+PLOT_ABBREV_MAP = {
+    'spgs': ('Spectrogram',                 'Qualify',  [-4.85, 1.25, 0.76]),
+    'gvtm': ('Accel. Vector Mag. vs. Time', 'Quantify', [-4.85, 1.25, 0.76]),
+    'gvt3': ('XYZ Accel. vs. Time',         'Quantify', [-4.85, 1.25, 0.76]),
+    'pcss': ('PSD/Time Histogram',          'Qualify',  [-4.85, 1.25, 0.76]),
+}
+
+# name of PDF files spreadsheet to use
+_PDF_FILES_XLSX = '0pdf_files.xlsx'
+
+# regimes from shortened string
 REGIMES = {
     'vib':  'Vibratory',
     'qs':   'Quasi-Steady',
 }
 
+# page dict values that serve as placeholders
 DEFAULT_ODT_PAGE_DICT = {
     'title':        'Handbook Title',
     'subtitle':     'Qualify | Quantify',        
@@ -38,7 +49,9 @@ DEFAULT_ODT_PAGE_DICT = {
     'plot_type':    'PLOT_TYPE'
 }
 
+# return odt_filename derived from pdf full filename
 def get_odt_filename_from_pdf_filename(fullfilename):
+    """return odt_filename derived from pdf full filename"""
     pth, fname = os.path.split(fullfilename)
     bname, ext = os.path.splitext(fname)
     page_prefix = bname.split('_')[0]
@@ -50,7 +63,9 @@ def get_odt_filename_from_pdf_filename(fullfilename):
     else:
         return None
 
+# return Rendered object for odt files based on pdf full filename
 def get_odt_renderer(fullfilename, page_dict=DEFAULT_ODT_PAGE_DICT):
+    """return Rendered object for odt files based on pdf full filename"""
     pth, fname = os.path.split(fullfilename)
     bname, ext = os.path.splitext(fname)
     prefix = '%02d%s' % (page_dict['page'], page_dict['subtitle'])
@@ -58,8 +73,9 @@ def get_odt_renderer(fullfilename, page_dict=DEFAULT_ODT_PAGE_DICT):
     # Explicitly assign page_dict that contains expected names for appy/pod template substitution
     return Renderer( _HANDBOOK_TEMPLATE_ODT, page_dict, odt_name )
 
+# handle subprocess commands with a timeout
 class MyCommand(object):
-    """Run a command in a thread."""
+    """handle subprocess commands with a timeout"""
     def __init__(self, cmd):
         self.cmd = cmd
         self.process = None
@@ -78,11 +94,12 @@ class MyCommand(object):
             self.process.terminate()
             thread.join()
         return self.process.returncode
-    
+
+# return (return_code, elapsed_sec) from given command string    
 def run_timeout_cmd(command, timeout_sec=5):
     """
-    Function that returns (returnCode, elapsed_sec) from given command string.
-    Also has timeout feature.
+    return (return_code, elapsed_sec) from given command string;
+    also has timeout feature with default value of 5 seconds
     """
     cmd_obj = MyCommand(command)
     tzero = time.time()
@@ -90,8 +107,9 @@ def run_timeout_cmd(command, timeout_sec=5):
     elapsed_sec = time.time() - tzero
     return return_code, elapsed_sec
 
+# handle pdfjam command
 class MyPdfjamCommand(PdfjamCommand):
-
+    """handle pdfjam command"""
     def __init__(self, *args, **kwargs):
         self.page = kwargs.pop('page', 0)
         self.subtitle = kwargs.pop('subtitle', 'qualify')
@@ -134,7 +152,9 @@ class MyPdfjamCommand(PdfjamCommand):
 #notes                                                  roadmaps500
 #page                                                             1
 
+# create and run pdfjam command using dataframe Series object fields
 def pdfjam_func(x):
+    """create and run pdfjam command using dataframe Series object fields"""
     fname = os.path.sep.join( [ x['path'], x['filename']] )
     pdfjam_cmd = MyPdfjamCommand(
         fname,
@@ -147,7 +167,9 @@ def pdfjam_func(x):
     print pdfjam_cmd
     pdfjam_cmd.run()
 
+# create and run odt renderer command using dataframe Series object fields
 def odtrender_func(x):
+    """create and run odt renderer command using dataframe Series object fields"""
     odt_page_dict = {
         'title':        x['title'],
         'subtitle':     x['subtitle'],        
@@ -158,16 +180,16 @@ def odtrender_func(x):
         'sample_rate':  x['sample_rate'],
         'cutoff':       x['cutoff'],
         'location':     x['location'],
-        'plot_type':    x['abbrev'],
+        'plot_type':    x['plot_type'],
         'page':         x['page'],
     }    
-    print x
+    #print x
     fname = os.path.sep.join( [ x['path'], x['filename']] )
     odt_renderer = get_odt_renderer(fname, page_dict=odt_page_dict)
     odt_renderer.run()    
     
 # return DataFrame read from_dir/0pdf_files.xlsx
-def process_pdf_filenames_from_spreadsheet(from_dir, xlsx_basename='0pdf_files.xlsx'):
+def process_pdf_filenames_from_spreadsheet(from_dir, xlsx_basename=_PDF_FILES_XLSX):
     """return DataFrame read from_dir/0pdf_files.xlsx"""
     file_name = os.path.join(from_dir, xlsx_basename)
     excel_file = pd.ExcelFile(file_name)
@@ -177,23 +199,17 @@ def process_pdf_filenames_from_spreadsheet(from_dir, xlsx_basename='0pdf_files.x
     df.apply(odtrender_func, axis=1)   # produces word-processing ODT files with fields filled
     return df
 
-# get regime, category, and title from regex pattern match
+# get regime, category, and title from regex pattern match of pdf filename
 def get_regime_category_title_from_sourcedir_rx_match(m):
-    """get regime, category, and title from regex pattern match"""
+    """get regime, category, and title from regex pattern match of pdf filename"""
     regime = REGIMES[ m.group('regime') ].title()
     category = m.group('category').title()
-    title = m.group('title')
+    title = m.group('title').replace('_', ' ')
     return regime, category, title
 
-# get subtitle (qualify or quantify) from pdf basename
-def get_subtitle_from_basename(pdfbname):
-    """get subtitle (qualify or quantify) from pdf basename"""
-    s = 'qualify'
-    return s.title()
-
-# get fields of pattern match from pdf filename
+# get fields of pattern match from pdf filename (startstr, sensor, suffix, plot abbrev)
 def get_start_sensor_abbrev_notes_from_pdf_filename(pdf_filename):
-    # get fields of pattern match from pdf filename
+    """get fields of pattern match from pdf filename (startstr, sensor, suffix, plot abbrev)"""
     match = re.search( re.compile(_HANDBOOKPDF_PATTERN), pdf_filename )
     if match:
         startstr = match.group('start')
@@ -222,7 +238,16 @@ def get_header_info(sensor, suffix, dtm, dict_header):
     else:
         system, sample_rate, cutoff, location = dict_header[ (sensor, dtm) ]
     return system, sample_rate, cutoff, location, dict_header
-    
+
+# map plot abbreviation (like spgs) to plot type text, subtitle (Qualify or Quantify), offsets and scale
+def map_abbrev_info(abbrev):
+    """map plot abbreviation (like spgs) to plot type text, subtitle (Qualify or Quantify), offsets and scale"""
+    if PLOT_ABBREV_MAP.has_key(abbrev):
+        plot_type, subtitle, offsets_scale = PLOT_ABBREV_MAP[abbrev]
+    else:
+        plot_type, subtitle, offsets_scale = abbrev, 'Qualify', [-4.85, 1.25, 0.76]
+    return plot_type, subtitle, offsets_scale
+        
 # write PDF files into Sheet1 of to_dir/0pdf_files.xlsx
 def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
     """write PDF files into to_dir/0pdf_files.xlsx"""
@@ -235,21 +260,29 @@ def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
     # from source_dir, parse regime (vibratory|quasi-steady), category (crew|vehicle|equipment), and title
     regime, category, title = get_regime_category_title_from_sourcedir_rx_match(match)
     
-    file_name = os.path.join(to_dir, '0pdf_files.xlsx')
+    file_name = os.path.join(to_dir, _PDF_FILES_XLSX)
     #writer = pd.ExcelWriter(file_name, engine='xlsxwriter')
     writer = pd.ExcelWriter(file_name)
     rows_list = []
     for pdf_file in pdf_files:
+        
         pdf_bname = os.path.basename(pdf_file)
         start, sensor, sensor_suffix, abbrev, notes = get_start_sensor_abbrev_notes_from_pdf_filename(pdf_file)
         system, sample_rate, cutoff, location, header_dict =  get_header_info(sensor, sensor_suffix, start, header_dict)
+    
+        # map from abbrev to plot type and subtitle
+        plot_type, subtitle, offsets_scale = map_abbrev_info(abbrev)
+        xoffset = offsets_scale[0]
+        yoffset = offsets_scale[1]
+        scale = offsets_scale[2]
+        
         dictrow = {
             'path': os.path.dirname(pdf_file),
             'filename': pdf_bname,
-            'subtitle': get_subtitle_from_basename(pdf_bname),
-            'xoffset_cm': -4.25, # cm
-            'yoffset_cm':  1.00, # cm
-            'scale': 0.86,
+            'subtitle': subtitle,
+            'xoffset_cm': xoffset, # cm
+            'yoffset_cm': yoffset, # cm
+            'scale': scale,
             'orient': 'landscape',
             'regime': regime,
             'category': category,
@@ -262,9 +295,11 @@ def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
             'cutoff': cutoff,
             'location': location,
             'abbrev': abbrev,
+            'plot_type': plot_type,
             'notes': notes,
             }
         rows_list.append(dictrow)
+        
     df = pd.DataFrame(data=rows_list, index=None,
                       columns=[
                         'path',
@@ -285,10 +320,14 @@ def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
                         'cutoff',
                         'location',
                         'abbrev',
+                        'plot_type',
                         'notes'])
+    
     df.to_excel(writer, sheet_name='Sheet1', index=False)
 
+# show alert dialog
 def alert(msg, title='ALERT'):
+    """show alert dialog"""
     label = gtk.Label(msg)
     dialog = gtk.Dialog(title,
                         None,
@@ -306,7 +345,7 @@ def OLDalert(msg):
     dialog.set_markup(msg)
     dialog.run()
 
-def do_build(pth):
+def OLDdo_build(pth):
     """Create interim hb entry build products."""
     hbe = HandbookEntry( source_dir=pth )
     if not hbe.will_clobber():
@@ -315,7 +354,7 @@ def do_build(pth):
     else:
         return 'ABORT PAGE PROCESSING: hb pdf filename conflict on yoda', hbe
 
-def finalize(pth):
+def OLDfinalize(pth):
     """Finalize handbook page."""
     hbe = HandbookEntry(source_dir=pth)
     if not hbe.will_clobber():
@@ -324,7 +363,7 @@ def finalize(pth):
     else:
         return 'ABORT BUILD: hb pdf filename conflict on yoda', hbe
 
-def show_log(log_file):
+def OLDshow_log(log_file):
     os.system('subl %s' % log_file)
 
 def OLDmain(curdir):
@@ -356,9 +395,32 @@ def OLDmain(curdir):
     if match and response == 2 and hbe:
         hbe.log.process.info('  *** CLOSE SUBLIME TO FINALIZE GTK DIALOG ***')
         show_log(hbe.log.file)
-    
-def main(curdir):
 
+# print list of hb pdf files on yoda
+def show_yodahb_list(pdf_filename):
+    """print list of hb pdf files on yoda"""
+    pat = '.*/hb_(?P<regime>.*?)_(?P<category>.*?)_(?P<title>.*)\.pdf$'
+    match = re.search( re.compile(pat), pdf_filename )
+    if match:
+        regime = match.group('regime')
+        category = match.group('category')
+        title = match.group('title')
+    else:
+        regime = 'REGIME'
+        category = 'CATEGORY'
+        title = 'TITLE'
+    return regime, category, title
+    
+#regime, category, title = show_yodahb_list('/home/pims/yodahb/hb_vib_vehicle_upa_rev_2011_12_22.pdf')
+#print regime
+#print category
+#print title
+#raise SystemExit
+
+# take handbooking action from nautilus script based on curdir
+def main(curdir):
+    """take handbooking action from nautilus script based on curdir"""
+    
     # Strip off uri prefix
     if curdir.startswith('file:///'):
         curdir = curdir[7:]
@@ -377,35 +439,69 @@ def main(curdir):
             #------------------------------------------------------
             # We are in main parent source dir
             #------------------------------------------------------
-            pdf_files = listdir_filename_pattern(curdir, '.*\.pdf$')
-            write_pdf_filenames_to_spreadsheet(pdf_files, curdir, match)
-            msg = 'wrote %d PDF filenames into pdf_files.xlsx' % len(pdf_files)
-            df = process_pdf_filenames_from_spreadsheet(curdir)
+            hb_pdf = os.path.join(curdir, bname + '.pdf')
+            if os.path.exists(hb_pdf):
+                # hb page PDF exists here already, so abort
+                msg = '%s.pdf exists already, so abort' % bname
+            elif os.path.exists(os.path.join(curdir, _PDF_FILES_XLSX)):
+                # got spreadsheet, so process it
+                df = process_pdf_filenames_from_spreadsheet(curdir)
+                msg = 'created build subdir using %s' % _PDF_FILES_XLSX
+            else:
+                # no spreadsheet, so create it
+                pdf_files = listdir_filename_pattern(curdir, '.*\.pdf$')
+                write_pdf_filenames_to_spreadsheet(pdf_files, curdir, match)
+                msg = 'redo ORDERING if needed, now is time to modify %s' % _PDF_FILES_XLSX
         elif match.string.endswith('build'):
             #------------------------------------------------------
             # We are in build subdir
             #------------------------------------------------------
-            out_pth = os.path.join(curdir, 'final')
-            mkdir_p(out_pth)
-            pdf_files = listdir_filename_pattern(curdir, '.*_offsets_.*_scale_.*\.pdf$')
-            for pdf_file in pdf_files:
-                odt_filename = get_odt_filename_from_pdf_filename(pdf_file)
-                if not odt_filename:
-                    print 'no odt file to match %s' % pdf_file
+            unjoined_path = os.path.join(curdir, 'unjoined')
+            if os.path.exists(unjoined_path):
+                msg = 'unjoined subdir exists already, so abort'
+            else:
+                msg = ''
+                mkdir_p(unjoined_path)
+                pdf_files = listdir_filename_pattern(curdir, '.*_offsets_.*_scale_.*\.pdf$')
+                # iterate over scale/offset PDFs to get odt filename, convert that to pdf, & produce final pdf
+                for pdf_file in pdf_files:
+                    odt_filename = get_odt_filename_from_pdf_filename(pdf_file)
+                    if not odt_filename:
+                        msg += 'unable to  odt file to match %s\n' % pdf_file
+                    else:
+                        ##############################################
+                        ### convert odt to pdf ###
+                        cmd = 'unoconv %s' % odt_filename
+                        mc = MyCommand(cmd)
+                        mc.run(9) # 9-sec timeout
+                        ##############################################
+                        ### overlay two PDF's to get one final PDF ###
+                        fg_pdf = pdf_file
+                        bg_pdf = odt_filename.replace('.odt', '.pdf')
+                        out_name = os.path.basename(bg_pdf).replace('.pdf', '_final.pdf')
+                        out_pdf = os.path.join(unjoined_path, out_name)
+                        cmd = 'pdftk %s background %s output %s' % (fg_pdf, bg_pdf, out_pdf)
+                        mc = MyCommand(cmd)
+                        mc.run(9) # 9-sec timeout
+                if len(msg) == 0:
+                    msg = 'done with build and we used all %d PDF files' % len(pdf_files)
                 else:
-                    # convert odt to pdf
-                    cmd = 'unoconv %s' % odt_filename
-                    mc = MyCommand(cmd)
-                    mc.run(9)
-                    # overlay two PDF's to get final
-                    fg_pdf = pdf_file
-                    bg_pdf = odt_filename.replace('.odt', '.pdf')
-                    out_name = os.path.basename(bg_pdf).replace('.pdf', '_final.pdf')
-                    out_pdf = os.path.join(out_pth, out_name)
-                    cmd = 'pdftk %s background %s output %s' % (fg_pdf, bg_pdf, out_pdf)
-                    mc = MyCommand(cmd)
-                    mc.run(9)
-            msg = 'done with build using %d PDF files' % len(pdf_files)
+                    msg += 'done with build BUT WE DID NOT USE ALL %d PDF FILES' % len(pdf_files)
+        elif match.string.endswith('build/unjoined'):
+            #------------------------------------------------------
+            # We are in build/unjoined subdir
+            #------------------------------------------------------            
+            # now join the unjoined PDFs
+            hb_path = curdir.rstrip('build/unjoined')
+            junk, hb_name = os.path.split(hb_path)
+            hb_pdf = os.path.join(hb_path, hb_name + '.pdf')
+            if os.path.exists(hb_pdf):
+                msg = '%s.pdf already exists in parent source dir, so abort' % hb_name
+            else:
+                cmd = 'pdfjam --landscape *.pdf -o %s' % hb_pdf
+                mc = MyCommand(cmd)
+                mc.run(9) # 9-sec timeout
+                msg = 'check parent source dir for hb_pdf'
         else:
             msg = 'ABORT: ignore unknown hb subdir'
     else:
@@ -413,18 +509,17 @@ def main(curdir):
 
     response = alert( '%s' % msg ) # 1 for "OK", 2 for "Show Log", otherwise -4 (for eXited out)
 
-
 #convert_odt2pdf('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01Qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500.odt')
 #raise SystemExit
 
-main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build')
-raise SystemExit
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build')
+#raise SystemExit
 
 #odt_renderer = get_odt_renderer('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500_offsets_-4.25cm_1.00cm_scale_0.86_landscape.pdf')
 #odt_renderer.run()
 #raise SystemExit
 
 if __name__ == "__main__":
-    # Get nautilus current uri
+    # Get nautilus current uri and take action in main func
     curdir = os.environ.get('NAUTILUS_SCRIPT_CURRENT_URI', os.curdir)
     main(curdir)
