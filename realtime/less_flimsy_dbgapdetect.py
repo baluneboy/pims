@@ -41,6 +41,7 @@ defaults = {
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
     ('es03',        'manbearpig',   'pims',     '3.92'),
+    #('es03',        'butters',      'pims',     '3.92'),
     ('es05',        'ike',          'pims',     '7.84'),
     ('es06',        'butters',      'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),    

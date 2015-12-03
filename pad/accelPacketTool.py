@@ -348,7 +348,7 @@ def query_and_display(table, host, details, custom=None):
     
         else:
             query = DefaultQuery(host, table)
-            query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-09-01 18:00:00") ORDER BY time ASC LIMIT 11')
+            query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-09-01 18:00:00") ORDER BY time ASC LIMIT 99')
     
     # create packet inspector object using query object as input
     pkt_inspector = PacketInspector(host, table, query=query, details=details)

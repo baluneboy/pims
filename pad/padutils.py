@@ -29,16 +29,16 @@ def get_header_file(sensor, suffix, dtm):
     intervals = [ Interval(f(x)[0], f(x)[1]) for x in headers ]
     bools = [ dtm in i for i in intervals ]
     #bools = Interval(dtm, dtm) in intervals[0]
-    print bools
+    #print bools
     return headers
     
-sensor = '121f03'
-suffix = '006'
-dtm = datetime.datetime(2014, 1, 2, 3, 4, 5)
-dirname = get_path_to_sensor(sensor, suffix, dtm)
-print dirname
-print len(get_header_file(sensor, suffix, dtm))
-raise SystemExit
+#sensor = '121f03'
+#suffix = '006'
+#dtm = datetime.datetime(2014, 1, 2, 3, 4, 5)
+#dirname = get_path_to_sensor(sensor, suffix, dtm)
+#print dirname
+#print len(get_header_file(sensor, suffix, dtm))
+#raise SystemExit
         
 def main(argv):
     """describe what this routine does here"""

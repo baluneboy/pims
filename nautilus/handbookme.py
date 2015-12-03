@@ -492,15 +492,21 @@ def main(curdir):
             # We are in build/unjoined subdir
             #------------------------------------------------------            
             # now join the unjoined PDFs
-            hb_path = curdir.rstrip('build/unjoined')
+            # hb_path = curdir.rstrip('build/unjoined') # << WHY DOES THIS NOT ALWAYS WORK
+            hb_path = os.path.sep.join( curdir.split(os.path.sep)[:-2] )
             junk, hb_name = os.path.split(hb_path)
             hb_pdf = os.path.join(hb_path, hb_name + '.pdf')
             if os.path.exists(hb_pdf):
                 msg = '%s.pdf already exists in parent source dir, so abort' % hb_name
             else:
-                cmd = 'pdfjam --landscape *.pdf -o %s' % hb_pdf
+                print curdir
+                print hb_path
+                print hb_name
+                print hb_pdf
+                cmd = '/usr/bin/pdfjam --landscape *.pdf -o %s' % hb_pdf
                 mc = MyCommand(cmd)
-                mc.run(9) # 9-sec timeout
+                retcode = mc.run(15) # 15-sec timeout
+                print retcode
                 msg = 'check parent source dir for hb_pdf'
         else:
             msg = 'ABORT: ignore unknown hb subdir'
@@ -512,7 +518,7 @@ def main(curdir):
 #convert_odt2pdf('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01Qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500.odt')
 #raise SystemExit
 
-#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build')
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_SARJ_Sinusoidal_Correlation/build/unjoined')
 #raise SystemExit
 
 #odt_renderer = get_odt_renderer('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500_offsets_-4.25cm_1.00cm_scale_0.86_landscape.pdf')
