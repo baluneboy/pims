@@ -18,12 +18,15 @@ from pims.files.pdfs.pdfjam import PdfjamCommand
 from pims.utils.pimsdateutil import handbook_pdf_startstr_to_datetime
 from pims.pad.padheader import PadHeaderDict
 
-# map abbrev key to tuple of descriptive text, Qualify or Quantify, and offsets/scale list
+#------------------------------------------------------------------------------------------
+# Map abbrev key to tuple of descriptive text, Qualify or Quantify, and offsets/scale list
+#------------------------------------------------------------------------------------------
 PLOT_ABBREV_MAP = {
-    'spgs': ('Spectrogram',                 'Qualify',  [-4.85, 1.25, 0.76]),
-    'gvtm': ('Accel. Vector Mag. vs. Time', 'Quantify', [-4.85, 1.25, 0.76]),
-    'gvt3': ('XYZ Accel. vs. Time',         'Quantify', [-4.85, 1.25, 0.76]),
-    'pcss': ('PSD/Time Histogram',          'Qualify',  [-4.85, 1.25, 0.76]),
+    'spgs': ('Spectrogram',                         'Qualify',  [-4.85, 1.25, 0.76], 'landscape'),
+    'pcss': ('PSD/Time Histogram',                  'Qualify',  [-4.85, 1.25, 0.76], 'landscape'),
+    'gvt3': ('XYZ Accel. vs. Time',                 'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
+    'gvtm': ('Accel. Vector Mag. vs. Time',         'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
+    'immm': ('Accel. Vector Mag. Min/Max vs. Time', 'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
 }
 
 # name of PDF files spreadsheet to use
@@ -242,11 +245,12 @@ def get_header_info(sensor, suffix, dtm, dict_header):
 # map plot abbreviation (like spgs) to plot type text, subtitle (Qualify or Quantify), offsets and scale
 def map_abbrev_info(abbrev):
     """map plot abbreviation (like spgs) to plot type text, subtitle (Qualify or Quantify), offsets and scale"""
+    
     if PLOT_ABBREV_MAP.has_key(abbrev):
-        plot_type, subtitle, offsets_scale = PLOT_ABBREV_MAP[abbrev]
+        plot_type, subtitle, offsets_scale, orientation = PLOT_ABBREV_MAP[abbrev]
     else:
-        plot_type, subtitle, offsets_scale = abbrev, 'Qualify', [-4.85, 1.25, 0.76]
-    return plot_type, subtitle, offsets_scale
+        plot_type, subtitle, offsets_scale, orientation = abbrev, 'NoMatch', [-4.85, 1.25, 0.76], 'landscape'
+    return plot_type, subtitle, offsets_scale, orientation
         
 # write PDF files into Sheet1 of to_dir/0pdf_files.xlsx
 def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
@@ -270,8 +274,10 @@ def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
         start, sensor, sensor_suffix, abbrev, notes = get_start_sensor_abbrev_notes_from_pdf_filename(pdf_file)
         system, sample_rate, cutoff, location, header_dict =  get_header_info(sensor, sensor_suffix, start, header_dict)
     
+        #-------------------------------------------
         # map from abbrev to plot type and subtitle
-        plot_type, subtitle, offsets_scale = map_abbrev_info(abbrev)
+        #-------------------------------------------
+        plot_type, subtitle, offsets_scale, orientation = map_abbrev_info(abbrev)
         xoffset = offsets_scale[0]
         yoffset = offsets_scale[1]
         scale = offsets_scale[2]
@@ -283,7 +289,7 @@ def write_pdf_filenames_to_spreadsheet(pdf_files, to_dir, match):
             'xoffset_cm': xoffset, # cm
             'yoffset_cm': yoffset, # cm
             'scale': scale,
-            'orient': 'landscape',
+            'orient': orientation,
             'regime': regime,
             'category': category,
             'title': title,
@@ -436,9 +442,11 @@ def main(curdir):
         #       but how to account for subdir levels at/below build level
         bname = os.path.basename(curdir)
         if bname.startswith('hb_vib_') or bname.startswith('hb_qs_'):
+            
             #------------------------------------------------------
             # We are in main parent source dir
             #------------------------------------------------------
+            
             hb_pdf = os.path.join(curdir, bname + '.pdf')
             if os.path.exists(hb_pdf):
                 # hb page PDF exists here already, so abort
@@ -452,10 +460,13 @@ def main(curdir):
                 pdf_files = listdir_filename_pattern(curdir, '.*\.pdf$')
                 write_pdf_filenames_to_spreadsheet(pdf_files, curdir, match)
                 msg = 'redo ORDERING if needed, now is time to modify %s' % _PDF_FILES_XLSX
+                
         elif match.string.endswith('build'):
+            
             #------------------------------------------------------
             # We are in build subdir
             #------------------------------------------------------
+            
             unjoined_path = os.path.join(curdir, 'unjoined')
             if os.path.exists(unjoined_path):
                 msg = 'unjoined subdir exists already, so abort'
@@ -487,10 +498,13 @@ def main(curdir):
                     msg = 'done with build and we used all %d PDF files' % len(pdf_files)
                 else:
                     msg += 'done with build BUT WE DID NOT USE ALL %d PDF FILES' % len(pdf_files)
+                    
         elif match.string.endswith('build/unjoined'):
+            
             #------------------------------------------------------
             # We are in build/unjoined subdir
-            #------------------------------------------------------            
+            #------------------------------------------------------
+            
             # now join the unjoined PDFs
             # hb_path = curdir.rstrip('build/unjoined') # << WHY DOES THIS NOT ALWAYS WORK
             hb_path = os.path.sep.join( curdir.split(os.path.sep)[:-2] )
@@ -509,8 +523,15 @@ def main(curdir):
                 print retcode
                 msg = 'check parent source dir for hb_pdf'
         else:
+            
+            #------------------------------------------------------
+            # We are in unknown hb subdir
+            #------------------------------------------------------
+                        
             msg = 'ABORT: ignore unknown hb subdir'
+    
     else:
+        
         msg = 'ABORT: ignore non-hb dir'
 
     response = alert( '%s' % msg ) # 1 for "OK", 2 for "Show Log", otherwise -4 (for eXited out)
@@ -519,6 +540,9 @@ def main(curdir):
 #raise SystemExit
 
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_SARJ_Sinusoidal_Correlation/build/unjoined')
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Troubleshooting_and_Repair')
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_25-Nov-2015_Progress_61P_Reboost')
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_2015_Cygnus-4_Capture_and_Install')
 #raise SystemExit
 
 #odt_renderer = get_odt_renderer('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500_offsets_-4.25cm_1.00cm_scale_0.86_landscape.pdf')
