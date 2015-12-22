@@ -68,3 +68,10 @@ target/
 *.tmLanguage.cache
 *.tmLanguage.cache
 *Control.cache
+*sams_apply_syntax.sublime-project
+*sams_apply_syntax.sublime-workspace
+
+# Handbook templates
+*handbook_template_BEFORE_MOVING_BOTTOM_TEXTBOX.odt
+*handbook_template_ORIGINAL.odt
+
