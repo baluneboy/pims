@@ -1,25 +1,12 @@
 #!/usr/bin/python
 
-import signal
 import time
-
-def test_request(arg=None):
-    """Your request goes here."""
-    time.sleep(2)
-    return arg
-
-def test_args_kwargs(func, *args, **kwargs):
-    print "func:", func
-    for (ind, arg) in enumerate(args):
-        print "arg %d is:" % ind, arg
-    for key in kwargs:
-        print "keyword arg: %s: %s" % (key, kwargs[key])
-    return "F I N I S H E D"
+import signal
  
+# FIXME this does not work as expected with zero for input sec
 class Timeout():
     """Timeout class using ALARM signal."""
-    class Timeout(Exception):
-        pass
+    class Timeout(Exception): pass
  
     def __init__(self, sec):
         self.sec = sec
@@ -34,26 +21,87 @@ class Timeout():
     def raise_timeout(self, *args):
         raise Timeout.Timeout()
  
-def main():
-    # Run blocks of code with separate timeouts
+def run_with_timeout(fun, timeout, *args, **kwargs):
+    # Run fun in under timeout seconds or bail out
     try:
-
-        with Timeout(4):
-            out = test_args_kwargs(zip, 1, 'two', myarg3="three", myarg4=4.0)
-            print out
-            
-        with Timeout(3):
-            print test_request("Request 1")
-            test_args_kwargs(zip, 1, 'two', myarg3="three", myarg4=4.0)
-
-        with Timeout(1):
-            print test_request("Request 2")
-            test_args_kwargs(map, 2, 'two', myarg3="threepeat", myarg4=44)            
-
+        with Timeout(timeout):
+            out = fun(*args, **kwargs)
+            print "OUTPUT FROM %s:" % fun.__name__, out
     except Timeout.Timeout:
-        print "Timeout"
+        print 'TIMEOUT VALUE OF %d SECONDS WAS REACHED FOR %s' % (timeout, fun.__name__)
  
 #############################################################################
+
+def test_request(arg=None):
+    """Your request goes here."""
+    time.sleep(2)
+    return arg
+
+def show_args_kwargs(*args, **kwargs):
+    if 'delay' in kwargs:
+        time.sleep(kwargs['delay'])
+    s = ''
+    for (ind, arg) in enumerate(args):
+        s += "arg %d is: %s, " % (ind, str(arg))
+
+    for key in kwargs:
+        s += "keyword['%s'] = %s, " % (key, kwargs[key])
+
+    return s.rstrip(', ')
  
+def demo_two():
+    
+    # Read the comments as running narrative...
+    
+    # let's start with timeout of 2 seconds...
+    timeout = 2
+    
+    # now run show_args_kwargs without delay (IT COMPLETES WITHOUT TIMEOUT)...
+    fun = show_args_kwargs
+    run_with_timeout(fun, timeout, 3.3, dog='meat')
+    
+    # run same function again, but this time it will delay itself 3 seconds (IT SHOULD TIMEOUT)...
+    fun = show_args_kwargs
+    run_with_timeout(fun, timeout, 4.4, 5.6, read=None, delay=3)
+    
+    # next, run this other function, test_request and since it has built-in sleep of 2 sec (IT SHOULD TIMEOUT)...
+    fun = test_request
+    run_with_timeout(fun, timeout, 'Test %s with timeout of %d' %(fun, timeout))
+
+    # finally, run test_request again with new timeout value (IT COMPLETES WITHOUT TIMEOUT)...
+    timeout = 4
+    fun = test_request
+    run_with_timeout(fun, timeout, 'which was run now with timeout of %d' % timeout)
+
+def demo_one():
+    """ simple demo
+
+        >>> timeout = 2
+        >>> # let's run show_args_kwargs without delay (IT COMPLETES WITHOUT TIMEOUT)...
+        >>> fun = show_args_kwargs
+        >>> run_with_timeout(fun, timeout, 3.3, dog='meat')
+        OUTPUT FROM show_args_kwargs: arg 0 is: 3.3, keyword['dog'] = meat
+        
+        >>> # run same function again, but this time it will delay itself 3 seconds (IT SHOULD TIMEOUT)...
+        >>> fun = show_args_kwargs
+        >>> run_with_timeout(fun, timeout, 4.4, 5.6, read=None, delay=3)
+        TIMEOUT VALUE OF 2 SECONDS WAS REACHED FOR show_args_kwargs
+        
+        >>> # next, run this other function, test_request and since it has built-in sleep of 2 sec (IT SHOULD TIMEOUT)...
+        >>> fun = test_request
+        >>> run_with_timeout(fun, timeout, 'Test %s with timeout of %d' %(fun, timeout))
+        TIMEOUT VALUE OF 2 SECONDS WAS REACHED FOR test_request
+        
+        >>> # finally, run test_request again with new timeout value (IT COMPLETES WITHOUT TIMEOUT)...
+        >>> timeout = 4
+        >>> fun = test_request
+        >>> run_with_timeout(fun, timeout, 'which was run now with timeout of %d' % timeout)
+        OUTPUT FROM test_request: which was run now with timeout of 4
+        
+    """
+    print 'done with simple demo'
+
 if __name__ == "__main__":
-    main()
+    import doctest
+    doctest.testmod(verbose=True)
+    demo_two()
