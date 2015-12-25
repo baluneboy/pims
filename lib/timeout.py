@@ -23,12 +23,14 @@ class Timeout():
  
 def run_with_timeout(fun, timeout, *args, **kwargs):
     # Run fun in under timeout seconds or bail out
+    out = None
     try:
         with Timeout(timeout):
             out = fun(*args, **kwargs)
-            print "OUTPUT FROM %s:" % fun.__name__, out
+            #print "OUTPUT FROM %s:" % fun.__name__, out
     except Timeout.Timeout:
-        print 'TIMEOUT VALUE OF %d SECONDS WAS REACHED FOR %s' % (timeout, fun.__name__)
+        out = 'TIMEOUT VALUE OF %d SECONDS WAS REACHED FOR %s' % (timeout, fun.__name__)
+    return out
  
 #############################################################################
 
@@ -58,20 +60,20 @@ def demo_two():
     
     # now run show_args_kwargs without delay (IT COMPLETES WITHOUT TIMEOUT)...
     fun = show_args_kwargs
-    run_with_timeout(fun, timeout, 3.3, dog='meat')
+    print run_with_timeout(fun, timeout, 3.3, dog='meat')
     
     # run same function again, but this time it will delay itself 3 seconds (IT SHOULD TIMEOUT)...
     fun = show_args_kwargs
-    run_with_timeout(fun, timeout, 4.4, 5.6, read=None, delay=3)
+    print run_with_timeout(fun, timeout, 4.4, 5.6, read=None, delay=3)
     
     # next, run this other function, test_request and since it has built-in sleep of 2 sec (IT SHOULD TIMEOUT)...
     fun = test_request
-    run_with_timeout(fun, timeout, 'Test %s with timeout of %d' %(fun, timeout))
+    print run_with_timeout(fun, timeout, 'Test %s with timeout of %d' %(fun.__name__, timeout))
 
     # finally, run test_request again with new timeout value (IT COMPLETES WITHOUT TIMEOUT)...
     timeout = 4
     fun = test_request
-    run_with_timeout(fun, timeout, 'which was run now with timeout of %d' % timeout)
+    print run_with_timeout(fun, timeout, 'Test %s was run now with timeout of %d' % (fun.__name__, timeout))
 
 def demo_one():
     """ simple demo
@@ -102,6 +104,6 @@ def demo_one():
     print 'done with simple demo'
 
 if __name__ == "__main__":
-    import doctest
-    doctest.testmod(verbose=True)
+    #import doctest
+    #doctest.testmod(verbose=True)
     demo_two()
