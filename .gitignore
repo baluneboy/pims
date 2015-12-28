@@ -58,6 +58,7 @@ target/
 
 # Mac OSX stuff
 .DS_Store
+.AppleDouble
 
 # Sublime stuff
 *.sublime-settings

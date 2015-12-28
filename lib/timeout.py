@@ -2,7 +2,8 @@
 
 import time
 import signal
- 
+from pims.lib.timed import timed
+
 # FIXME this does not work as expected with zero for input sec
 class Timeout():
     """Timeout class using ALARM signal."""
@@ -20,7 +21,7 @@ class Timeout():
  
     def raise_timeout(self, *args):
         raise Timeout.Timeout()
- 
+
 def run_with_timeout(fun, timeout, *args, **kwargs):
     # Run fun in under timeout seconds or bail out
     out = None
@@ -31,6 +32,12 @@ def run_with_timeout(fun, timeout, *args, **kwargs):
     except Timeout.Timeout:
         out = 'TIMEOUT VALUE OF %d SECONDS WAS REACHED FOR %s' % (timeout, fun.__name__)
     return out
+
+
+@timed
+def verbose_run_with_timeout(fun, timeout, *args, **kwargs):
+    return run_with_timeout(fun, timeout, *args, **kwargs)
+
  
 #############################################################################
 
