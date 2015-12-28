@@ -7,12 +7,16 @@ import timeit
 import pywemo
 from pims.lib.timeout import verbose_run_with_timeout
 
+# FIXME wrap this in bash script that used Linux timeout command
+#       because there is some crazy overhead of like 2 sec that
+#       I am not going to try and track down
+
 # input parameters
 defaults = {
 'target':        'the light',   # string for name of target device
 'action':        'toggle',      # string corresponding to device method to be called
-'timeout':       '10',          # converts to integer number of seconds for timeout period
-'max_iter':      '5',           # converts to integer for max # tries at discovering wemo devices
+'timeout':       '7',           # converts to integer number of seconds for timeout period
+'max_iter':      '8',           # converts to integer for max # tries at discovering wemo devices
 }
 parameters = defaults.copy()
 
@@ -50,7 +54,7 @@ def process_inputs(target='the light', action='toggle', timeout=50, max_iter=5):
     
     outstr = ("SUCCESS" if success else "FAILURE")
     outstr += " %s after %d iterations: " % (strtime, count)
-    outstr += timed_str
+    outstr += timed_str + ' was how long it took'
     
     return outstr
 
@@ -82,7 +86,6 @@ def main(argv):
     else:
         if parameters_ok():
             #print parameters
-
             print process_inputs(
                 target=parameters['target'],
                 action=parameters['action'],
