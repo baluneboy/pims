@@ -31,22 +31,6 @@ def alert(msg, title='ALERT'):
     return response # 1 for "OK", 2 for "Cancel", otherwise -4 (for X)
 
 
-#### return parsed rendition of readme.txt file for ATL events related to Progress Docking
-###def parse_atl_events(readme_file, eof_str):
-###    """return parsed rendition of readme.txt file for ATL events related to Progress Docking"""
-###    asflown_events = []
-###    with open(readme_file, 'r') as f:
-###        for line in f:
-###            if line.startswith(eof_str):
-###                # we hit line that matches end-of-file string
-###                return asflown_events
-###            if line.strip() and not line.startswith('#'):
-###                # not blank line and not comment, so append
-###                evt = AsFlownEvent(line)
-###                asflown_events.append(evt)
-###    return asflown_events
-
-
 # take action from nautilus script based on last line of readme.txt
 def main(curdir):
     """take action from nautilus script based on last line of readme.txt"""

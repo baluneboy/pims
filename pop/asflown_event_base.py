@@ -7,7 +7,9 @@ from dateutil import parser
 
 from pims.files.utils import extract_between_lines_as_list
 
-class AsFlownEvent(object):
+class AsFlownEventBase(object):
+
+    __metaclass__ = abc.ABCMeta
     
     def __init__(self, readme_line):
         tmp = readme_line.rstrip('\n').split(' ')
@@ -18,6 +20,35 @@ class AsFlownEvent(object):
         s = ''
         s += 'AS-FLOWN EVENT TIME = %s, TEXT = %s' % (self.time, self.text)
         return s
+
+    @abc.abstractmethod    
+    def get_matlab_code(self):
+        """return matlab code for this event"""
+        pass
+
+
+class AsFlownEvent(AsFlownEventBase):
+    
+    def get_matlab_code(self):
+        """return matlab code for this event"""
+        return '% ' + str(self)
+
+
+class ProgressDockingAsFlownEvent(AsFlownEvent):
+    
+    def get_matlab_code(self):
+        """return matlab code for this Progress Docking event"""
+        s = ''
+        if self.text.startswith('Plot gvt'):
+            if self.text.endswith('Start'):
+                s += "strStartGvtPlotSpan = datenum('%s'); %% Plot gvt START" % self.time
+            elif self.text.endswith('CRease'):
+                s += "strCeaseGvtPlotSpan = datenum('%s'); %% Plot gvt CEASE" % self.time
+            else:
+                s += '%% UNRECOGNIZED AS FLOWN EVENT TEXT = "%s"' % self.text
+                return s
+            
+        return s + ' % PROG DOCK EVT ' + str(self)
 
 
 class MatlabCode(object):
@@ -30,7 +61,7 @@ class MatlabCode(object):
     def __str__(self):
         s = ''
         for evt in self.asflown_events:
-            s += 'AS-FLOWN EVENT TIME = %s, TEXT = %s\n' % (evt.time, evt.text)
+            s += '% %s, %s\n' % (evt.time, evt.text)
         return s
 
     @abc.abstractmethod    
@@ -48,6 +79,7 @@ class MatlabCode(object):
         """append matlab code to readme_file related to specific activity"""
         pass    
 
+
 class ProgressDockingMatlabCode(MatlabCode):
     
     def __init__(self, *args, **kwargs):
@@ -59,7 +91,8 @@ class ProgressDockingMatlabCode(MatlabCode):
         s += self.get_sensor_subdirs()
         s += '\n\n'
         for evt in self.asflown_events:
-            s += 'AS-FLOWN PROGRESS DOCKING EVENT TIME = %s, TEXT = %s\n' % (evt.time, evt.text)
+            #s += 'AS-FLOWN PROGRESS DOCKING EVENT TIME = %s, TEXT = %s\n' % (evt.time, evt.text)
+            s += '%s\n' % evt.get_matlab_code()
         s += '\n# STANDARD PROCESSING FOR PROGRESS DOCKING ENDS HERE'
         return s
 
@@ -72,7 +105,7 @@ class ProgressDockingMatlabCode(MatlabCode):
         for line in lines:
             # if not blank and not comment, then append event
             if line.strip() and not line.startswith('#'):
-                evt = AsFlownEvent(line)
+                evt = ProgressDockingAsFlownEvent(line)
                 asflown_events.append(evt)
         return asflown_events
 
@@ -142,12 +175,12 @@ def main(argv):
     print_usage()  
 
 
-if __name__ == '__main__':
-
-    print get_sensor_subdirs(parameters['sensor_subdirs'])
-    raise SystemExit
-
-    sys.exit(main(sys.argv))
+##if __name__ == '__main__':
+##
+##    print get_sensor_subdirs(parameters['sensor_subdirs'])
+##    raise SystemExit
+##
+##    sys.exit(main(sys.argv))
 
     
 """
