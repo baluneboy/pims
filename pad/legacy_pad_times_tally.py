@@ -5,10 +5,12 @@
 
 import csv
 import datetime
+from time import mktime
 from string import *
 import struct
 import os, sys
 import shutil
+import resample
 from padutils import *
 from padpro import *
 
@@ -197,7 +199,7 @@ def mainLoop():
                     for hfn in fileList:
                         fn = padFileName = split(hfn, '.header')[0]
                         if(os.path.exists(fn)):
-                            startTime,junk,endTime = fileTimeRange(hfn)
+                            startTime,junk,endTime = resample.fileTimeRange(hfn)
                             ### FIXME added this part quickly to check for gaps
                             if sensor.endswith('samses_accel_es06'):
                                 diffTime = startTime - prevEndTime
@@ -214,7 +216,7 @@ def mainLoop():
         print >> outfile, strOut
 
         #Increment the day
-        y, m ,d = nextDate(y, m, d)
+        y, m ,d = resample.nextDate(y, m, d)
         tStart = mktime((y,m,d,0,0,0,0,0,0))
 
     outfile.close()

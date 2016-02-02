@@ -24,17 +24,32 @@ __all__ = [
 #/tmp/pth/1qualify_notes.pdf
 #---------------------------
 #.*/(?P<page>\d{1})(?P<subtitle>qualify|quantify)_(?P<notes>.*)\.pdf\Z
-_HANDBOOKPDF_PATTERN = (
+#.*/(?P<page>\d{2})(?P<subtitle>qualify|quantify)_(?P<start>[0-9_\.]+)_(?P<sensor>[a-z0-9]+)_(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_(?P<notes>.*)\.pdf
+_OLD_HANDBOOKPDF_PATTERN = (
     ".*/"                                       # path at the start, then
-    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
-    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
-    "_"                                         # underscore, then
+    "(?P<page>\d{2})"                           # a digit OR A to Z single char, then
+    "(?P<subtitle>qualify|quantify)_"           # enum for subtitle underscore, then
+    "(?P<start>[0-9_\.]+)_"                     # start time underscore, then
+    "(?P<sensor>[a-z0-9]+)_"                    # sensor underscore, then
+    "(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_"  # plot abbreviation underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )
 
-##---------------------------
-#_SUFFIX_CALLOUTS = (
+#---------------------------
+#.*/(?P<start>[0-9_\.]+)_(?P<sensor>[a-z0-9]+)_(?P<plot_type>spg.|gvt.|rvt.|imm|irms|pcs.)_(?P<notes>.*)\.pdf
+_HANDBOOKPDF_PATTERN = (
+    ".*/"                                       # path at the start, then
+    "(?P<start>[0-9_\.]+)_"                     # start time underscore, then
+    "(?P<sensor>[a-z0-9]+?)"                    # sensor, then << non-greedy trailing question mark FTW
+    "(?P<sensorsuffix>ten|one|006|)_"           # suffix (or empty) underscore, then
+    "(?P<plot_type>spg.|gvt.|rvt.|imm.|irms|pcs.)_"  # plot abbreviation underscore, then
+    "(?P<notes>.*)"                             # notes, then
+    "\.pdf\Z"                                   # extension to finish
+    )
+
+# ---------------------------
+# _SUFFIX_CALLOUTS = (
 #    ".*/"                                       # path at the start, then
 #    "(?P<page>\d{1}|[A-Z])"                     # a digit OR A to Z single char, then
 #    "(?P<subtitle>qualify|quantify)"            # enum for subtitle, then
@@ -253,6 +268,7 @@ _PLOTTYPES = {
     'pcs':   'PCSA',
     'cvf':   'Cumulative RMS vs. Frequency',
     'ist':   'Interval Stat',
+    'imm':   'Interval Min/Max',
     'rvt':   'RMS vs. Time',    
     'chi':   'Cumulative Histogram',    
     '':      'empty',
@@ -324,21 +340,25 @@ def is_unique_handbook_pdf_match(fname):
 if __name__ == "__main__":
        
     files = [
-        '/tmp/9quantify_2014_09_25_08_30_00_121f08006_chim_compare_rodent_research_install.pdf',
-        '/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
-        '/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
-        '/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
-        '/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
-        '/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
-        '/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
-        '/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
-        '/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
-        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
-        '/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
-        '/tmp/1quantify_2015_05_12_09_00_00_0bbd_gvt3_airlock_hatch_activities_xoff_-4.22_yoff_1.00_scale_0.77_ori_landscape.pdf',
-        '/tmp//misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_BioLab_Centrifuge_Rotor/1qualify_2015_08_03_13_00_00_121f08_spgs_roadmaps500_biolab_centrifuge_rotor_test.pdf',
+        #'/tmp/9quantify_2014_09_25_08_30_00_121f08006_chim_compare_rodent_research_install.pdf',
+        #'/tmp/9quantify_2015_12_09_08_00_00_radgse_gvt3_cygnus-4_capture_install_zoom.pdf',
+        #'/tmp/1qualify_2013_12_19_08_00_00.000_121f03_spgs_roadmaps500_cmg_spin_downup.pdf',
+        #'/tmp/5quantify_2013_10_08_13_35_00_es03_cvfs_msg_wv3fans_compare.pdf',
+        #'/tmp/1qualify_2013_10_01_00_00_00.000_121f05_pcss_roadmaps500.pdf',
+        #'/tmp/3quantify_2013_09_22_121f03_irmss_cygnus_fan_capture_31p7to41p7hz.pdf',
+        #'/tmp/1quantify_2013_12_11_16_20_00_ossbtmf_gvt3_progress53p_reboost.pdf',
+        #'/tmp/1qualify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        #'/tmp/2quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_hist.pdf',
+        #'/tmp/3quantify_2011_05_19_00_08_00_121f03006_gvt3_12hour_pm1mg_001800_z1mg.pdf',
+        #'/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_CMG_Desat/1quantify_2011_05_19_18_18_00_121f03006_gvt3_12hour_pm1mg_001800_12hc.pdf',
+        #'/tmp/3quantify_2014_03_03_14_30_00_121f08_rvts_glacier3_duty_cycle.pdf',
+        #'/tmp/1quantify_2015_05_12_09_00_00_0bbd_gvt3_airlock_hatch_activities_xoff_-4.22_yoff_1.00_scale_0.77_ori_landscape.pdf',
+        #'/tmp//misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_BioLab_Centrifuge_Rotor/1qualify_2015_08_03_13_00_00_121f08_spgs_roadmaps500_biolab_centrifuge_rotor_test.pdf',
+        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_2015_Cygnus-4_Capture_and_Install/1qualify_2015_12_08_18_00_00_ossbtmf_gvt3_twodays.pdf',
+        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_2015_Cygnus-4_Capture_and_Install/2quantify_2015_12_08_18_00_00_radgse_gvt3_cygnus-4_capture_install.pdf',
+        '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_2015_Cygnus-4_Capture_and_Install/3quantify_2015_12_09_08_00_00_radgse_gvt3_cygnus-4_capture_install_zoom.pdf',
         ]
 
     for f in files:
-        print is_unique_handbook_pdf_match(f), f
-    
+        is_match = is_unique_handbook_pdf_match(f)
+        print is_match, f

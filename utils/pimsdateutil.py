@@ -189,6 +189,28 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         d2 = None
     return d1, d2
 
+# convert start string like 2015_01_02_03_04_05.678_blah to datetime object for start GMT
+def handbook_pdf_startstr_to_datetime(startstr):
+    """convert start string to datetime object for start GMT"""
+    # get rid of header ext if there is one, and just work with basename
+    ymdhms = [1970, 1, 1, 0, 0, 0, 0]
+    pattern = '(?:\d*\.)?\d+_'
+    i = 0
+    for x in re.findall(pattern, startstr):
+        if i > 4 and ('.' in x):
+            xx = x.rstrip('_').split('.')
+            v1 = int(xx[0])
+            v2 = int(xx[1]) * 1000
+            ymdhms[i] = v1
+            ymdhms[i+1] = v2
+            i += 2
+        else:
+            v = int(x.rstrip('_'))
+            ymdhms[i] = v
+            i += 1
+    args = tuple(ymdhms)
+    return datetime.datetime( *args )
+
 def format_datetime_as_pad_underscores(dtm):
     """
     Format datetime as underscore-delimited PAD string.

@@ -40,7 +40,7 @@
     // so the user gets feedback? This is really only useful to those writing
     // functions. The average user just wants the plugin to work, so let's not reraise
     // the exception
-    "reraise_exceptions": false,
+    "reraise_exceptions": true,
     // If you want to have a syntax applied when new files are created, set
     // "new_file_syntax" to the name of the syntax to use. The format is exactly the
     // same as "name" in the rules below. For example, if you want to have a new
@@ -235,6 +235,38 @@
                 {"file_name": ".*\\.(py|pyw|py3)"},
                 {"binary": "python"}
             ]
-        }
+        },
+        // SAMSLOGS ENTRIES /////////////////////////////////////////////////////////////////////////////////////////////
+        {
+            // recent-sams-cmds.txt file
+            "name": "samslogs/recentsamscmds",
+            "rules": [
+                {"file_name": ".*recent-sams-cmds\\.txt$"}
+            ]
+        },        
+        // NOTE: for Windows the "path slashes" [file seps] below should be 4 (four) backslashes...c'mon man
+        {
+            // samslist txt files in usr/tgz
+            "name": "samslogs/samslist",
+            "rules": [
+                //{"file_name": ".*\\\\usr\\\\tgz\\\\samslist\\w+\\.txt$"}, // <<< SEE THE SILLINESS!
+                {"file_name": ".*/usr/tgz/samslist\\w+\\.txt$"},
+                {"function": {"name": "is_disguised_samslist_file", "source": "ApplySyntax/is_disguised_samslist_file"}}
+            ]
+        },
+        {
+            // summary_samslist txt files in usr/tgz
+            "name": "samslogs/samslistsummary",
+            "rules": [
+                {"file_name": ".*/usr/tgz/summary_samslist\\w+\\.txt$"}
+            ]
+        },
+        {
+            // syslog files in var/log
+            "name": "samslogs/syslog",
+            "rules": [
+                {"file_name": ".*/var/log/syslog.*$"}
+            ]
+        }        
     ]
 }

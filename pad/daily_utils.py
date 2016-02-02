@@ -31,29 +31,51 @@ def get_total_seconds(subdir):
     
     # get list of (file, rate) tuples sorted by rate
     r = grep_sample_rate(subdir)
-    hdr_list = file_rate_tuples(r)
+    hdr_list_tuples = file_rate_tuples(r)
     #print hdr_list
 
     # get total seconds from sum of T (= N / fs ) for each dat file
-    dat_files_seconds = [ get_num_samples(t[0].replace('.header','')) / t[1] for t in hdr_list ]
+    dat_files_seconds = [ get_num_samples(t[0].replace('.header','')) / t[1] for t in hdr_list_tuples ]
     total_seconds = sum(dat_files_seconds)
-    return total_seconds
+    return total_seconds, hdr_list_tuples
+
+# return delta seconds from header file list; delta is time diff between first and last header file
+def get_delta_for_day(hdr_list_tuples):
+    """return delta seconds from header file list; delta is time diff between first and last header file"""
+
+    hdr_list_tuples.sort()
+    if hdr_list_tuples:
+        # get delta seconds = (last - first); where first & last are header file timestamps
+        t1 = os.path.getmtime(hdr_list_tuples[0][0])
+        t2 = os.path.getmtime(hdr_list_tuples[-1][0])
+        #print t1
+        #print t2
+        delta_sec = t2 - t1
+    else:
+        delta_sec = -1
+    return delta_sec
 
 # show total pad hours for core sensors for yoda ymd path given by date_str
 def show_pad_hours_for_day(date_str, subdirs):
     """show total pad hours for core sensors for yoda ymd path given by date_str"""
     pth = datetime_to_ymd_path(datestr_to_datetime(date_str))   
+    print '{0:>6s} {1:>4s} {2:s}'.format('deltam', 'hrs', 'subdir')
     for sensor_subdir in subdirs:
         subdir = os.path.join(pth, sensor_subdir)           
         try:
-            total_sec = get_total_seconds(subdir)
+            total_sec, hdr_list_tuples = get_total_seconds(subdir)
         except Exception, e:
-            total_sec = 0
-        print '{0:>5.1f} {1:s}'.format(total_sec / 3600.0, subdir)
+            total_sec = -1
+            hdr_list_tuples = None
+        try:
+            delta_sec = get_delta_for_day(hdr_list_tuples)
+        except Exception, e:
+            delta_sec = -1
+        print '{0:>6.1f} {1:>4.1f} {2:s}'.format(delta_sec / 60.0, total_sec / 3600.0, subdir)
 
 if __name__ == "__main__":
     
-    day_range = DayRange(one,two)
+    #day_range = DayRange(one,two)
     
     date_str = sys.argv[1]
     

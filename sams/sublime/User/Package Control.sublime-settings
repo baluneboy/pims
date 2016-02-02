@@ -1,4 +1,5 @@
 {
+	"bootstrapped": true,
 	"in_process_packages":
 	[
 	],
@@ -11,6 +12,7 @@
 		"LineEndings",
 		"Package Control",
 		"SchemeCycler",
+		"Text Pastry",
 		"WordHighlight"
 	]
 }

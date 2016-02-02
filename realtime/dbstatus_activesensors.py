@@ -52,7 +52,7 @@ def get_samplerate(p):
 
 if __name__ == '__main__':
 	pimsComputers = ['chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
-	#pimsComputers.remove('manbearpig')
+	pimsComputers.remove('manbearpig')
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
 

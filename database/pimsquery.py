@@ -40,7 +40,7 @@ def quick_test(host, schema):
         print "GMT:", r['gmt']
     result.close()
     r2.close()
-    
+
 #quick_test('manbearpig', 'pims')
 #raise SystemExit
 
@@ -179,7 +179,19 @@ def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEM
             if idle_wait(sql_retry_time):
                 return []
     return results
+
+# create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on kyle
+def get_sensor_location_from_kyle(sensor, dtm):
+    # select from_unixtime(time), location_name from pad.coord_system_db where coord_name = "121f08" and time < unix_timestamp('2011-01-02') order by time desc limit 1;
+    timestr = dtm.strftime('%Y-%m-%d %H:%M:%S')
+    loc = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" and time < unix_timestamp("%s") order by time desc limit 1' % (sensor, timestr), 'kyle')
+    return loc[0][0]
+
 #####################################################################################
+
+#loc = get_sensor_location_from_kyle('121f03', datetime.datetime.now())
+#print loc
+#raise SystemExit
 
 # FIXME did this one kinda quick, so scrub it
 class HandbookQueryFilename(object):

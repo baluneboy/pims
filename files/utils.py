@@ -3,16 +3,19 @@ import re
 import time
 import errno
 import shutil
+import pandas as pd
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.strings.utils import remove_non_ascii
 
+
 def file_age_days(fname):
     utime_file = os.path.getmtime(fname)
     utime_now = time.time()
     return int( (utime_now - utime_file) // 86400 )
+
 
 def mkdir_p(path):
     try:
@@ -23,12 +26,39 @@ def mkdir_p(path):
         else:
             raise
 
+
+# return list of lines extracted from text file between 2 delimiting lines
+def extract_between_lines_as_list(text_file, line1, line2):
+    with open(text_file, 'rb') as f:
+        textfile_temp = f.read()
+        if line1 and line2:
+            s = textfile_temp.split(line1 + '\n')[1].split('\n' + line2)[0]
+        elif not line1 and line2:
+            s = textfile_temp.split('\n' + line2)[0]
+        elif line1 and not line2:
+            s = textfile_temp.split(line1 + '\n')[1]
+        else:
+            s = textfile_temp
+        return s.split('\n')
+
+    
 # get most recent file along pth that ends with suffix
 def most_recent_file_with_suffix(pth, suffix):
     """get most recent file along pth that ends with suffix"""
     files = [ os.path.join(pth, f) for f in os.listdir(pth) if f.endswith(suffix) ]
     files.sort(key=lambda x: os.path.getmtime(x))
     return os.path.join(pth, files[-1])
+
+# get file lines between two delimiter strings
+def get_lines_between(beginstr, endstr, filename, include_newlines=True):
+    """get file lines between two delimiter strings"""
+    if include_newlines:
+        beginstr += '\n'
+        endstr = '\n' + endstr
+    with open(filename, 'r') as f:
+        temp = f.read()
+        s = temp.split(beginstr)[1].split(endstr)[0]
+    return s
 
 # prepend to text file
 def prepend_tofile(s, txtfile):
@@ -58,6 +88,18 @@ def tail(f, n, offset=0):
         if len(lines) >= to_read or pos == 0:
             return lines[-to_read:offset and -offset or None]
         avg_line_length *= 1.3
+
+def reshape_csv_file(csv_file, shape_tuple):
+    # reshape the data
+    df = pd.read_csv(csv_file)
+    data = df.values
+    a = data.reshape(shape_tuple)
+    df_new = pd.DataFrame(a)
+    
+    # write new shaped data to new csv file
+    new_file = csv_file + '.RESHAPED.csv'
+    df_new.to_csv(new_file, index=False, header=False)
+    print 'wrote ' + new_file
 
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:
@@ -181,7 +223,7 @@ def move_pad_pair(header_file, dest_dir):
     return os.path.join(dest_dir, os.path.basename(header_file))
 
 def listdir_filename_pattern(dirpath, fname_pattern):
-    """Listdir files that match fname_pattern."""
+    """Get list of files that match fname_pattern."""
     if not os.path.exists(dirpath):
         return None
     files = [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
@@ -218,6 +260,17 @@ def filter_dirnames(dirpath, predicate):
             #print abspath
             if predicate(abspath):
                 yield abspath
+
+def grep_r(pattern, topdir):
+    r = re.compile(pattern)
+    for parent, dnames, fnames in os.walk(topdir):
+        for fname in fnames:
+            filename = os.path.join(parent, fname)
+            if os.path.isfile(filename):
+                with open(filename) as f:
+                    for line in f:
+                        if r.search(line):
+                            yield line
 
 # transfer file uploaded (by JAXA) FROM fromdir TO todir
 def ike_jaxa_file_transfer(fromdir, todir):

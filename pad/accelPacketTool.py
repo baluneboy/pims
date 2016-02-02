@@ -60,6 +60,7 @@ DB_TABLES = {
     'hirap':  'towelie', 
 }
 
+
 # hex dump of packet (or header)
 def packetDump(packet):
     """hex dump of packet (or header)"""
@@ -88,6 +89,7 @@ def packetDump(packet):
         start = start + size
     return hex.rstrip('\n'), ln  
 
+
 # get CCSDS time from header part of packet
 def get_ccsds_time(hdr):
     """get CCSDS time from header part of packet"""
@@ -100,6 +102,7 @@ def get_ccsds_time(hdr):
     fine = float(int(fine_hex, scale)) / (2.0**8)
     #return coarse, fine_hex, fine
     return datetime.datetime.fromtimestamp( coarse + fine )
+
 
 # get CCSDS sequence counter from header part of packet
 def get_ccsds_sequence(hdr):
@@ -116,6 +119,7 @@ def get_ccsds_sequence(hdr):
     ##print bin(int(my_hexdata, scale))[2:].zfill(num_of_bits)
     ##print bin(int(my_hexdata, scale) & VALUE_MASK)
     return int(my_hexdata, scale) & VALUE_MASK
+
 
 # general query
 class GeneralQuery(object):
@@ -136,12 +140,14 @@ class GeneralQuery(object):
     def get_results(self):
         return sqlConnect(self.querystr, self.host)
 
+
 # default query has limit of 1 and desc time order
 class DefaultQuery(GeneralQuery):
     """default query has limit of 1 and desc time order"""
     
     def __init__(self, host, table):
         super(DefaultQuery, self).__init__(host, table, query_suffix='ORDER BY time DESC LIMIT 1')
+
 
 # SAMS SE half-sec foursome query
 class SamsSeHalfSecFoursomeQuery(GeneralQuery):
@@ -155,6 +161,7 @@ class SamsSeHalfSecFoursomeQuery(GeneralQuery):
     def __init__(self, host, table):
         super(SamsSeHalfSecFoursomeQuery, self).__init__(host, table, query_suffix = 'ORDER BY time DESC LIMIT 12')
 
+
 # SAMS TSH one-sec eightsome query
 class SamsTshOneSecEightsomeQuery(GeneralQuery):
     """
@@ -167,6 +174,7 @@ class SamsTshOneSecEightsomeQuery(GeneralQuery):
     def __init__(self, host, table):
         super(SamsTshOneSecEightsomeQuery, self).__init__(host, table, query_suffix = 'ORDER BY time DESC LIMIT 24')
 
+
 # "start, length" query has ascending order with special limit to imply "start at rec" and "give me this many records"
 class StartLenAscendQuery(GeneralQuery):
     """Like SELECT * FROM 121f04 ORDER BY time ASC LIMIT 2, 3; # ASC & LIMIT imply start at rec (2+1) and give me 3 results"""
@@ -174,6 +182,7 @@ class StartLenAscendQuery(GeneralQuery):
     def __init__(self, host, table, start, length):
         suffix = 'ORDER BY time ASC LIMIT %d, %d' % ( (start-1) , length ) # zero is 1st rec
         super(StartLenAscendQuery, self).__init__(host, table, query_suffix = suffix)
+
 
 # packet inspector for having good look at accel db packets
 class PacketInspector(object):
@@ -326,6 +335,7 @@ class PacketInspector(object):
             # FIXME put this above details and improve handling of details versus utimes form of output
             print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, pkt_time_human, self.table)
 
+
 # use parameters to inspect packets in db table
 def query_and_display(table, host, details, custom=None):
     """use parameters to inspect packets in db table"""
@@ -348,7 +358,7 @@ def query_and_display(table, host, details, custom=None):
     
         else:
             query = DefaultQuery(host, table)
-            query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-09-01 18:00:00") ORDER BY time ASC LIMIT 11')
+            query = GeneralQuery(host, table, 'WHERE time > unix_timestamp("2014-09-01 18:00:00") ORDER BY time ASC LIMIT 1000')
     
     # create packet inspector object using query object as input
     pkt_inspector = PacketInspector(host, table, query=query, details=details)
@@ -358,6 +368,7 @@ def query_and_display(table, host, details, custom=None):
     df = pkt_inspector.get_results_dataframe()
     return df
     #pkt_inspector.display_results_awkwardly()
+
     
 # check for reasonableness of parameters
 def params_ok():
@@ -374,9 +385,10 @@ def params_ok():
     if not parameters['db_tables']:
         parameters['db_tables'] = DB_TABLES
 
-    # FIXME ideally, check for tables on hosts in pre-cursory fashion here
+    # FIXME ideally, pre-check for tables on hosts here before diving in
 
     return True # params are OK; otherwise, we returned False above
+
 
 # print short description of how to run the program
 def print_usage():
@@ -386,6 +398,7 @@ def print_usage():
     print 'EXAMPLE2: %s 121f03=tweek hirap=towelie details=False # TWO SMALL SETS' % os.path.abspath(__file__)
     print 'EXAMPLE3: %s 121f03=tweek details=True # ONE DETAILED SET' % os.path.abspath(__file__)
     print 'EXAMPLE4: %s details=True # SHOWS MAX INFO' % os.path.abspath(__file__)
+
 
 # iterate over db query results to show pertinent packet details (and header info when details=True)
 def main(argv):
@@ -425,7 +438,10 @@ def main(argv):
         #print pd.Timestamp( np.datetime64('2012-05-01T01:00:00.000000') )
         #df_cat['ccsds_sec_delta'] = df_cat['ccsds_time_delta'].map(tdelta2sec)
         
-        print df_cat
+        # FIXME the CSV output filename should reflect inputs and include a when-run timestamp too
+        #print df_cat
+        #df_cat.to_csv('/tmp/es03.csv', index=False, header=True)
+        df_cat.to_csv('/tmp/hirapts3.csv', index=False, header=True)
 
         return 0
 
