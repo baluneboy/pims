@@ -18,7 +18,7 @@ def remedy_start(fname):
     rem_start = stop + datetime.timedelta(seconds=1)
     return rem_start
 
-def remedy_cmd_prefix(fname):
+def remedy(fname):
     #                                                                           LESS_THAN_DATETME
     #python /home/pims/dev/programs/python/packet/resample.py fcNew=6 dateStart=2015_08_07_00_00_00.000 dateStop=2015_08_08_00_00_00.000 sensor=121f02
     date_start = remedy_start(fname)
@@ -26,7 +26,7 @@ def remedy_cmd_prefix(fname):
     if (date_start.hour < 23):
         cmd = 'python /home/pims/dev/programs/python/packet/resample.py fcNew=6'
     else:
-        cmd = '#python /home/pims/dev/programs/python/packet/resample.py fcNew=6'
+        cmd = 'echo SKIP python /home/pims/dev/programs/python/packet/resample.py fcNew=6'
     cmd += ' dateStart=' + format_datetime_as_pad_underscores(date_start)
     cmd += ' dateStop=' + format_datetime_as_pad_underscores(date_stop)
     cmd += ' sensor='
@@ -36,7 +36,7 @@ if __name__ == "__main__":
     if len(sys.argv) == 3:
         action = sys.argv[1]
         fname = sys.argv[2]
-        if action == 'remedy_cmd_prefix':
+        if action == 'remedy':
             cmd = eval( action + "('" + fname + "')" )
             print cmd
         else:
