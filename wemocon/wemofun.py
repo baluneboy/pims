@@ -13,7 +13,7 @@ from pims.lib.timeout import verbose_run_with_timeout
 
 # input parameters
 defaults = {
-'target':        'the light',   # string for name of target device
+'target':        'the lamp',    # string for name of target device
 'action':        'toggle',      # string corresponding to device method to be called
 'timeout':       '7',           # converts to integer number of seconds for timeout period
 'max_iter':      '8',           # converts to integer for max # tries at discovering wemo devices
