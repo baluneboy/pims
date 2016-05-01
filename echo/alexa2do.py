@@ -5,7 +5,7 @@ import PyEcho
 import datetime
 import time
 import RPi.GPIO as gpio
-import wemocontrol.wemo_backend as wemo_backend
+import wemocon.wemo_backend as wemo_backend
 
 from myring import retrieve, SECRETSDB_FILE
 
