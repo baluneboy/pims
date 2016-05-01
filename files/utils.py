@@ -10,10 +10,12 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.strings.utils import remove_non_ascii
 
+
 def file_age_days(fname):
     utime_file = os.path.getmtime(fname)
     utime_now = time.time()
     return int( (utime_now - utime_file) // 86400 )
+
 
 def mkdir_p(path):
     try:
@@ -24,6 +26,22 @@ def mkdir_p(path):
         else:
             raise
 
+
+# return list of lines extracted from text file between 2 delimiting lines
+def extract_between_lines_as_list(text_file, line1, line2):
+    with open(text_file, 'rb') as f:
+        textfile_temp = f.read()
+        if line1 and line2:
+            s = textfile_temp.split(line1 + '\n')[1].split('\n' + line2)[0]
+        elif not line1 and line2:
+            s = textfile_temp.split('\n' + line2)[0]
+        elif line1 and not line2:
+            s = textfile_temp.split(line1 + '\n')[1]
+        else:
+            s = textfile_temp
+        return s.split('\n')
+
+    
 # get most recent file along pth that ends with suffix
 def most_recent_file_with_suffix(pth, suffix):
     """get most recent file along pth that ends with suffix"""
@@ -242,6 +260,17 @@ def filter_dirnames(dirpath, predicate):
             #print abspath
             if predicate(abspath):
                 yield abspath
+
+def grep_r(pattern, topdir):
+    r = re.compile(pattern)
+    for parent, dnames, fnames in os.walk(topdir):
+        for fname in fnames:
+            filename = os.path.join(parent, fname)
+            if os.path.isfile(filename):
+                with open(filename) as f:
+                    for line in f:
+                        if r.search(line):
+                            yield line
 
 # transfer file uploaded (by JAXA) FROM fromdir TO todir
 def ike_jaxa_file_transfer(fromdir, todir):
