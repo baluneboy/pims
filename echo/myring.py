@@ -10,7 +10,7 @@ import pickle
 
 ### Settings ###
 
-saltSeed = 'SEE/home/ken/secret_saltSeed' # MAKE THIS YOUR OWN RANDOM STRING
+saltSeed = 'mkhgts465wef4fwtdd' # MAKE THIS YOUR OWN RANDOM STRING
 
 PASSPHRASE_FILE = '/home/ken/secret.p'
 SECRETSDB_FILE = '/home/ken/secrets'
