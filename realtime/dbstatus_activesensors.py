@@ -10,6 +10,12 @@ from commands import *
 from accelPacket import guessPacket
 from pims.database.pimsquery import db_connect
 
+# FIXME I had to manually add es05 and 121f05 when those sensors were inactive.
+#       I did not dig to see if db table empty was issue or what, but both
+#       those sensors being inactive for a while eventually made it so that
+#       we get NameError: name 'packet' is not defined on line commented
+#       below with this string: "FIXME WHY NameError FOR [STALE] SENSORS?"
+
 # table names (i.e. sensors) to ignore that would otherwise get displayed note
 # that these might not have sensor sample rate or location, so it's not an
 # active sensor
@@ -97,6 +103,7 @@ if __name__ == '__main__':
 						minTime = 0
 						maxTime = 0
 						age = time() # time now
+						packet = None
 					else:
 						# get three values in one pass in case slow database is not indexed
 						r = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
@@ -114,7 +121,10 @@ if __name__ == '__main__':
 						loc = 'kyle down'
 					
 					# get sample rate from packet blob
-					rate = '%.1f' % get_samplerate(packet)
+					if packet:
+						rate = '%.1f' % get_samplerate(packet) # "FIXME WHY NameError FOR [STALE] SENSORS?"
+					else:
+						rate = '0.0' # "FIXME WHY NameError FOR [STALE] SENSORS?" This may be the fix!?
 					
 					# output text
 					if (c == 'manbearpig') and (sensor != 'es03'): continue
