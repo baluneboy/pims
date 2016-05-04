@@ -19,7 +19,6 @@ from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers, 
 from pims.utils.iterabletools import pairwise
 from ugaudio.load import padread
 
-
 # find header files for given year/month/day
 def find_headers_without006(ymd_dir):
     """find header files for given year/month/day
@@ -43,14 +42,6 @@ def find_headers_without006(ymd_dir):
     out, err = p.communicate()
     splitout = out.split('\n')[:-1] # split on newlines & get rid of very last trailing newline
     return splitout
-
-#ymd_dir = '/misc/yoda/pub/pad/year2015/month04/day29'
-#headers_all = find_headers_without006(ymd_dir)
-#F03 = [ x for x in headers_all if x.endswith('121f03' + '.header') ]
-#for f in F03:
-#    print f
-#print len(F03)
-#raise SystemExit
 
 
 # get loose pad interval set from header filenames
@@ -298,8 +289,8 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-07-25')
-    dstop =  parser.parse('2015-07-26')
+    dstart = parser.parse('2016-02-11')
+    dstop =  parser.parse('2016-02-12')
     maxgapsec = 17.0
 
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
@@ -479,17 +470,6 @@ def trim_span(start, stop, maxgapsec=17, JIMMY_DIR='/data/pad', YODA_DIR='/misc/
         # classify & process yoda headers for this sensor/day combo
         process_yoda_header_files(hig_yoda.headers[sensday], intervals, new_path)
 
-#def my_demo():
-#    start = parser.parse('2015-03-20')
-#    stop =  parser.parse('2015-03-21')
-#    maxgapsec = 17.0
-#    #trim_span(start, stop, maxgapsec=maxgapsec)
-#    trim_span(start, stop, maxgapsec=maxgapsec, JIMMY_DIR='/data/tmp/pad', YODA_DIR='/data/perm/pad')
-#
-#my_demo()
-#raise SystemExit
-
-
 # iterate over day directory (only sams2 subdirs for now)
 def main(daydir):
     """iterate over day directory (only sams2 subdirs for now)"""
@@ -515,4 +495,3 @@ def do_main():
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
-    #do_main()

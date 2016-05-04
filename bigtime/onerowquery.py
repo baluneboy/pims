@@ -117,7 +117,7 @@ def demo():
                 print utime
         else:
             print table, 'does not exist'
-    for ee_id in ['122-f02', '122-f03', '122-f04']:
+    for ee_id in ['122-f02', '122-f03', '122-f04', '122-f07']:
         utime = query_timestamp(ee_id)
         print ee_id,
         if utime:

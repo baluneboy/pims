@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+##############################################
+# FOR QUICK TEST, RUN demo IN onerowquery.py #
+##############################################
+
 import os
 import time
 import datetime
@@ -64,8 +68,8 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 14:
-        raise Exception('expected exactly 14 timemachine objects as input')
+    if len(time_machines) != 15:
+        raise Exception('expected exactly 15 timemachine objects as input')
 
     disp_host = socket.gethostname()
 
@@ -117,6 +121,8 @@ def run(time_machines):
         font_mgr.Draw(screen, 'arial', 24, txt, rect, COLORS['gray'], 'right', 'center', True)
         rect.top += VERTOFFSET / 4
 
+        ################################################################################################################
+        # HTML UPDATE CODE STARTS HERE
         # when host_now.second is zero this triggers overwrite plots/user/sams/status/sensortimes.txt and .html file too
         f = None
         html_rows = []
@@ -246,12 +252,13 @@ if __name__ == '__main__':
 
     # TODO find true expected delta instead of empirical value
     bigs = [
-        #    table  prefix  ExpDeltaSec   db host        time getter
+        #    table        prefix  ExpDeltaSec  db host        time getter
         # -----------------------------------------------------------
         ('gse_packet',   'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
         ('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
         ('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
         ('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet_rt', '122-f07', SLEEP/6,  'yoda',        EeTimeGetter),
         ('es03rt',       'MSG',     SLEEP/6,  'chef',        TimeGetter),
         ('es05rt',       'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
         ('es06rt',       'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),

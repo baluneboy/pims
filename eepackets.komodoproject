@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="21d546f1-f7a7-463a-bb55-1a61723b859b" kpf_version="5" name="eepackets.komodoproject">
+<file id="b289666f-52c3-44c0-b785-a5ee5599b21b" idref="21d546f1-f7a7-463a-bb55-1a61723b859b" name="pimsquery.py" url="database/pimsquery.py">
+</file>
+<file id="f1ea31c9-c6c4-4222-b40c-36eb99eb13aa" idref="21d546f1-f7a7-463a-bb55-1a61723b859b" name="prune_ee_packets.py" url="database/prune_ee_packets.py">
+</file>
+</project>

@@ -50,6 +50,10 @@ class EeTimeGetter(TimeGetter):
     def _get_time(self):
         return query_timestamp(self.ee_id, self.table, host=self.host)    
 
+###etg = EeTimeGetter('ee_packet_rt', host='yoda', ee_id='122-f07')
+###print unix2dtm(etg._get_time())
+###raise SystemExit
+
 # get yoda samsmon db gse_packet table latest ku_timestamp
 class KuTimeGetter(TimeGetter):
     """get yoda samsmon db gse_packet table latest ku_timestamp"""

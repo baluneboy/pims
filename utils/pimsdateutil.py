@@ -124,7 +124,7 @@ def samsops_timestamp_to_datetime(timestr):
     Examples
     --------
     
-    >>> samsmon_timestamp_to_datetime('2015-06-02 11:50:35')
+    >>> samsops_timestamp_to_datetime('2015-06-02 11:50:35')
     datetime.datetime(2015, 6, 2, 11, 50, 35)
     
     """
@@ -330,7 +330,18 @@ def hours_in_month(dt):
     """
     days = days_in_month(dt)
     return days * 24
-    
+   
+def first_day_of_previous_month(d):
+    """First day of previous month, where current month is given by input date, d.
+
+    >>> d = datetime.date(2016, 4, 6)
+    >>> first_day_of_previous_month(d)
+    datetime.date(2016, 3, 1)
+    """
+    d = datetime.date(d.year, d.month, 1)
+    d -= datetime.timedelta(days=1)
+    return datetime.date(d.year, d.month, 1)
+
 def first_weekday_on_or_after(weekday, dt):
     """First day of kind MONDAY .. SUNDAY on or after date.
 

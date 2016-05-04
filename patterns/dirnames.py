@@ -11,6 +11,13 @@ _HANDBOOKDIR_PATTERN = (
     "(?P<title>.*)\Z"                           # any title to finish string
     )
 
+#\A(?P<parentdir>.*)/hb_(?P<regime>vib|qs)_(?P<category>\w+?)_(?P<title>.*)$
+_SENSORCHECKDIR_PATTERN = (
+    "\A(?P<parentdir>.*)/hb_vib_vehicle_"       # parentdir slash hb_vib_vehicle_ to start string
+    "Sensor_Check_"                             # Sensor_Check_, then
+    "(?P<date>\d{4}-\d{2}-\d{2})\Z"             # YYYY-MM-DD to finish string
+    )
+
 #(?P<sensor_dir>(?P<pad_dir>.*)/year\d{4}/month\d{2}/day\d{2}/(?P<sensor_subdir>(?P<system>.*)_(accel|rad)_.*))/(?P<Y1>\d{4})_(?P<M1>\d{2})_(?P<D1>\d{2})_(?P<h1>\d{2})_(?P<m1>\d{2})_(?P<s1>\d{2})\.(?P<ms1>\d{3})(?P<pm>[\+-])(?P<Y2>\d{4})_(?P<M2>\d{2})_(?P<D2>\d{2})_(?P<h2>\d{2})_(?P<m2>\d{2})_(?P<s2>\d{2})\.(?P<ms2>\d{3})\.(?P<sensor>.*)\.header\Z
 _HEADER_PATTERN = (
     "(?P<sensor_dir>(?P<pad_dir>.*)/year\d{4}/month\d{2}/day\d{2}/(?P<sensor_subdir>(?P<system>.*)_(accel|rad)_.*))/" # partitioned to sensor subdir slash

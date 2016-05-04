@@ -193,6 +193,28 @@ def get_sensor_location_from_kyle(sensor, dtm):
 #print loc
 #raise SystemExit
 
+# delete older EE packets from jimmy db tables
+def delete_older_ee_packets(table, num_keep=3600):
+    # delete from pims.122f02 where time not in ( select time from ( select time from pims.122f02 order by time desc limit 3600 -- Keep this many records. ) foo );
+    query_str = 'delete from pims.%s where time not in ( select time from ( select time from pims.%s order by time desc limit %d ) foo );' % (table, table, num_keep)
+    #print query_str
+    res = db_connect(query_str, 'jimmy')
+    #print res
+
+# get list of ee tables off jimmy
+def get_ee_table_list():
+    # delete from pims.122f02 where time not in ( select time from ( select time from pims.122f02 order by time desc limit 3600 -- Keep this many records. ) foo );
+    query_str = 'show tables like "122f%";'
+    #print query_str
+    res = db_connect(query_str, host='jimmy', db='pims')
+    # have to flatten nested tuple here
+    tab_list = [ tup[0] for tup in res ]
+    return tab_list
+
+#res = get_ee_table_list()
+#print res
+#raise SystemExit
+
 # FIXME did this one kinda quick, so scrub it
 class HandbookQueryFilename(object):
     """Query yoda for handbook filename (should be none or one)."""

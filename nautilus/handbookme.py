@@ -25,6 +25,10 @@ PLOT_ABBREV_MAP = {
     'spgs': ('Spectrogram',                         'Qualify',  [-4.85, 1.25, 0.76], 'landscape'),
     'pcss': ('PSD/Time Histogram',                  'Qualify',  [-4.85, 1.25, 0.76], 'landscape'),
     'gvt3': ('XYZ Accel. vs. Time',                 'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
+    'iav3': ('Int. Avg. Accel. vs. Time',           'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
+    'rvt3': ('XYZ RMS Accel. vs. Time',             'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
+    'rvts': ('RMS Accel. vs. Time',                 'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
+    'psd3': ('XYZ Power Spectral Density',          'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
     'gvtm': ('Accel. Vector Mag. vs. Time',         'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
     'immm': ('Accel. Vector Mag. Min/Max vs. Time', 'Quantify', [-4.85, 1.25, 0.76], 'landscape'),
 }
@@ -456,7 +460,7 @@ def main(curdir):
                 df = process_pdf_filenames_from_spreadsheet(curdir)
                 msg = 'created build subdir using %s' % _PDF_FILES_XLSX
             else:
-                # no spreadsheet, so create it
+                # initially, no spreadsheet, so create it
                 pdf_files = listdir_filename_pattern(curdir, '.*\.pdf$')
                 write_pdf_filenames_to_spreadsheet(pdf_files, curdir, match)
                 msg = 'redo ORDERING if needed, now is time to modify %s' % _PDF_FILES_XLSX
@@ -543,6 +547,12 @@ def main(curdir):
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MSG_Troubleshooting_and_Repair')
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_25-Nov-2015_Progress_61P_Reboost')
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_2015_Cygnus-4_Capture_and_Install')
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_46S_Docking_19-Mar-2016')
+#raise SystemExit
+
+#pdf_file = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_46S_Docking_19-Mar-2016/2016_03_05_03_15_00_121f05_iav3_1h59m59s_progress61p_reboost.pdf'
+#start, sensor, sensor_suffix, abbrev, notes = get_start_sensor_abbrev_notes_from_pdf_filename(pdf_file)
+#print start, sensor, sensor_suffix, abbrev, notes
 #raise SystemExit
 
 #odt_renderer = get_odt_renderer('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500_offsets_-4.25cm_1.00cm_scale_0.86_landscape.pdf')
