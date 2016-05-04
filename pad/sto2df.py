@@ -110,16 +110,17 @@ def emcs_sto2dataframe(sto_file):
         df.rename(columns={k: v}, inplace=True)
 
     # write csv file to same name as sto, but with csv extension
-    df.to_csv( sto_file.replace('.sto', '.csv') )
-    
+	csv_file = sto_file.replace('.sto', '.csv')
+    df.to_csv(csv_file)
+    print 'csv file at %s' % csv_file
+
     return df
 
 def main(sto_file):
     # convert sto file to dataframe
     df = emcs_sto2dataframe(sto_file)
-    print df
+    #print df
     
 if __name__ == '__main__':
-    #sto_file = sys.argv[1]
-    sto_file = '/tmp/jnk/EMCSdata.sto'
+    sto_file = sys.argv[1]
     main(sto_file)
