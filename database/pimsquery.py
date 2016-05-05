@@ -211,7 +211,16 @@ def get_ee_table_list():
     tab_list = [ tup[0] for tup in res ]
     return tab_list
 
-#res = get_ee_table_list()
+# return tuple of count, min(time), and max(time) from ee table
+def get_dbstatusish_details_for_ee(table, host='jimmy'):
+    # select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from 122f04;
+    query_str = 'select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from %s;' % table
+    #print query_str
+    res = db_connect(query_str, host)
+    count, tmin, tmax = res[0]
+    return count, tmin, tmax
+
+#res = get_dbstatusish_details_for_ee('122f04')
 #print res
 #raise SystemExit
 
