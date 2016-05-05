@@ -17,12 +17,11 @@ def prune(table_list):
     for t in table_list:
         delete_older_ee_packets(t)
 
-def dbstat(host, table_list):
-    for t in table_list:
-        count, tmin, tmax = get_dbstatusish_details_for_ee(t, host=host)
-        age = time.time() - dtm2unix(tmax)
-        loc = get_sensor_location_from_kyle(t, datetime.datetime.now())     
-        return t, count, tmin, tmax, age, EEPKT_RATE, loc
+def dbstat(host, table):
+    count, tmin, tmax = get_dbstatusish_details_for_ee(table, host=host)
+    age = time.time() - dtm2unix(tmax)
+    loc = get_sensor_location_from_kyle(table, datetime.datetime.now())     
+    return count, tmin, tmax, age, EEPKT_RATE, loc
     
 def main(argv):
     """switchyard: {prune | dbstat}"""
