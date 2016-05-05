@@ -9,6 +9,8 @@ from time import *
 from commands import *
 from accelPacket import guessPacket
 from pims.database.pimsquery import db_connect
+from pims.database.ee_packets import dbstat
+from pims.database.pimsquery import get_ee_table_list
 
 # FIXME I had to manually add es05 and 121f05 when those sensors were inactive.
 #       I did not dig to see if db table empty was issue or what, but both
@@ -81,8 +83,19 @@ if __name__ == '__main__':
 			if c == myname:
 				n = 'localhost' # mysql permissions require localhost if you are local
 			
+			if c == 'jimmy':
+				ee_tables = get_ee_table_list()
+				eeid, count, minTime, maxTime, age, rate, loc = dbstat(c, ee_tables)
+				print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, eeid, count, minTime, maxTime, age, rate, loc)
+
+			#if myname == 'jimmy':
+			#	results = db_connect('show tables like "122f%"', n)
+			#else:
+			#	# iterate over tables (i.e. sensors) on this computer
+			#	results = db_connect('show tables', n)
+			
 			# iterate over tables (i.e. sensors) on this computer
-			results = db_connect('show tables', n)
+			results = db_connect('show tables', n)			
 			
 			# flatten nested tuple (results) using list comprehension
 			table_list = [element for tupl in results for element in tupl]
