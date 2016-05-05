@@ -53,7 +53,7 @@ def get_samplerate(p):
 		return pkt.rate()
 
 if __name__ == '__main__':
-	pimsComputers = ['chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
+	pimsComputers = ['jimmy', 'chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
 	pimsComputers.remove('manbearpig')
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
@@ -85,14 +85,10 @@ if __name__ == '__main__':
 			
 			if c == 'jimmy':
 				ee_tables = get_ee_table_list()
-				eeid, count, minTime, maxTime, age, rate, loc = dbstat(c, ee_tables)
-				print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, eeid, count, minTime, maxTime, age, rate, loc)
-
-			#if myname == 'jimmy':
-			#	results = db_connect('show tables like "122f%"', n)
-			#else:
-			#	# iterate over tables (i.e. sensors) on this computer
-			#	results = db_connect('show tables', n)
+				for eetab in ee_tables:
+					count, minTime, maxTime, age, rate, loc = dbstat(c, eetab)
+					print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, eetab, count, minTime, maxTime, age, rate, loc)
+				continue
 			
 			# iterate over tables (i.e. sensors) on this computer
 			results = db_connect('show tables', n)			
