@@ -2,7 +2,7 @@
 	"color_scheme": "Packages/Color Scheme - Default/SamsLogs.tmTheme",
 	"detect_slow_plugins": false,
 	"dictionary": "Packages/Language - English/en_US.dic",
-	"font_size": 10,
+	"font_size": 12,
 	"http_proxy": "localhost:31280",
 	"ignored_packages":
 	[

@@ -14,7 +14,8 @@ from pygame.locals import QUIT
 import pandas as pd
 
 from fontmgr import FontManager
-from timemachine import RapidTimeGetter, TimeGetter, EeTimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
+from timemachine import RapidTimeGetter, TimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
+from timemachine import EeTimeGetter, CcsdsEeTimeGetter
 
 from pims.utils.pimsdateutil import unix2dtm
 
@@ -68,8 +69,8 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 15:
-        raise Exception('expected exactly 15 timemachine objects as input')
+    if len(time_machines) != 14:
+        raise Exception('expected exactly 14 timemachine objects as input')
 
     disp_host = socket.gethostname()
 
@@ -170,10 +171,25 @@ def run(time_machines):
                 font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, COLORS[color], 'right', 'center', True)
                 rect.top += VERTOFFSET
             
+            #if f:
+            #    dict_row = {}
+            #    dict_row['GMT'] = logstr
+            #    if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
+            #        devi, dtab = tm.time_getter.table.split('_')[0:2]
+            #        msg = '\n%s %s %s' % (logstr, tm.prefix, devi.upper())
+            #        dict_row['Device'] = tm.prefix
+            #        dict_row['Type'] = devi.upper()                
+            #    else:
+            #        msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
+            #        dict_row['Device'] = tm.time_getter.table
+            #        dict_row['Type'] = tm.prefix                       
+            #    f.write(msg)
+            #    html_rows.append(dict_row)
+
             if f:
                 dict_row = {}
                 dict_row['GMT'] = logstr
-                if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
+                if tm.prefix.startswith('Ku'):
                     devi, dtab = tm.time_getter.table.split('_')[0:2]
                     msg = '\n%s %s %s' % (logstr, tm.prefix, devi.upper())
                     dict_row['Device'] = tm.prefix
@@ -255,10 +271,13 @@ if __name__ == '__main__':
         #    table        prefix  ExpDeltaSec  db host        time getter
         # -----------------------------------------------------------
         ('gse_packet',   'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
-        ('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet_rt', '122-f07', SLEEP/6,  'yoda',        EeTimeGetter),
+        #('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
+        #('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
+        #('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),\
+        ('122f02',       '122-f02', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        #('122f03',       '122-f03', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        ('122f04',       '122-f04', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),        
+        ('122f07',       '122-f07', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
         ('es03rt',       'MSG',     SLEEP/6,  'chef',        TimeGetter),
         ('es05rt',       'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
         ('es06rt',       'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),

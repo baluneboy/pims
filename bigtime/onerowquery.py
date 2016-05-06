@@ -4,6 +4,8 @@ from pims.database.pimsquery import mysql_con
 from pims.database.samsquery import mysql_con_yoda
 from pims.utils.pimsdateutil import samsops_timestamp_to_datetime
 from pims.utils.pimsdateutil import dtm2unix
+from pims.database.ee_packets import dbstat
+
 
 # FIXME the if host == 'yoda' kludge was quick fix here
 # return True if table exists on host; otherwise, return False
@@ -69,6 +71,13 @@ def query_timestamp(ee_id, table='ee_packet_rt', schema='samsmon', host='yoda'):
     con.close()
     if result:
         utime = dtm2unix( result[0][0] )
+    return utime    
+
+# return unixtime query result from time for ee table (in like 122f07 db table) or None (if empty)
+def query_timestamp_jimmy(table, host='jimmy'):
+    """return unixtime query result from time for ee table (in like 122f07 db table) or None (if empty)"""
+    count, tmin, tmax, age, rate, loc = dbstat(host, table)
+    utime = dtm2unix( tmax )
     return utime    
 
 # return unixtime query result from ku_timestamp gse_packet db table or None (if empty)

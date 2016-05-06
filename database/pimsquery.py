@@ -162,7 +162,7 @@ def idle_wait(seconds = 0):
         if add_idle_function:
             return add_idle_function()
     return 0
-def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEMA):
+def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEMA, retry=True):
     sql_retry_time = 30
     repeat = 1
     while repeat:
@@ -175,9 +175,12 @@ def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEM
             cursor.close()
             con.close()
         except MySQLError, msg:
-            print 'MySQL call failed, will try again in %s seconds' % sql_retry_time
-            if idle_wait(sql_retry_time):
-                return []
+            if retry:
+                print 'MySQL call failed, will try again in %s seconds' % sql_retry_time
+                if idle_wait(sql_retry_time):
+                    return []
+            else:
+                raise Exception(msg)
     return results
 
 # create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on kyle
@@ -216,7 +219,7 @@ def get_dbstatusish_details_for_ee(table, host='jimmy'):
     # select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from 122f04;
     query_str = 'select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from %s;' % table
     #print query_str
-    res = db_connect(query_str, host)
+    res = db_connect(query_str, host, retry=False)
     count, tmin, tmax = res[0]
     return count, tmin, tmax
 
