@@ -193,7 +193,11 @@ def run(time_machines):
                     devi, dtab = tm.time_getter.table.split('_')[0:2]
                     msg = '\n%s %s %s' % (logstr, tm.prefix, devi.upper())
                     dict_row['Device'] = tm.prefix
-                    dict_row['Type'] = devi.upper()                
+                    dict_row['Type'] = devi.upper()
+                elif tm.prefix.startswith('122'):
+                    msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
+                    dict_row['Device'] = tm.time_getter.table
+                    dict_row['Type'] = 'EE'
                 else:
                     msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
                     dict_row['Device'] = tm.time_getter.table
