@@ -43,7 +43,7 @@ _HANDBOOKPDF_PATTERN = (
     "(?P<start>[0-9_\.]+)_"                     # start time underscore, then
     "(?P<sensor>[a-z0-9]+?)"                    # sensor, then << non-greedy trailing question mark FTW
     "(?P<sensorsuffix>ten|one|006|)_"           # suffix (or empty) underscore, then
-    "(?P<plot_type>spg.|gvt.|rvt.|imm.|irms|pcs.)_"  # plot abbreviation underscore, then
+    "(?P<plot_type>iav.|psd.|spg.|gvt.|rvt.|imm.|irms|pcs.)_"  # plot abbreviation underscore, then
     "(?P<notes>.*)"                             # notes, then
     "\.pdf\Z"                                   # extension to finish
     )

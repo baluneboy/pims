@@ -5,12 +5,12 @@
 	],
 	"installed_packages":
 	[
-		"AAAPackageDev",
 		"ApplySyntax",
 		"FuzzyFileNav",
 		"HighlightWords",
 		"LineEndings",
 		"Package Control",
+		"PackageDev",
 		"SchemeCycler",
 		"Text Pastry",
 		"WordHighlight"

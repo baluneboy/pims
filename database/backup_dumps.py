@@ -10,6 +10,7 @@ from dateutil.relativedelta import relativedelta
 from samsquery import _UNAME_SAMS, _PASSWD_SAMS
 from pims.files.utils import mkdir_p
 from pims.database.backup_dumps_info import TABLE_INFO_DEFAULT
+from pims.utils.pimsdateutil import first_day_of_previous_month
 
 # input parameters
 defaults = {
@@ -130,13 +131,16 @@ class MysqlDumpCommand(object):
         results, err = p.communicate()
         return results
 
-
 def parametersOK():
     """check for reasonableness of parameters entered on command line"""    
     
     # convert start & stop parameters to date objects
-    parameters['start'] = parser.parse( parameters['start'] ).date()
     parameters['stop'] = parser.parse( parameters['stop'] ).date()
+    if parameters['start'].lower() == 'auto':
+        parameters['start'] = first_day_of_previous_month( parameters['stop'] )
+        parameters['stop'] = datetime.date( parameters['stop'].year, parameters['stop'].month, 1)
+    else:
+        parameters['start'] = parser.parse( parameters['start'] ).date()
     
     # map from (schema, table) to table info & default action
     try:
@@ -189,7 +193,7 @@ def main(argv):
             parameters[pair[0]] = pair[1]
     else:
         if parametersOK():
-            #print parameters
+            #print parameters; return -1
             try:
                 backup_tables(parameters['host'], parameters['start'], parameters['stop'])
             except Exception, err:

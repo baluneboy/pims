@@ -162,7 +162,7 @@ def idle_wait(seconds = 0):
         if add_idle_function:
             return add_idle_function()
     return 0
-def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEMA):
+def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEMA, retry=True):
     sql_retry_time = 30
     repeat = 1
     while repeat:
@@ -175,9 +175,12 @@ def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEM
             cursor.close()
             con.close()
         except MySQLError, msg:
-            print 'MySQL call failed, will try again in %s seconds' % sql_retry_time
-            if idle_wait(sql_retry_time):
-                return []
+            if retry:
+                print 'MySQL call failed, will try again in %s seconds' % sql_retry_time
+                if idle_wait(sql_retry_time):
+                    return []
+            else:
+                raise Exception(msg)
     return results
 
 # create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on kyle
@@ -191,6 +194,37 @@ def get_sensor_location_from_kyle(sensor, dtm):
 
 #loc = get_sensor_location_from_kyle('121f03', datetime.datetime.now())
 #print loc
+#raise SystemExit
+
+# delete older EE packets from jimmy db tables
+def delete_older_ee_packets(table, num_keep=3600):
+    # delete from pims.122f02 where time not in ( select time from ( select time from pims.122f02 order by time desc limit 3600 -- Keep this many records. ) foo );
+    query_str = 'delete from pims.%s where time not in ( select time from ( select time from pims.%s order by time desc limit %d ) foo );' % (table, table, num_keep)
+    #print query_str
+    res = db_connect(query_str, 'jimmy')
+    #print res
+
+# get list of ee tables off jimmy
+def get_ee_table_list():
+    # delete from pims.122f02 where time not in ( select time from ( select time from pims.122f02 order by time desc limit 3600 -- Keep this many records. ) foo );
+    query_str = 'show tables like "122f%";'
+    #print query_str
+    res = db_connect(query_str, host='jimmy', db='pims')
+    # have to flatten nested tuple here
+    tab_list = [ tup[0] for tup in res ]
+    return tab_list
+
+# return tuple of count, min(time), and max(time) from ee table
+def get_dbstatusish_details_for_ee(table, host='jimmy'):
+    # select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from 122f04;
+    query_str = 'select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from %s;' % table
+    #print query_str
+    res = db_connect(query_str, host, retry=False)
+    count, tmin, tmax = res[0]
+    return count, tmin, tmax
+
+#res = get_dbstatusish_details_for_ee('122f04')
+#print res
 #raise SystemExit
 
 # FIXME did this one kinda quick, so scrub it

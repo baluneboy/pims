@@ -6,7 +6,8 @@ from itertools import cycle
 from collections import deque
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from onerowquery import query_onerow_unixtime, table_exists, query_timestamp, query_ku_timestamp, query_hirap
+from onerowquery import query_onerow_unixtime, table_exists, query_timestamp
+from onerowquery import query_timestamp_jimmy, query_ku_timestamp, query_hirap
 
 from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
@@ -49,6 +50,25 @@ class EeTimeGetter(TimeGetter):
 
     def _get_time(self):
         return query_timestamp(self.ee_id, self.table, host=self.host)    
+    
+###etg = EeTimeGetter('ee_packet_rt', host='yoda', ee_id='122-f07')
+###print unix2dtm(etg._get_time())
+###raise SystemExit
+
+# get jimmy pims db ee_packet table timestamp
+class CcsdsEeTimeGetter(EeTimeGetter):
+    """get jimmy pims db ee_packet table timestamp"""
+
+    #def __init__(self, *args, **kwargs):
+    #    self.ee_id = kwargs.pop('ee_id')       
+    #    super(CcsdsEeTimeGetter, self).__init__(*args, **kwargs)
+
+    def _get_time(self):
+        return query_timestamp_jimmy(self.table, host=self.host)
+    
+#etg2 = CcsdsEeTimeGetter('122f07', ee_id='122-f07', host='jimmy')
+#print unix2dtm(etg2._get_time())
+#raise SystemExit
 
 # get yoda samsmon db gse_packet table latest ku_timestamp
 class KuTimeGetter(TimeGetter):

@@ -9,6 +9,8 @@ from time import *
 from commands import *
 from accelPacket import guessPacket
 from pims.database.pimsquery import db_connect
+from pims.database.ee_packets import dbstat
+from pims.database.pimsquery import get_ee_table_list
 
 # FIXME I had to manually add es05 and 121f05 when those sensors were inactive.
 #       I did not dig to see if db table empty was issue or what, but both
@@ -51,7 +53,7 @@ def get_samplerate(p):
 		return pkt.rate()
 
 if __name__ == '__main__':
-	pimsComputers = ['chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
+	pimsComputers = ['jimmy', 'chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
 	pimsComputers.remove('manbearpig')
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
@@ -81,8 +83,15 @@ if __name__ == '__main__':
 			if c == myname:
 				n = 'localhost' # mysql permissions require localhost if you are local
 			
+			if c == 'jimmy':
+				ee_tables = get_ee_table_list()
+				for eetab in ee_tables:
+					count, minTime, maxTime, age, rate, loc = dbstat(c, eetab)
+					print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, eetab, count, minTime, maxTime, age, rate, loc)
+				continue
+			
 			# iterate over tables (i.e. sensors) on this computer
-			results = db_connect('show tables', n)
+			results = db_connect('show tables', n)			
 			
 			# flatten nested tuple (results) using list comprehension
 			table_list = [element for tupl in results for element in tupl]
