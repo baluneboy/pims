@@ -548,6 +548,24 @@ def main(curdir):
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_qs_vehicle_25-Nov-2015_Progress_61P_Reboost')
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_2015_Cygnus-4_Capture_and_Install')
 #main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_46S_Docking_19-Mar-2016')
+
+#pdf_file = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Manufacturing_Device_2016-06-09/2016_06_09_08_00_00_121f04_spgs_overlay_current_mfg_device.pdf'
+#pdf_file = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Manufacturing_Device_2016-06-09/2016_06_09_08_00_00_121f04_spgs_mfg_device.pdf'
+#start, sensor, sensor_suffix, abbrev, notes = get_start_sensor_abbrev_notes_from_pdf_filename(pdf_file)
+#print start
+#print sensor
+#print sensor_suffix
+#print abbrev
+#print notes
+#system, sample_rate, cutoff, location, header_dict =  get_header_info(sensor, sensor_suffix, start, {})
+#print system
+#print sample_rate
+#print cutoff
+#print location
+#print header_dict
+#raise SystemExit
+
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Manufacturing_Device_2016-06-09')
 #raise SystemExit
 
 #pdf_file = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_46S_Docking_19-Mar-2016/2016_03_05_03_15_00_121f05_iav3_1h59m59s_progress61p_reboost.pdf'

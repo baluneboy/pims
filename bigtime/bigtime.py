@@ -69,7 +69,7 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 14:
+    if len(time_machines) != 15:
         raise Exception('expected exactly 14 timemachine objects as input')
 
     disp_host = socket.gethostname()
@@ -238,9 +238,20 @@ def run(time_machines):
 
     pygame.quit()
 
+# TODO instead of 2 stacked tables:
+#      (1) black okay on top
+#      (2) red olds on bottom
+#
+#      how about 4 stacked tables:
+#      (1) LEAD  20 <= delta      : gray  for devices more than 20 seconds ahead of butters host (e.g. hirap)
+#      (2) OKAY   0 <= delta <  20: black for devices with butters/host delta from 0s lag to 20s lead
+#      (3) LAGS -30 <= delta <   0: gray  for devices with butters/host delta from 30s lag to  0s lag
+#      (4) OLDS        delta < -30: red   for devices with butters/host delta from inf lag to 30s lag
 def to_html(df, h):
     df_host = df[ df['Type'] == 'HOST' ]
     host_gmt = df_host['GMT'].values[0]
+    # FIXME the next 2 lines of code (non-comment lines) should allow rows with 30 lag behind host_gmt as okay
+    # FIXME the next 2 lines need to do math on GMT times (do not attempt math on strings)
     df_okay = df[ df['GMT'] >= host_gmt ]
     df_olds = df[ df['GMT'] < host_gmt ]
     h.write( df_okay.to_html(classes='okay', index=False, formatters=FORMATTERS) )
@@ -279,7 +290,7 @@ if __name__ == '__main__':
         #('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
         #('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),\
         ('122f02',       '122-f02', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
-        #('122f03',       '122-f03', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        ('122f03',       '122-f03', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
         ('122f04',       '122-f04', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),        
         ('122f07',       '122-f07', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
         ('es03rt',       'MSG',     SLEEP/6,  'chef',        TimeGetter),

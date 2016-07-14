@@ -20,16 +20,27 @@ _SENSOR_SUBDIR_PATTERN = (
 #/misc/yoda/pub/pad/year2013/month11/day01/sams2_accel_121f05/2013_11_01_23_52_29.944-2013_11_02_00_02_29.959.121f05.header
 #/misc/yoda/pub/pad/year2015/month03/day29/iss_rad_radgse/2015_03_29_09_39_21.609+2015_03_29_11_39_17.480.radgse.header
 _PADPATH_PATTERN = "(?P<ymdpath>%s/pub/pad/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _YODAPATH
-_PADHEADERFILES_PATTERN = _PADPATH_PATTERN + (
+_PADDATAFILES_PATTERN = _PADPATH_PATTERN + (
     "/(?P<subdir>.*_(accel|rad)_(?P<sensor>.*))/"                       # subdir
     "(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}_\d{2}_\d{2}\.\d{3})" # underscore-delimited start part of fname, then
     "(?P<pm>[\+\-])"                                                    # plus/minus
     "(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"              # underscore-delimited stop part of fname, then
-    "\.(?P=sensor)"                                                     # dot sensor
-    "\.header\Z"                                                        # extension to finish
+    "\.(?P=sensor)\Z"                                                   # dot sensor
     )
+_PADHEADERFILES_PATTERN = _PADDATAFILES_PATTERN[:-2] + '\.header\Z'          # header extension for header files
 
-'(?P<ymdpath>/misc/yoda/www/plots/batch/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))/(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}(_\d{2}_\d{2}\.\d{3}|))_(?P<sensor>.*)_((?P<abbrev>.*)_roadmaps(?P<rate>.*)\.pdf|roadmap\.pdf)'
+_GENERAL_PADPATH_PATTERN = "(?P<ymdpath>.*/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))"
+_GENERAL_PADDATAFILES_PATTERN = _GENERAL_PADPATH_PATTERN + (
+    "/(?P<subdir>.*_(accel|rad)_(?P<sensor>.*))/"                       # subdir
+    "(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}_\d{2}_\d{2}\.\d{3})" # underscore-delimited start part of fname, then
+    "(?P<pm>[\+\-])"                                                    # plus/minus
+    "(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})"              # underscore-delimited stop part of fname, then
+    "\.(?P=sensor)\Z"                                                   # dot sensor
+    )
+_GENERAL_PADHEADERFILES_PATTERN = _GENERAL_PADDATAFILES_PATTERN[:-2] + '\.header\Z' # header extension for header files
+
+
+#'(?P<ymdpath>/misc/yoda/www/plots/batch/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))/(?P<start>(?P=year)_(?P=month)_(?P=day)_\d{2}(_\d{2}_\d{2}\.\d{3}|))_(?P<sensor>.*)_((?P<abbrev>.*)_roadmaps(?P<rate>.*)\.pdf|roadmap\.pdf)'
 ###############################################################################################################################
 #/misc/yoda/www/plots/batch/year2013/month09/day29/2013_09_29_00_00_00.000_121f03_spgs_roadmaps500.pdf
 _BATCHPATH_PATTERN = "(?P<ymdpath>%s/www/plots/batch/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _YODAPATH

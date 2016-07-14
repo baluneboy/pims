@@ -108,5 +108,5 @@ def demo_set_get_block_info(info_block1, info_block2):
     print bstick.get_info_block2()
     
 if __name__ == "__main__":
-    #bstick.set_random_color(); time.sleep(2); bstick.turn_off(); raise SystemExit
+    bstick.set_random_color(); time.sleep(2); bstick.turn_off(); raise SystemExit
     demo_set_get_block_info("abcdefghijklmnopqrstuvwxyz", "ABCDEFGHIJKLMNOPQRSTUVWXYZ")

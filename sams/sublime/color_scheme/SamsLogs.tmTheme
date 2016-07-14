@@ -121,6 +121,17 @@
 		</dict>	
 		<dict>
 			<key>name</key>
+			<string>Tangerine</string>
+			<key>scope</key>
+			<string>tangerine</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#DA70D6</string>
+			</dict>
+		</dict>			
+		<dict>
+			<key>name</key>
 			<string>Greenish</string>
 			<key>scope</key>
 			<string>greenish</string>
@@ -129,7 +140,29 @@
 				<key>foreground</key>
 				<string>#80D555</string>
 			</dict>
-		</dict>			
+		</dict>		
+		<dict>
+			<key>name</key>
+			<string>Lime</string>
+			<key>scope</key>
+			<string>lime</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#80D357</string>
+			</dict>
+		</dict>	
+		<dict>
+			<key>name</key>
+			<string>SkyBlue</string>
+			<key>scope</key>
+			<string>skyblue</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#428BCD</string>
+			</dict>
+		</dict>						
 		<dict>
 			<key>name</key>
 			<string>Yellow</string>
