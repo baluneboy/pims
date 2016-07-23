@@ -62,7 +62,6 @@ def markup_devices(html_file):
     with NamedTemporaryFile(delete=False) as f:
         f.write(soup.encode('UTF-8'))
 
-    print f.name
     return f.name
 
 if __name__ == "__main__":
