@@ -127,7 +127,8 @@ def run(time_machines):
         # when host_now.second is zero this triggers overwrite plots/user/sams/status/sensortimes.txt and .html file too
         f = None
         html_rows = []
-        dict_row = {}
+        dict_row0 = {}
+        dict_row1 = {}
         if host_now.second == 0:
             txt_file = '/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
             htm_file = txt_file.replace('.txt', '.html')
@@ -137,11 +138,19 @@ def run(time_machines):
             f.write('\n' + '-' * 38)
             f.write('\nbegin')
             f.write('\n%s %s HOST' % (host_now.strftime('%Y:%j:%H:%M:%S'), disp_host))
+            f.write('\n%s %s %s' % (host_now.strftime('%Y:%j:00:00:00'), host_now.strftime('%d-%b-%Y'), host_now.strftime('%A').upper()[0:3]))
             
-            dict_row['GMT'] = host_now.strftime('%Y:%j:%H:%M:%S')
-            dict_row['Device'] = disp_host
-            dict_row['Type'] = 'HOST'
-            html_rows.append(dict_row)
+            # row/entry for line that shows HOST (butters) as a device with its current/local time
+            dict_row0['GMT'] = host_now.strftime('%Y:%j:%H:%M:%S')
+            dict_row0['Device'] = disp_host
+            dict_row0['Type'] = 'HOST'
+            html_rows.append(dict_row0)
+
+            # row/entry for line that shows date as DOY in left column and like dd-Mmm-YYYY im middle column
+            dict_row1['GMT'] = host_now.strftime('%Y:%j:00:00:00')
+            dict_row1['Device'] = host_now.strftime('%d-%b-%Y')
+            dict_row1['Type'] = host_now.strftime('%A').upper()[0:3]                      
+            html_rows.append(dict_row1)
             
         # spare gray text in gray rect
         txt = 'unused spare gray text inside gray bar'
@@ -253,7 +262,7 @@ def to_html(df, h):
     # FIXME the next 2 lines of code (non-comment lines) should allow rows with 30 lag behind host_gmt as okay
     # FIXME the next 2 lines need to do math on GMT times (do not attempt math on strings)
     df_okay = df[ df['GMT'] >= host_gmt ]
-    df_olds = df[ df['GMT'] < host_gmt ]
+    df_olds = df[ df['GMT'] <  host_gmt ]
     h.write( df_okay.to_html(classes='okay', index=False, formatters=FORMATTERS) )
     # FIXME need to account for empty dataframe possibility for df_olds
     h.write( df_olds.to_html(classes='olds', index=False, formatters=FORMATTERS, header=False) )
@@ -279,6 +288,21 @@ def demo_on_park():
 
     run(time_machines)
 
+def check_df():
+    df = pd.read_pickle('/tmp/df.pik')
+    df_host = df[ df['Type'] == 'HOST' ]
+    print df_host
+    host_gmt = df_host['GMT'].values[0]
+    df_okay = df[ df['GMT'] >= host_gmt ]
+    df_olds = df[ df['GMT'] <  host_gmt ]
+    print df_host
+    print host_gmt
+    print df_okay
+    print df_olds
+    
+#check_df()
+#raise SystemExit
+    
 if __name__ == '__main__':
 
     # TODO find true expected delta instead of empirical value
