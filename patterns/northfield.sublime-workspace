@@ -1,0 +1,616 @@
+{
+	"auto_complete":
+	{
+		"selected_items":
+		[
+		]
+	},
+	"buffers":
+	[
+		{
+			"file": "/Users/ken/dev/programs/bash/wget_northfield.bash",
+			"settings":
+			{
+				"buffer_size": 6058,
+				"line_ending": "Unix"
+			}
+		},
+		{
+			"file": "mark_northfield.py",
+			"settings":
+			{
+				"buffer_size": 1920,
+				"line_ending": "Unix"
+			}
+		}
+	],
+	"build_system": "",
+	"command_palette":
+	{
+		"height": 247.0,
+		"selected_items":
+		[
+			[
+				"inst",
+				"Package Control: Install Package"
+			],
+			[
+				"install",
+				"Package Control: Install Package"
+			],
+			[
+				"Insta",
+				"Package Control: Install Package"
+			],
+			[
+				"p",
+				"Package Control: Install Package"
+			],
+			[
+				"palp",
+				"Package Control: List Packages"
+			],
+			[
+				"",
+				"Package Control: List Packages"
+			],
+			[
+				"pa",
+				"Package Control: Install Package"
+			],
+			[
+				"Pa",
+				"Package Control: Install Package"
+			]
+		],
+		"width": 584.0
+	},
+	"console":
+	{
+		"height": 240.0
+	},
+	"distraction_free":
+	{
+		"menu_visible": true,
+		"show_minimap": false,
+		"show_open_files": false,
+		"show_tabs": false,
+		"side_bar_visible": false,
+		"status_bar_visible": false
+	},
+	"file_history":
+	[
+		"/Users/ken/dev/programs/bash/download4macos.bash",
+		"/Users/ken/Projects/RPi_Garage_Opener/TP-Link_Gloria_Chat.txt",
+		"/Users/ken/macscripts/alexascan4devices.bash",
+		"/Users/ken/macscripts/saytime.bash",
+		"/Users/ken/banger_and_fan.py",
+		"/Users/ken/macscripts/alexafocusword.bash",
+		"/Users/ken/macscripts/playchords.bash",
+		"/Users/ken/macscripts/My_Old_Kentucky_Home.txt",
+		"/Users/ken/macscripts/playwiggle3x.bash",
+		"/private/tmp/demo_one.py",
+		"/Users/ken/alexa2do.py",
+		"/private/tmp/myring.py",
+		"/Users/ken/Desktop/newsfeeds.txt",
+		"/Users/ken/dev/programs/bash/leaving4work.bash",
+		"/Users/ken/dev/programs/bash/opengarage.bash",
+		"/Users/ken/macscripts/audacity_click_track.applescript",
+		"/Users/ken/Library/Application Support/audacity/Chains/TorchMP3.txt",
+		"/Users/ken/dev/programs/bash/perminute.bash",
+		"/Volumes/SADTROMBONE/hitma.txt",
+		"/Users/ken/dev/bash/downloadpad.bash",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/readme_ken.txt",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/SAMS/SAMS_main.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/SAMS/zoom2sensor.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/sams.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/su_bezier.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/zoom2sensor.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/putsensor.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/ken/ken_draw_stairs.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/ken_draw_stairs.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/ken_lathe.rb",
+		"/Users/ken/Library/Application Support/SketchUp 2016/SketchUp/Plugins/ken_pent_face.rb",
+		"/Users/ken/Documents/SketchyPhysicsErrorLoading.txt",
+		"/Users/ken/Downloads/LargeCollection/Description.txt",
+		"/Users/ken/Projects/LTSpice_Models/Relays/rly_dpdt.asy",
+		"/Users/ken/Projects/LTSpice_Models/Relays/signal_relay_test.asc",
+		"/Users/ken/Projects/LTSpice_Models/Relays/relay.lib",
+		"/Users/ken/Projects/LTSpice_Models/Relays/relay_test2.asc",
+		"/Users/ken/Projects/LTSpice_Models/Relays/relay_test1.asc",
+		"/Users/ken/Projects/LTSpice_Models/Relays/relay_test1.asc.txt",
+		"/Users/ken/Projects/LTSpice_Models/ULN2803/ULN2803m.asy",
+		"/Users/ken/Projects/LTSpice_Models/ULN2803/ULN2803m.asc",
+		"/Users/ken/Projects/LTSpice_Models/ULN2803/D1n4001rl.model",
+		"/Users/ken/Projects/LTSpice_Models/ULN2803/Di_Bat54.txt",
+		"/Users/ken/Projects/LTSpice_Models/ULN2803/2n2222a.model",
+		"/Users/ken/Projects/LTSpice_Models/ULN2803/Diode_Test.asc",
+		"/Users/ken/Projects/LTSpice_Models/2n2222a.model",
+		"/Users/ken/Projects/LTSpice_Models/2n2222a.lib",
+		"/Users/ken/Projects/RPi_Garage_Opener/WebIOPi_Successfully_Installed.txt",
+		"/Users/ken/Documents/PopsMedtronicIdCard.txt",
+		"/Users/ken/Desktop/8-chRelay.txt",
+		"/Users/ken/Downloads/INSTALL_MAC_OS_X",
+		"/Users/ken/Documents/Receipts/AdafruitOrderSubmitted_01-Jan-2016.txt",
+		"/Users/ken/macscripts/open_garage.bash",
+		"/private/tmp/ugaudio/README.md",
+		"/Users/ken/Desktop/qpyplus_last_err.log",
+		"/private/tmp/trash.txt",
+		"/private/tmp/ken/pims/pims/readme_gitsparse.txt",
+		"/Users/ken/Documents/readme_cox.txt",
+		"/private/tmp/794.txt",
+		"/Users/ken/temp/var/log/sams-ii/messages",
+		"/Users/ken/Documents/mom_handheld_viewer.txt",
+		"/Volumes/Git 2.2.1 Mavericks Intel Universal/README.txt",
+		"/Users/ken/Library/LaunchAgents/org.me.playchord.plist.WATCHDOWNLOADS.OBSOLETE",
+		"/Users/ken/Library/LaunchAgents/com.osx.ken.wakeme_fiona.plist",
+		"/Users/ken/macscripts/saytimesiri.bash",
+		"/Users/ken/macscripts/morning_time_fiona.bash",
+		"/Users/ken/Downloads/794.txt",
+		"/Applications/Audacity/plug-ins/ExperimentalSampleDataImport.ny",
+		"/Users/ken/macscripts/headline_scraper.py",
+		"/Users/ken/macscripts/TimeOfDay.applescript",
+		"/Users/ken/macscripts/takephonereminder.bash",
+		"/Users/ken/macscripts/pandora4dow.bash",
+		"/Users/ken/macscripts/pandora.applescript",
+		"/Users/ken/macscripts/trash.applescript",
+		"/Users/ken/macscripts/spotify.applescript",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/User/samslogs/messages.tmLanguage",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/Color Scheme - Default/SamsLogs.tmTheme",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/User/samslogs/messages.tmTheme",
+		"/tmp/trash4.txt",
+		"/Users/ken/Downloads/samslogstmlanguagefiles/messages",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/ApplySyntax/ApplySyntax.sublime-settings",
+		"/tmp/trash.txt",
+		"/Users/ken/macscripts/rsink.bash",
+		"/Users/ken/macscripts/say_voice_list.bash",
+		"/Users/ken/say_voice_list.txt",
+		"/tmp/temp1.vcf",
+		"/Users/ken/Downloads/vcard_split-0.2dev-r2010/vcard_split.py",
+		"/Users/ken/Downloads/vcfPytools-master/trash3.vcf",
+		"/Users/ken/Downloads/vcfPytools-master/trash2.vcf",
+		"/private/tmp/takephonereminder.bash",
+		"/Users/ken/Documents/trash.txt",
+		"/Users/ken/Downloads/gimp-image-reg-0.5.5-macosx-10.6/README.txt",
+		"/Users/ken/Documents/things2do.txt",
+		"/Users/ken/Documents/pcsc_pcsc_00002.vcf",
+		"/Users/ken/Documents/two_verizon_wireless_chats.txt",
+		"/Users/ken/Documents/bellatrix_verizon_chat.txt",
+		"/Users/ken/macscripts/chrome_example.applescript",
+		"/Users/ken/macscripts/minutely.bash",
+		"/Users/ken/.profile",
+		"/tmp/crontab.uASqroo0NY",
+		"/tmp/crontab.E3875X2pKr",
+		"/tmp/crontab.OmYsXdqwwN",
+		"/private/tmp/trash.py",
+		"/Users/ken/.bash_profile",
+		"/System/Library/Frameworks/Python.framework/Versions/2.7/lib/python2.7/re.py",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/connect/blinker_examples/signaldefs.py",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/config/mysql.ini",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/config/mysql.cfg",
+		"/Users/ken/macscripts/readme_python_ver.txt",
+		"/Users/ken/Downloads/wxPython2.8-osx-docs-demos-2.8.12.1-universal-py2.7/Samples/demo/myRuler.py",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/connect/blinker_examples/receiver.py",
+		"/Users/ken/Documents/REPLACE_DELTA_SHOWER_UNIT_RP19804_PLUS_CAULK",
+		"/private/tmp/hellogtk.cs",
+		"/Users/ken/Library/LaunchAgents/com.osx.ken.mouse_catch_test.plist",
+		"/tmp/pwNot.log",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/realtime/examples/socket_client_example.py",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/realtime/examples/socket_server_example.py",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/realtime/examples/dispatcher_args.py",
+		"/Library/Python/2.7/site-packages/matplotlib/mlab.py",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/User/myhide.py",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/User/Default (OSX).sublime-keymap",
+		"/Users/ken/Library/Application Support/Sublime Text 2/Packages/User/Preferences.sublime-settings",
+		"/Library/Python/2.7/site-packages/recipes.pth",
+		"/private/tmp/document.txt",
+		"/Users/ken/Documents/chase.txt",
+		"/Users/ken/temp/pims.grc.nasa.gov/plots/user/hro/vat/python/realtime/demo_buffer.py",
+		"/private/tmp/scr.bash",
+		"/Users/ken/work/recipes/recipes_mousetrack2.py"
+	],
+	"find":
+	{
+		"height": 35.0
+	},
+	"find_in_files":
+	{
+		"height": 0.0,
+		"where_history":
+		[
+		]
+	},
+	"find_state":
+	{
+		"case_sensitive": true,
+		"find_history":
+		[
+			"ork",
+			"ett",
+			"Working",
+			"Pops",
+			"ARCHIVE",
+			"\\n",
+			" LEADERBOARD",
+			"\\n#",
+			"RANK.*\\nPOINTS\\n",
+			"sams",
+			"pants_location",
+			"pants_def",
+			"fetchblue",
+			"pent",
+			")",
+			"sin(",
+			"cos(",
+			"relay.lib",
+			"RLY_2POW1",
+			"rly",
+			"1N4001",
+			"D1n4001rl",
+			"SYMATTR SpiceModel",
+			"SYMATTR SpiceModel 2n2222a.model",
+			"2n2222a.model",
+			"Q2n2222a",
+			"SYMATTR Value.*22a",
+			"Q2n",
+			"2222a.model",
+			"/Users/ken/Projects/LTSpice_Models/2n2222a.lib",
+			"ssh",
+			"input = 2",
+			" ",
+			"\\t+(\\d\\.\\d{2})",
+			"(\\d+ )(\\d{2}-)",
+			"(\\d{2}) OCT",
+			"(\\d{2}) SEP",
+			"\\s\\n",
+			"\\$",
+			"\\n",
+			"\\$",
+			"National",
+			"ugaudio.py",
+			"\\+",
+			"+",
+			"migration",
+			"', ",
+			"\\n",
+			"e\\+01",
+			"e+01",
+			"e-04",
+			"genre",
+			"tdelay",
+			"str2",
+			"str1",
+			"front_string",
+			"http",
+			"id.",
+			"id",
+			"underline",
+			"bold",
+			"constant",
+			"\\n\\n",
+			"^.string.*\\n",
+			"^\\s+.string",
+			".string..*\\..*\\n",
+			"\\<string\\>.*\\..*\\n",
+			"<string>.*\\..*\\n",
+			"\\n.*\\n",
+			".*\\..*\\n",
+			"\"\\./",
+			"\"\\n",
+			"\" \"",
+			"-avn",
+			"rsync -avn ./(.*) ~/Desktop/huntsville/\\n",
+			"cp ",
+			"SLASHN",
+			"\\s+",
+			"\\n",
+			"\\s+",
+			"^\\d{2}\\t(.*)\\n",
+			"^\\d{2}(.*)\\n",
+			"2\\d\\t.*\\n",
+			"\\n\\n",
+			"\\d\\d\\t.*\\n",
+			"1\\t.*\\n",
+			"(./.*)\\s+(\\d{1,3})\\n",
+			"(.*), (.*), (.*)\\n",
+			", ",
+			"\\n",
+			".*, (.*), (.*)\\n",
+			"\\t",
+			"; ",
+			"\\n",
+			",",
+			"}\"",
+			"i",
+			"Agnes",
+			"\\n",
+			" .*\\n",
+			"macmini3:pims ken$ ",
+			"%scores",
+			"s",
+			"(\\d)\\n",
+			"\\n(\\d{1,2})\\n",
+			"alex",
+			"cnn.com",
+			"example.com",
+			"/Users/joe",
+			"Installing.*",
+			"fifo",
+			"889",
+			"root,INFO,end",
+			" : ",
+			"tc\\.",
+			"\\)\\)",
+			"',\\(",
+			"B",
+			"M",
+			"T",
+			" ",
+			"\\s+",
+			"\\s",
+			"2",
+			"1",
+			"0",
+			"(.)",
+			"my_region_set"
+		],
+		"highlight": true,
+		"in_selection": false,
+		"preserve_case": false,
+		"regex": true,
+		"replace_history":
+		[
+			"ARCHIVEDIR",
+			" ",
+			"",
+			",",
+			"",
+			"SAMS",
+			"sensor_location",
+			"sensor_def",
+			"getsensor",
+			"myface",
+			"",
+			"s",
+			"c",
+			"D1n4001rl",
+			"SYMATTR SpiceModel",
+			"2n2222a.model",
+			"SYMATTR Value Q2n2222a",
+			"2n2222a.model",
+			"input = 2\\n",
+			",",
+			"\\t\\1",
+			"\\1\\t\\2",
+			"\\1-OCT-2015",
+			"\\1-SEP-2015",
+			"\\n",
+			"",
+			"\\t\\t\\t\\n",
+			"\\n\\$",
+			"Nat'l",
+			"convert.py",
+			"\\+\\n",
+			"+\\n",
+			"pims",
+			"\\n",
+			" ",
+			"e\\+00",
+			"e+00",
+			"e+01",
+			"GENRE",
+			"TDELAY",
+			"tdelay",
+			"station",
+			"str1",
+			"\\n",
+			"<string",
+			"\\n",
+			"\"/Users/ken/Desktop/Music/",
+			"/\"\\n",
+			"/\" \"",
+			"-av",
+			"rsync -avn \"./\\1\" \"~/Desktop/huntsville/\\1\"\\n",
+			"rsync -avn ",
+			"\\n",
+			" ",
+			"SLASHN",
+			" SLASHN",
+			" ",
+			"cp \\1 ~/Desktop/huntsville/\\n",
+			"cp \\1 ~/Desktop/huntsvill/",
+			"\\n",
+			"",
+			"\\2\\t\\1\\n",
+			"\\2\\n\\1\\n\\3\\n\\n",
+			"\\n",
+			"\\n\\n",
+			"mkdir -p \"\\1/\\2\"\\n",
+			"mkdir -p \"\\1/\\2\"",
+			", ",
+			"\\n",
+			"\\n\\n",
+			";",
+			" ",
+			"\\n",
+			"",
+			"%s",
+			"scores",
+			"\\n\\1\\n\\n",
+			"pandora.com",
+			"www.cnn.com",
+			"$HOME",
+			"=",
+			"self\\.",
+			"\\]\\)",
+			"',\\[",
+			"2,",
+			"1,",
+			"0,",
+			"', '",
+			" ",
+			"B",
+			"M",
+			"T",
+			"'\\1', ",
+			"my_regions",
+			"file_patterns",
+			"\\1\\n",
+			"files_handlers",
+			"rm",
+			"##",
+			"@@",
+			"/Unknown Album\"",
+			"Unknown Album\"$",
+			"mkdir \"",
+			"###",
+			"#",
+			"",
+			"\\n",
+			"",
+			"\\1KHNEWLINE",
+			"",
+			"rm \"",
+			"## \"",
+			"@@ \"",
+			"rm \"",
+			"## \"",
+			"@@ \"",
+			"## \"",
+			"rm \"",
+			"@@ \""
+		],
+		"reverse": false,
+		"show_context": true,
+		"use_buffer2": true,
+		"whole_word": false,
+		"wrap": true
+	},
+	"groups":
+	[
+		{
+			"selected": 1,
+			"sheets":
+			[
+				{
+					"buffer": 0,
+					"file": "/Users/ken/dev/programs/bash/wget_northfield.bash",
+					"settings":
+					{
+						"buffer_size": 6058,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								3447,
+								3447
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/ShellScript/Shell-Unix-Generic.tmLanguage",
+							"tab_size": 2,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 2280.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				},
+				{
+					"buffer": 1,
+					"file": "mark_northfield.py",
+					"settings":
+					{
+						"buffer_size": 1920,
+						"regions":
+						{
+						},
+						"selection":
+						[
+							[
+								1685,
+								1685
+							]
+						],
+						"settings":
+						{
+							"syntax": "Packages/Python/Python.tmLanguage",
+							"tab_size": 4,
+							"translate_tabs_to_spaces": true
+						},
+						"translation.x": 0.0,
+						"translation.y": 479.0,
+						"zoom_level": 1.0
+					},
+					"type": "text"
+				}
+			]
+		}
+	],
+	"incremental_find":
+	{
+		"height": 0.0
+	},
+	"input":
+	{
+		"height": 33.0
+	},
+	"layout":
+	{
+		"cells":
+		[
+			[
+				0,
+				0,
+				1,
+				1
+			]
+		],
+		"cols":
+		[
+			0.0,
+			1.0
+		],
+		"rows":
+		[
+			0.0,
+			1.0
+		]
+	},
+	"menu_visible": true,
+	"output.exec":
+	{
+		"height": 154.0
+	},
+	"replace":
+	{
+		"height": 64.0
+	},
+	"save_all_on_build": true,
+	"select_file":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"select_project":
+	{
+		"height": 0.0,
+		"selected_items":
+		[
+		],
+		"width": 0.0
+	},
+	"show_minimap": true,
+	"show_open_files": true,
+	"show_tabs": true,
+	"side_bar_visible": false,
+	"side_bar_width": 265.0,
+	"status_bar_visible": true
+}
