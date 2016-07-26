@@ -10,6 +10,32 @@ from shutil import copyfile, move
 # FIXME (see TODOs in loop that does markup_devices)
 # TODO << python module probably in some other 'fileutils' folder under pims
 
+
+def table_cat():
+    rep_cell = '<td width="33%"><font color="COLOR">{text}</font></td>'
+    page = urllib2.urlopen('http://pims.grc.nasa.gov/plots/user/sams/status/sensortimes.html').read()
+    soup = BeautifulSoup(page)
+    soup.prettify()
+    
+    rows = soup.find_all('tr')
+    print 'total of %d rows' % len(rows),
+    
+    tables = soup.find_all('table')
+    print 'in %d tables' % len(tables)
+    
+    colors = ['black', 'red']
+    for table in tables:
+        tr = table.find_all('tr')
+        print 'table has %d rows' % len(tr)
+        for td in table.find_all('td'):
+            td.replace_with(BeautifulSoup(rep_cell.replace('COLOR', 'black').format(text=td.text.strip()), 'html.parser'))
+
+    # write marked up as html to new file
+    new_file = '/tmp/trash2.html'
+    with open(new_file, 'w') as f:
+        f.write(soup.encode('UTF-8'))
+
+
 def demo_test():
     pth = '/tmp/raw'
     files = ['2016-06-22.htm', '2016-06-27.htm', '2016-06-29.htm', '2016-06-28.htm', '2016-07-02.htm']

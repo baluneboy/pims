@@ -6,6 +6,8 @@ import sys
 from bs4 import BeautifulSoup, Tag
 from shutil import copyfile
 
+from mark_samsdevicetimes import replace_columns
+
 # TODO << probably in some other 'fileutils' folder under pims
 # - remove dot bak files in /Users/ken/NorthfieldBackups that
 #   have filename prefix date field older than 2 months ago
@@ -16,7 +18,7 @@ _PATTERN = r'(?P<first>Cr[^>]*)([^<]+)(?P<last>Hershberger)'
 def get_matches(fname, pat):
     matches = set()
     with open(fname, 'r') as f:
-        contents = f.read() 
+        contents = f.read()
         for match in re.finditer(pat, contents):
             s = match.group(0)
             matches.add(s)
@@ -79,15 +81,35 @@ def demo_soup(html_file):
         node.attrs['color'] = style6_color # RED TO STOP READING
                                            # BLUE IS CLUE TO CONTINUE
 
+    # blue font for "FIRST RACE" cell
+    replacement_racenum = '<td><font color="blue">{text}</font></td>'
+    
+    # TODO the replace_with does not seem to work???
+    
+    # FIXME exhaustive testing to see if we can identify and mark just RACE table top line
+    #       we also may need workaround if replace_with does not work (to include FIN #)
+    #       which has to be parsed from CrH's "white-on-black" cell
+    
     rows = set()
     for text in columns:
-      tr = text.findParents('tr')[0]
-      # tr is your now your most recent `<tr>` parent    
-      rows.add(tr)
-      cols = tr.findAll('td')
-      if len(cols) == 14:
-        cols[8].attrs['bgcolor'] = 'black'
-        cols[8].attrs['style'] = 'color:white'
+        tr = text.findParents('tr')[0]
+        # tr is your now your most recent `<tr>` parent
+        table1 = tr.findParents('table')[0]
+        table2 = tr.findParents('table')[1]
+        table_cols = table2.findAll('td')
+        for tc in table_cols:
+            cell_text = tc.text.encode('UTF-8')
+            # FIXME for this "if" use regular expression FIRST RACE, SECOND RACE, ... NINETEENTH RACE
+            if 'FIRST RACE' in cell_text or 'THIRD RACE' in cell_text:
+                tc.attrs['bgcolor'] = '#ffa'
+                print type(tc), type(tc.text), tc.text
+                #tc.replace_with(BeautifulSoup(replacement_racenum.format(text=tc.text), 'html.parser'))
+
+        rows.add(tr)
+        cols = tr.findAll('td')
+        if len(cols) == 14:
+            cols[8].attrs['bgcolor'] = 'black'
+            cols[8].attrs['style'] = 'color:white'
 
     for r in rows:
         r.attrs['bgcolor'] = '#ffa'
@@ -123,14 +145,16 @@ def markup(old_file, new_file):
     # get UNIQUE set of table rows that contain matching jockey name
     rows = set()
     for text in columns:
-      tr = text.findParents('tr')[0]
-      # tr is your now your most recent `<tr>` parent    
-      rows.add(tr)
-      cols = tr.findAll('td')
-      # FIXME we assume when num of columns (cells) for this row is 14 it's to highlight
-      if len(cols) == 14:
-        cols[8].attrs['bgcolor'] = 'black'
-        cols[8].attrs['style'] = 'color:white'      
+        tr = text.findParents('tr')[0]
+        # tr is your now your most recent `<tr>` parent
+        table = tr.findParents('table')[0]
+        print table
+        rows.add(tr)
+        cols = tr.findAll('td')
+        # FIXME we assume when num of columns (cells) for this row is 14 it's to highlight
+        if len(cols) == 14:
+            cols[8].attrs['bgcolor'] = 'black'
+            cols[8].attrs['style'] = 'color:white'
 
     # change bg color of table row that matches jockey name to yellow
     for r in rows:
@@ -155,6 +179,6 @@ if __name__ == "__OLDmain__":
 if __name__ == "__main__":
     old_file = sys.argv[1]
     new_file = sys.argv[2]
-    print 'markup matches in %s ' % new_file,   
+    print 'markup matches in %s ' % new_file,
     markup(old_file, new_file)
     print 'done',
