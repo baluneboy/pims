@@ -168,6 +168,29 @@ def datestr_to_datetime(timestr):
     fmt = '%Y-%m-%d'
     return datetime.datetime.strptime(timestr, fmt)
 
+
+# convert northfield html filename to date (from like 072616.htm)
+def northfield_fullfilestr_to_date(fullfilestr):
+    """convert northfield html filename to date object   
+    >>> fstr = '/tmp/raw/072616.htm'
+    >>> northfield_fullfilestr_to_date(fstr)
+    datetime.date(2016, 7, 26)
+    """    
+    # get rid of header ext if there is one, and just work with basename
+    fstr = os.path.basename(fullfilestr.replace('.htm', ''))
+    if not re.match('^\d{6}$', fstr):
+        raise ValueError('basename str %s does not match expected pattern' % fstr)
+    try:
+        yr = int('20' + fstr[-2:])
+        mo = int(fstr[0:2])
+        da = int(fstr[2:4])
+        d = datetime.date(yr, mo, da)
+    except ValueError, e:
+        warn( 'fstr %s did not nicely convert to date' % fstr )
+        d = None
+    return d
+
+
 # convert string like YODA_YMD_PATH/.../2014_05_31_20_49_60.000-2014_05_31_21_00_00.001.SENSOR to datetime object
 def pad_fullfilestr_to_start_stop(fullfilestr):
     """convert pad fullfile string to datetime object"""
