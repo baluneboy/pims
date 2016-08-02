@@ -276,10 +276,10 @@ def scrape_into_dataframe(old_htm_file, new_htm_file=None):
             # interesting text to add to top, race cell (orange) line
             criteria = df_race.DRIVER.str.contains(r'Cr.*Hershberger')
             df_slice = df_race[criteria]
-            fin = df_slice.FINISH.values[0]
-            tot = len(df_race)
-            pct = df_slice.LASTQPCT.values[0]
-            num = df_slice.NUME.values[0]
+            fin = df_slice.FINISH.values[0]     # what place Hershberger finished
+            tot = len(df_race)                  # number of horses in this race
+            pct = df_slice.LASTQPCT.values[0]   # percentage of time was the Last Qtr
+            num = df_slice.NUME.values[0]       # count the letter E in horse name
             if num == 0:
                 numstr = 'that had no letter E in its name'
             elif num == 1:
