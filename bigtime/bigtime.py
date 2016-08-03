@@ -32,10 +32,16 @@ COLORS = {
     'black':  (  0,   0,   0),
 }
 
+#FORMATTERS = {
+#    'GMT':    lambda x: '%17s' % x,
+#    'Device': lambda x: '%8s' % x,
+#    'Type':   lambda x: '%4s'  % x,    
+#}
+
 FORMATTERS = {
-    'GMT':    lambda x: '%17s' % x,
-    'Device': lambda x: '%8s' % x,
-    'Type':   lambda x: '%4s'  % x,    
+    'GMT':    lambda x: '%s' % x,
+    'Device': lambda x: '%s' % x,
+    'Type':   lambda x: '%s' % x,    
 }
 
 #FF0000 is RED
@@ -49,7 +55,10 @@ HEADER = '''
         </title>
         <style>
             .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 14px; }
-            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }
+            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
+            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
+            .okay td { width="360px"; text-align: center; }
+            .olds td { width="360px"; text-align: center; }                   
         </style>
     </head>
     <body>
