@@ -70,6 +70,54 @@ def markup_devices(html_file):
     return tmp_file
 
 
+
+def table_cat(html_file, new_file):
+    replace_color_width = '<td width="33%"><font color="COLOR">{text}</font></td>'
+    replace_color_width_bgcolor = '<td width="33%"><font color="COLOR"><mark>{text}</mark></font></td>'
+    #page = urllib2.urlopen('http://pims.grc.nasa.gov/plots/user/sams/status/sensortimes.html').read()
+
+    # read html input file as html source
+    with open(html_file, 'r') as infile:
+        html_src = infile.read()
+
+    # convert html source to beautiful soup
+    soup = BeautifulSoup(html_src)
+    soup.prettify()
+    
+    # yellow highlight mark on "HOST" rows (two of them)
+    #replace_columns(soup, '(\s*)(HOST|MON|TUE|WED|THU|FRI|SAT|SUN)(\s*)', '<td><mark>{text}</mark></td>')      
+    
+    rows = soup.find_all('tr')
+    print 'total of %d rows' % len(rows),
+    
+    tables = soup.find_all('table')
+    print 'in %d tables' % len(tables)
+    
+    colors = { 0:'black', 1:'red' }
+    for i, table in enumerate(tables):
+        color = colors[i]
+        tr = table.find_all('tr')
+        print 'table %d has %d rows' % (i, len(tr))
+        cells = table.find_all('td')
+        for td in cells:
+            txt = td.text.strip()
+            if txt in ['HOST', 'MON', 'TUE', 'WED', 'THU', 'FRI', 'SAT', 'SUN']:
+                td.replace_with(BeautifulSoup(replace_color_width_bgcolor.replace('COLOR', color).format(text=txt), 'html.parser'))
+            else:
+                td.replace_with(BeautifulSoup(replace_color_width.replace('COLOR', color).format(text=txt), 'html.parser'))    
+
+    # write marked up as html to new file
+    with open(new_file, 'w') as f:
+        f.write(soup.encode('UTF-8'))
+
+
+def demo_test():
+    html_file = '/Users/ken/Downloads/devtimes.html'
+    new_file = '/tmp/trash2.html'
+    table_cat(html_file, new_file)
+
+#demo_test(); raise SystemExit
+
 if __name__ == "__main__":
     if len(sys.argv) > 1:
         html_file = sys.argv[1]

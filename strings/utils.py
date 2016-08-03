@@ -69,6 +69,27 @@ def convert_from_camel(name):
     s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', name)
     return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
+
+def count_letter(word, char='e'):
+    """
+    Return count of char (letters) in word.
+    
+    Examples
+    --------
+    >>> count_letter('WINDY KITTY', char='k')
+    0
+
+    >>> count_letter('ic' + 'k'*101, char='k')
+    101
+    
+    """    
+    count = 0
+    for c in word:
+        if c == char:
+            count += 1
+    return count
+
+
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
