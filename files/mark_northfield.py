@@ -228,6 +228,7 @@ def scrape_into_dataframe(old_htm_file, new_htm_file=None):
     any_race_has_driver = False
     
     # iterate over outermost (race) tables
+    bad_row_counts = []
     race_tables = soup.find_all('table', border="0", cellpadding="0", cellspacing="0", style="border: 1px solid #999999;", width="940")
     for race_table in race_tables:
 
@@ -249,17 +250,24 @@ def scrape_into_dataframe(old_htm_file, new_htm_file=None):
         #print "\nrace #%02d had %02d entries" % (race_num, len(result_rows) - 1)
 
         # iterate over result rows to append to dataframe, but skip top heading row
+        num_bad_rows = 0
         for result_row in result_rows[1:]:
             data_columns = [d, race_num] # prepend date and race number
             [data_columns.append(c.text.strip()) for c in result_row.find_all('td')]
-            new_row = convert_data(data_columns, headings)
-            df_race = df_race.append(new_row, ignore_index=True)
+            try:
+                new_row = convert_data(data_columns, headings)
+            except:
+                num_bad_rows += 1
+            else:
+                df_race = df_race.append(new_row, ignore_index=True)
             # if the driver matches for Cr Hershberger, then yellow highlight this row
             if re.match(r'Cr.*Hershberger', new_row.DRIVER.values[0]):
                 this_race_has_driver = True
                 any_race_has_driver = True
                 highlight_matching_driver_row(result_row)
-                
+        
+        bad_row_counts.append(num_bad_rows)
+        
         # append this race results to this day's dataframe
         df_day = df_day.append(df_race, ignore_index=True)
         
@@ -291,6 +299,11 @@ def scrape_into_dataframe(old_htm_file, new_htm_file=None):
             # change race_cell text
             race_cell.string.replace_with("%s: %s" % (race_text, fun_str))
 
+    if sum(bad_row_counts) > 0:
+        print '\nrace-by-race count of bad rows =', bad_row_counts
+    else:
+        print '\nno bad rows in any race'
+
     # for driver name matches, turn style6 (very top text) blue; else turn red
     if any_race_has_driver:
         style6_color = 'blue'
@@ -314,7 +327,36 @@ def scrape_into_dataframe(old_htm_file, new_htm_file=None):
         with open(new_htm_file, 'w') as f:
             f.write(soup.prettify().encode('UTF-8'))
         print 'and wrote markup htm file %s' % new_htm_file,
-    
+
+
+def batch_write():
+    pth = '/Users/ken/NorthfieldBackups/raw'
+    #my_files = [
+    #'011616.htm', '031616.htm', '052115.htm', '052615.htm', '052715.htm',
+    #'052815.htm', '060116.htm', '060416.htm', '060616.htm', '060716.htm',
+    #'060816.htm', '061116.htm', '061316.htm', '061416.htm', '061516.htm',
+    #'061816.htm', '062016.htm', '062116.htm', '062215.htm', '062216.htm',
+    #'062315.htm', '062415.htm', '062516.htm', '062615.htm', '062716.htm',
+    #'062816.htm', '062915.htm', '062916.htm', '063015.htm', '070216.htm',
+    #'070316.htm', '070516.htm', '070616.htm', '070916.htm', '071010.htm',
+    #'071116.htm', '071210.htm', '071216.htm', '071310.htm', '071316.htm',
+    #'071610.htm', '071616.htm', '071710.htm', '071816.htm', '071910.htm',
+    #'071916.htm', '072016.htm', '072215.htm', '072316.htm', '072415.htm',
+    #'072516.htm', '072616.htm', '072715.htm', '072716.htm', '072815.htm',
+    #'072915.htm', '073016.htm', '080116.htm', '080216.htm', '080316.htm',
+    #]
+    my_files = [    
+    '011616.htm', '052115.htm', '052615.htm', '052715.htm', '052815.htm',
+    '062016.htm', '062315.htm', '062415.htm', '062615.htm', '062915.htm',
+    '063015.htm', '070916.htm', '071010.htm', '071116.htm', '071210.htm',
+    '071216.htm', '071310.htm', '071610.htm', '071710.htm', '071910.htm',
+    '072016.htm', '072215.htm', '072415.htm', '072715.htm', '072815.htm',
+    '072915.htm',
+    ]
+    files = [os.path.join(pth, f) for f in my_files]
+    for f in files:
+        scrape_into_dataframe(f)
+
 #    
 #def RECENT_markup(old_htm_file, new_htm_file):
 #
