@@ -3,7 +3,7 @@
 import os
 import re
 import sys
-#from tempfile import NamedTemporaryFile
+from tempfile import NamedTemporaryFile
 from bs4 import BeautifulSoup, Tag
 from shutil import copyfile, move
 
@@ -21,9 +21,7 @@ def replace_columns(soup, regex, replacement):
         tr = td.findParents('tr')[0] # tr is your now your most recent `<tr>` parent
         cols = tr.findAll('td')
         for col in cols:
-            cell_text = col.text.strip()
-            col.replace_with(BeautifulSoup(replacement.format(text=cell_text), 'html.parser'))
-
+            col.replace_with(BeautifulSoup(replacement.format(text=col.text), 'html.parser'))
 
 def mark_the_table(table, which_class):
     # modify class and border on this table
@@ -83,24 +81,13 @@ def markup_devices(html_file):
         html_src = infile.read()
 
     # convert html source to beautiful soup
-    soup = BeautifulSoup(html_src, 'html.parser')
+    soup = BeautifulSoup(html_src)
     
     # yellow highlight mark on "HOST" rows (two of them)
     replace_columns(soup, '(\s*)(HOST|MON|TUE|WED|THU|FRI|SAT|SUN)(\s*)', '<td><mark>{text}</mark></td>')
     
-    ## FIXME in bigtime.py where html source is first created (for now and convenience we do otherwise here)
-    ## iterate over cells and strip blanks
-    #cells = soup.find_all('td')
-    #td_replace = '<td>{text}</td>'
-    #for cell in cells:
-    #    cell_text = cell.text.strip()
-    #    cell.replace_with(BeautifulSoup(td_replace.format(text=cell_text), 'html.parser'))
-        
-    ## iterate over tables
-    #tables = soup.find_all('table', 'dataframe')
-    #for table in tables:
-    #    print table
-    #    print '---------------------'
+    # FIXME why does only hirap go blue?
+    replace_columns(soup, '(\s*)MAM(\s*)', '<td><font color="blue">{text}</font></td>')
 
     # TODO and FIXME you need to adjust original code for table widths and column widths to get set as needed
     #tables = soup.findAll('table') # this does not find all my tables!?
@@ -112,14 +99,10 @@ def markup_devices(html_file):
     #<th style="text-align: left;">Type</th>
 
     # write marked up as html to new file
-    tmp_file = html_file.replace('.html', '.temp')
-    #with NamedTemporaryFile(delete=False) as f:
-    with open(tmp_file, 'w') as f:
+    with NamedTemporaryFile(delete=False) as f:
         f.write(soup.encode('UTF-8'))
 
-    #return f.name
-    return tmp_file
-
+    return f.name
 
 def table_cat(html_file, new_file):
     replace_color_width = '<td width="33%"><font color="COLOR">{text}</font></td>'
@@ -169,10 +152,7 @@ def demo_test():
 #demo_test(); raise SystemExit
 
 if __name__ == "__main__":
-    if len(sys.argv) > 1:
-        html_file = sys.argv[1]
-    else:
-        html_file='/misc/yoda/www/plots/user/sams/status/sensortimes.html'
+    html_file = sys.argv[1]
     new_file = markup_devices(html_file)
     #new_file = device_tables_css_html(html_file)
     move(new_file, html_file)
