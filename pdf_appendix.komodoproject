@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="99608d14-c9b1-4ea1-9f04-6719c106ee68" kpf_version="5" name="pdf_appendix.komodoproject">
+<file id="0a60e80b-6a95-4f82-91db-c8dda5fad06a" idref="99608d14-c9b1-4ea1-9f04-6719c106ee68" name="pdfjam.py" url="files/pdfs/pdfjam.py">
+</file>
+<file id="9dd9a2f6-cbc4-4581-8f3f-3a91cd955cbe" idref="99608d14-c9b1-4ea1-9f04-6719c106ee68" name="appendix_figure_renderer.py" url="utils/appendix_figure_renderer.py">
+</file>
+<file id="d80718f7-34b8-410d-bfda-a7b81caf4c28" idref="99608d14-c9b1-4ea1-9f04-6719c106ee68" name="pdf_figure_stamper.py" url="utils/pdf_figure_stamper.py">
+</file>
+</project>

@@ -15,6 +15,8 @@ the __main__ section
 import os
 import fnmatch
 import time
+from pims.files.utils import listdir_filename_pattern
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 
 __author__ = 'Eysteinn Kristinsson <eysispeisi@gmail.com>'
 
@@ -76,6 +78,36 @@ def black_list(f, patterns):
 @filter_file_list
 def min_size(f, minsize):
     return os.path.getsize(f) >= minsize
+
+# class for list of 121f05 data files
+class PicketFenceDataFiles(object):
+    """A class for list of SAMS PAD data files."""
+    
+    def __init__(self,  ymd_sensor_subdir, file_pat, pad_dir='/misc/yoda/pub/pad'):
+        self.ymd_sensor_subdir = ymd_sensor_subdir
+        self.file_pat = file_pat
+        self.pad_dir = pad_dir
+        self.dir = os.path.join(self.pad_dir, self.ymd_sensor_subdir)
+        self.files = self.get_files()    
+
+    def get_files(self):
+        return listdir_filename_pattern(self.dir, self.file_pat)
+    
+    def print_info(self):
+        for f in self.files:
+            start, stop = pad_fullfilestr_to_start_stop(f)
+            start_str = start.strftime('%Y-%m-%d/%H:%M:%S.%f')[:-3]
+            num_bytes = os.path.getsize(f)
+            print "%s, %7d, %s" % (start_str, num_bytes, f)
+
+
+def characterize_picket_fence():
+    pf1 = PicketFenceDataFiles('year2016/month10/day12/sams2_accel_121f05', '.*\.121f05$', pad_dir='/misc/yoda/pub/pad')
+    pf1.print_info()
+    pf2 = PicketFenceDataFiles('year2016/month10/day12/sams2_accel_121f05', '.*\.121f05$', pad_dir='/data/pad')
+    pf2.print_info()
+    pf3 = PicketFenceDataFiles('year2016/month10/day13/sams2_accel_121f05', '.*\.121f05$', pad_dir='/data/pad')
+    pf3.print_info()
 
 # class for list of pdf files that are at least min_size bytes in size   
 class BigPdfFiles(object):

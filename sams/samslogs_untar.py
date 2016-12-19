@@ -199,11 +199,11 @@ def get_latest_tgz():
     """get most recent tgz file, then text prompt to continue with it or not"""
 
     # subdir is like 2015_downlink
-    #subdir = '%4d_downlink' % datetime.datetime.now().year
+    subdir = '%4d_downlink' % datetime.datetime.now().year
     
     # get most recent tgz file along a default dir
-    #tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/' + subdir, '.tgz')
-    tgz_file = most_recent_file_with_suffix('/media/trek21/Downlinks', '.tgz')
+    tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/' + subdir, '.tgz')
+    #tgz_file = most_recent_file_with_suffix('/media/trek21/Downlinks', '.tgz')
     
     # at this point, the directory does not exist, so return full path for tgz_file
     return tgz_file

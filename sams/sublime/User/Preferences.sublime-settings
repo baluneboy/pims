@@ -6,6 +6,7 @@
 	"http_proxy": "localhost:31280",
 	"ignored_packages":
 	[
+		"Package Control",
 		"Vintage"
 	]
 }

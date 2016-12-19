@@ -2,6 +2,8 @@
 
 import datetime
 from interval import Interval, IntervalSet
+from pims.utils.pimsdateutil import datetime_to_ymd_path, pad_fullfilestr_to_start_stop
+
 
 class CompareOverlapInterval(Interval):
     
@@ -251,8 +253,10 @@ def demo_big_list(dirpath, sensor):
     import re
     from pims.files.utils import filter_filenames
     fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
+    print fullfile_pattern
     suffix = sensor + '.header'
     header_files = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith(suffix)]
+    return header_files
     
 #dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
 #sensor = '121f03'
@@ -261,25 +265,74 @@ def demo_big_list(dirpath, sensor):
 #    print f
 #raise SystemExit
 
-def demo():
-    from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
+
+def get_pad_data_files(dirpath, sensor):
+    import re
+    from pims.files.utils import filter_filenames
+    fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\Z'
+    suffix = sensor # + '.header'
+    header_files = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith(suffix)]
+    return header_files
+
+
+def demo_show_loose_pad_gaps():
     f1 = '/misc/yoda/pub/pad/2015_03_14_00_05_47.252+2015_03_14_00_15_47.267.121f05.header'
     f2 = '/misc/yoda/pub/pad/2015_03_14_00_15_48.867+2015_03_14_00_25_00.000.121f05.header'
-    t1, t2 = pad_fullfilestr_to_start_stop(f1)
-    t3, t4 = pad_fullfilestr_to_start_stop(f2)
+    #t1, t2 = pad_fullfilestr_to_start_stop(f1)
+    #t3, t4 = pad_fullfilestr_to_start_stop(f2)
     r = LoosePadIntervalSet(maxgapsec=1) # try 1 to see "not close enough" or 2 for "close enough"
-    r.add(Interval(t1,t2))
-    #print r
-    r.add(Interval(t3,t4))
-    #print r
-    ss = Interval(datetime.datetime(2015, 3, 14, 0, 0, 0), datetime.datetime(2015, 3, 15, 0, 0, 0))
-    iss = IntervalSet( (ss,) )
-    # now set of gaps are these
-    print iss - r
+    r.add(padfilename2interval(f1))
+    r.add(padfilename2interval(f2))
     
-#demo()
-#raise SystemExit
+    day_interval = Interval(datetime.datetime(2015, 3, 14, 0, 0, 0), datetime.datetime(2015, 3, 15, 0, 0, 0))
+    whole_day_intervalset = IntervalSet( (day_interval,) )
+    
+    # now set of gaps are thes
+    for gap in (whole_day_intervalset - r):
+        print gap
+
+
+def padfilename2interval(fname):
+    t1, t2 = pad_fullfilestr_to_start_stop(fname)
+    return Interval(t1,t2)
+
+
+def get_loose_pad_gaps(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pub/pad'):
+    
+    # get day interval and "day" PAD ymd path
+    tomorrow = day + datetime.timedelta(days=1)
+    t1 = datetime.datetime.combine(day, datetime.datetime.min.time())
+    t2 = datetime.datetime.combine(tomorrow, datetime.datetime.min.time())
+    ymdpath = datetime_to_ymd_path(day, base_dir=basedir)
+    
+    # initialize loose pad interval set
+    s = LoosePadIntervalSet(maxgapsec=maxgapsec)
+    
+    # build interval set with pad filenames for "yesterday" and "day"
+    yesterday = day - datetime.timedelta(days=1)
+    file_list = get_pad_data_files(datetime_to_ymd_path(yesterday, base_dir=basedir), sensor) # "yesterday" files
+    file_list.extend(get_pad_data_files(ymdpath, sensor)) # extend list with "day" files
+    for f in file_list:
+        s.add(padfilename2interval(f))  
+    
+    # build interval for day of interest (the whole day)
+    day_interval = Interval(t1, t2)
+    whole_day_intervalset = IntervalSet( (day_interval,) )
+    
+    # difference to get set of gaps for day of interest
+    gaps = whole_day_intervalset - s
+    
+    return gaps   
+
+
+def get_strata_gaps(days_ago=2, sensor='121f04', maxgapsec=59, basedir='/misc/yoda/pub/pad'):
+    #print days_ago, sensor, maxgapsec, basedir
+    day = datetime.date.today() - datetime.timedelta(days=days_ago)
+    gaps = get_loose_pad_gaps(day, sensor=sensor, maxgapsec=maxgapsec, basedir=basedir)
+    return gaps
+
     
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=True)
+    

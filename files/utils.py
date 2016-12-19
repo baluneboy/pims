@@ -232,10 +232,15 @@ def listdir_filename_pattern(dirpath, fname_pattern):
 
 def filter_filenames(dirpath, predicate):
     """
-    #>>> filePattern = '\d{14}.\d{14}/\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.*'
-    #>>> dirpath = '/misc/jaxa'
-    #>>> predicate = re.compile(r'/misc/jaxa/' + filePattern).match
-    #>>> for filename in filter_filenames(dirpath, predicate): print filename
+    >>> sensor = '121f03'
+    >>> fullfile_pattern = r'(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_%s)/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.%s\Z' % (sensor, sensor)
+    >>> dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
+    >>> for f in list(filter_filenames(dirpath, re.compile(fullfile_pattern).match))[0:5]: print f
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_06_05.702+2015_03_17_00_16_05.708.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_16_05.710+2015_03_17_00_26_05.719.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_26_05.721+2015_03_17_00_36_05.728.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_36_05.730+2015_03_17_00_46_05.737.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_46_05.739+2015_03_17_00_56_05.747.121f03
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:
@@ -246,13 +251,13 @@ def filter_filenames(dirpath, predicate):
 def filter_dirnames(dirpath, predicate):
     """
     >>> subdirPattern = 'sams2_accel_121f0[28].*'
-    >>> dirpath = r'/misc/yoda/pub/pad/year2015/month01/day01'
+    >>> dirpath = r'/misc/yoda/pub/pad/year2016/month01/day01'
     >>> predicate = re.compile(os.path.join(dirpath, subdirPattern)).match
     >>> for dirname in filter_dirnames(dirpath, predicate): print dirname
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f02
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f02006
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f08
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f08006
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f08
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f08006
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f02006
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for dirname in dirnames:
@@ -308,5 +313,5 @@ def remove_old_files(folder, numdays):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=True)
     

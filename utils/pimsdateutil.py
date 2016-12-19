@@ -10,13 +10,14 @@ import time
 from dateutil import parser
 from warnings import warn
 
+
 MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 
 (JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE,
  JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER) = range(1, 13)
 
 _DAY = datetime.timedelta(1)
-
+        
 def timedelta_hours(td):
     """Return timedelta in hours.
     
@@ -95,6 +96,14 @@ def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     """
     return os.path.join( base_dir, d.strftime('year%Y/month%m/day%d') )
 
+
+# return string for "yesterday's" year/month/day PAD path
+def yesterday_pad_ymd_path(base_dir='/misc/yoda/pub/pad'):
+    """return string for "yesterday's" year/month/day PAD path"""
+    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    return datetime_to_ymd_path(yesterday, base_dir=base_dir)
+
+
 def timestr_to_datetime(timestr):
     """
     Return datetime representation of a time string.
@@ -159,6 +168,19 @@ def datetime_to_doytimestr(dtm):
     """
     if not dtm: return None
     return dtm.strftime('%Y:%j:%H:%M:%S.%f')
+
+# convert datetime object to string like 2016-11-27,332/00:02:00.000
+def datetime_to_longtimestr(dtm):
+    """convert datetime object to string like 2016-11-27,332/01:02:03.456
+    
+    >>> datetime_to_longtimestr(datetime.datetime(2016, 11, 27, 1, 2, 3, 456543))
+    '2016-11-27,332/01:02:03.457'
+    """
+    if not dtm: return None
+    s = dtm.strftime('%Y-%m-%d,%j/%H:%M:%S.%f')
+    f = round(float(s[-7:]), 3)
+    temp = "%.3f" % f
+    return "%s%s"% (s[:-7], temp[1:])
 
 # convert string like 2014-05-02 to datetime object
 def datestr_to_datetime(timestr):

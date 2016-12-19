@@ -20,6 +20,7 @@ from timemachine import EeTimeGetter, CcsdsEeTimeGetter
 from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
+SLOPTIME = datetime.timedelta(seconds=20) # GMT slop for timestamp still close enough to HOST's now
 SLEEP = 0.7           # seconds between event loop updates
 VERTOFFSET = 200      # vertical offset between gray rect bars (default 200)
 SCREEN_PCT =  90      # screen width/height that window occupies
@@ -47,20 +48,31 @@ FORMATTERS = {
 #FF0000 is RED
 #000000 is BLACK
 #FFFFFF is WHITE
+###HEADER = '''
+###<html>
+###    <head>
+###        <title>
+###            SAMS Device Times
+###        </title>
+###        <style>
+###            .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 14px; }
+###            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
+###            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
+###            .okay td { width="360px"; text-align: center; }
+###            .olds td { width="360px"; text-align: center; }                   
+###        </style>
+###    </head>
+###    <body>
+###'''
 HEADER = '''
 <html>
+    <link rel="stylesheet" type="text/css" href="device_tables.css" media="screen"/>
     <head>
-        <title>
-            SAMS Device Times
-        </title>
-        <style>
-            .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 14px; }
-            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
-            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
-            .okay td { width="360px"; text-align: center; }
-            .olds td { width="360px"; text-align: center; }                   
-        </style>
+        <META HTTP-EQUIV=Refresh CONTENT='30'>
     </head>
+    <title>
+        SAMS Device Times
+    </title>
     <body>
 '''
 
@@ -240,7 +252,8 @@ def run(time_machines):
             df = df[ ['GMT', 'Device', 'Type'] ]
             
             # sort rows by GMT descending
-            df = df.sort( ['GMT'], ascending = [False] )
+            #df = df.sort( ['GMT'], ascending = [False] )
+            df = df.sort_values(by=['GMT'], ascending = [False] )
             
             # write 2 tables and footer
             to_html(df, h) # this writes 2 tables
@@ -272,6 +285,8 @@ def to_html(df, h):
     # FIXME the next 2 lines need to do math on GMT times (do not attempt math on strings)
     df_okay = df[ df['GMT'] >= host_gmt ]
     df_olds = df[ df['GMT'] <  host_gmt ]
+    #df_okay = df[ df['GMT'] >= ( host_gmt - SLOPTIME ) ]
+    #df_olds = df[ df['GMT'] <  ( host_gmt - SLOPTIME ) ]    
     h.write( df_okay.to_html(classes='okay', index=False, formatters=FORMATTERS) )
     # FIXME need to account for empty dataframe possibility for df_olds
     h.write( df_olds.to_html(classes='olds', index=False, formatters=FORMATTERS, header=False) )

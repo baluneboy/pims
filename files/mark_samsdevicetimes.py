@@ -25,6 +25,57 @@ def replace_columns(soup, regex, replacement):
             col.replace_with(BeautifulSoup(replacement.format(text=cell_text), 'html.parser'))
 
 
+def mark_the_table(table, which_class):
+    # modify class and border on this table
+    table.attrs['class'] = which_class
+    table.attrs['border'] = 2
+    #headings = table.find_all('th')
+    #
+    ## modify 6 column headings attrs for our css formatting
+    #headings[0].attrs['class'] = 'column-1 column-gmt'
+    #headings[1].attrs['class'] = 'column-2 column-device'
+    #headings[2].attrs['class'] = 'column-3 column-type'
+
+    # format first 3 columns of all table rows
+    all_rows = table.find_all('tr')
+    for row in all_rows:
+        cells = row.find_all(['th','td'])
+        cells[0].attrs['style'] = 'text-align: right'
+        cells[1].attrs['style'] = 'text-align: center'
+        cells[2].attrs['style'] = 'text-align: left'    
+        
+        
+# css implementation for improved (colorized) html
+def NOTYET_device_tables_css_html(html_file):
+    """css implementation for improved (colorized) html"""
+
+    # read html input file as html source
+    with open(html_file, 'r') as infile:
+        html_src = infile.read()
+
+    # convert html source to beautiful soup
+    soup = BeautifulSoup(html_src, 'html.parser')
+   
+    # yellow highlight mark on "HOST" rows (two of them)
+    replace_columns(soup, '(\s*)(HOST|MON|TUE|WED|THU|FRI|SAT|SUN)(\s*)', '<td><mark>{text}</mark></td>')
+    
+    # get the one and only table here
+    tables = soup.find_all('table')
+    #if len(tables) != 2:
+    #    raise Exception('expected exactly two tables here')
+    
+    for table in tables:
+        mark_the_table(tables[0], "okay")
+    #mark_the_table(tables[1], "olds")
+
+    # write marked up as html to new file
+    tmp_file = html_file.replace('.html', '.temp')
+    with open(tmp_file, 'w') as f:
+        f.write(soup.encode('UTF-8'))
+
+    #return f.name
+    return tmp_file
+
 def markup_devices(html_file):
 
     # read html input file as html source
@@ -68,7 +119,6 @@ def markup_devices(html_file):
 
     #return f.name
     return tmp_file
-
 
 
 def table_cat(html_file, new_file):
@@ -124,4 +174,5 @@ if __name__ == "__main__":
     else:
         html_file='/misc/yoda/www/plots/user/sams/status/sensortimes.html'
     new_file = markup_devices(html_file)
+    #new_file = device_tables_css_html(html_file)
     move(new_file, html_file)
