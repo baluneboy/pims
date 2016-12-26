@@ -3,6 +3,10 @@
 	{
 		"selected_items":
 		[
+			[
+				"usr",
+				"user_rows"
+			]
 		]
 	},
 	"buffers":
@@ -11,15 +15,18 @@
 			"file": "/Users/ken/dev/programs/bash/wget_northfield.bash",
 			"settings":
 			{
-				"buffer_size": 6058,
+				"buffer_size": 6104,
 				"line_ending": "Unix"
 			}
 		},
 		{
+			"contents": "",
 			"file": "mark_northfield.py",
+			"file_size": -1,
+			"file_write_time": -1,
 			"settings":
 			{
-				"buffer_size": 1920,
+				"buffer_size": 0,
 				"line_ending": "Unix"
 			}
 		}
@@ -225,6 +232,10 @@
 		"case_sensitive": true,
 		"find_history":
 		[
+			"html_file",
+			"tr_set",
+			"all_rows",
+			"src_file",
 			"ork",
 			"ett",
 			"Working",
@@ -348,18 +359,18 @@
 			" ",
 			"\\s+",
 			"\\s",
-			"2",
-			"1",
-			"0",
-			"(.)",
-			"my_region_set"
+			"2"
 		],
 		"highlight": true,
-		"in_selection": false,
+		"in_selection": true,
 		"preserve_case": false,
 		"regex": true,
 		"replace_history":
 		[
+			"old_file",
+			"rows",
+			"all_cells",
+			"html_file",
 			"ARCHIVEDIR",
 			" ",
 			"",
@@ -497,15 +508,15 @@
 					"file": "/Users/ken/dev/programs/bash/wget_northfield.bash",
 					"settings":
 					{
-						"buffer_size": 6058,
+						"buffer_size": 6104,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								3447,
-								3447
+								0,
+								0
 							]
 						],
 						"settings":
@@ -515,7 +526,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 2280.0,
+						"translation.y": 1802.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"
@@ -525,15 +536,15 @@
 					"file": "mark_northfield.py",
 					"settings":
 					{
-						"buffer_size": 1920,
+						"buffer_size": 0,
 						"regions":
 						{
 						},
 						"selection":
 						[
 							[
-								1685,
-								1685
+								0,
+								0
 							]
 						],
 						"settings":
@@ -543,7 +554,7 @@
 							"translate_tabs_to_spaces": true
 						},
 						"translation.x": 0.0,
-						"translation.y": 479.0,
+						"translation.y": 0.0,
 						"zoom_level": 1.0
 					},
 					"type": "text"

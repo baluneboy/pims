@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import pandas
-import pandas.io.data
+#import pandas.io.data
+from pandas_datareader import data
 import datetime
 import urllib2
 import csv
@@ -20,7 +21,7 @@ symbol = "SNXFX"
 symbol = "SWHGX"
 symbol = "SKSEX"
 
-history = pandas.io.data.DataReader(symbol, "yahoo", start="2012/1/1")
+history = data.DataReader(symbol, "yahoo", start="2012/1/1")
 print history.head(6)
 print history.tail(6)
 
