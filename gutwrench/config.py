@@ -5,8 +5,16 @@
 import os
 import sys
 import ConfigParser
+from dateutil.parser import parse
 from filesystem_tree import FilesystemTree
 
+#################################################################
+# Any config file suffix (types) should be added to globals here:
+#          SUFFIX     CALLABLE
+#-----------------------------
+globals()['float'] =  float
+globals()['dtm']   =  parse
+#################################################################
 
 def show_config(config):
     config.write(sys.stdout)
@@ -22,6 +30,29 @@ def show_config(config):
     print config.get('ancillary', 'expression', 0, {'bar': 'Documentation'})
 
 
+class PimsConfigParser(ConfigParser.SafeConfigParser):
+    
+    def get_formatted_option(self, section, option):
+        
+        # check for special option (parameter) with underscored suffix
+        if '_' in option:
+            func_str = option.split('_')[-1]
+        else:
+            # assuming the value is of type str here
+            return self.get(section, option)
+            
+        # if possible, format this option using suffix as func_str for func method to call on it
+        try:
+            func = globals()[func_str] # or should this be locals() instead of globals()?
+            value = self._get(section, func, option)
+        except Exception, e:
+            print 'an exception happened trying %s(%s)' % (func_str, option)
+            print 'so fall back to just using str to format parameter in config'
+            value = self.get(section, option)
+        
+        return value       
+
+    
 class ConfigHandler(object):
     
     def __init__(self, base_path, ini_file='gutwrench.ini'):
@@ -29,7 +60,8 @@ class ConfigHandler(object):
         self.set_ini_file(ini_file)
         self.file_tree = self.get_file_tree()
         self.files = self.get_files()
-        self.config = ConfigParser.SafeConfigParser()
+        #self.config = ConfigParser.SafeConfigParser()
+        self.config = PimsConfigParser()
         
     @property
     def base_path(self):
@@ -62,46 +94,38 @@ class ConfigHandler(object):
 
     def load_config(self):
         self.config.read(self.ini_file)
-    
-    def OLDget_target_str(self):
-        target_str = None
-        try:
-            target_str = self.config.get('output', 'target')
-        except Exception, e:
-            print 'an exception happened: %s' % e.message
-        return target_str
-    
+        
     def create_ini_file(self, ft, ini_file):
         ft.mk((ini_file, '''
         # auto-generated gutwrench.ini
         
-        [headings]
+        [HeadingSection]
         source   = An Interesting Experiment
         regime   = vibratory
         category = equipment
         
-        [output]
-        target = roadmap_canvas
+        [OutputSection]
+        target = RoadmapCanvasTarget
         topdir = /misc/yoda/www/plots/user/handbook/source_docs
         
-        [gmtspan]
+        [GmtSpanSection]
         gmtstart = 2016-12-20 16:00
         gmtstop  = 2016-12-25
         
-        [sensors]
+        [SensorSection]
         sensor_1 = 121f02
         sensor_2 = 121f03
         sensor_3 = 121f05
         sensor_4 = 121f08
         
-        [ancillary]
+        [AncillarySection]
         ini_last_modified = 2016-12-27 13:26
         expression = %(bar)s is %(baz)s!
         baz = yummy
         
-        [resources]
+        [ResourceSection]
         host = jimmy
-        port = 8080
+        port = 1234
         # NOTE YOU CAN DO SUBSTITUTION LIKE THIS POORLY FORMATTED URL
         url = http://%(host)s:%(port)s/
         '''))
