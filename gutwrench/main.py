@@ -43,10 +43,15 @@ def process_data(params):
        
     # get config handler based on ini file
     cfgh = ConfigHandler(parameters['base_path'], ini_file=parameters['ini_file'])
+   
+    # quick check to see that "dot run" file does not exist yet
+    run_fname = cfgh.ini_file.replace('.ini', '.run')
+    if os.path.basename(run_fname) in cfgh.files:
+        raise Exception('dot run file exists already %s' % run_fname)    
     
     # load config from config (ini) file
     cfgh.load_config()
-        
+           
     # get target based on output section of config (ini) file using target parameter there
     print 'processing %s' % cfgh.ini_file
     target = get_target(cfgh)
@@ -58,9 +63,12 @@ def process_data(params):
         
         # do target main processing
         target.main_process()
-        
+            
         # do target post-processing
         target.post_process()
+        
+    else:
+        raise Exception('no target found in OutputSection of config %s' % cfgh.ini_file)
 
 
 # describe main routine here

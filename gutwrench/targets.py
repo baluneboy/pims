@@ -17,6 +17,7 @@ class RoadmapCanvasTarget(object):
         self.required_section_names = self.get_required_section_names()
         self.verify_required_sections()
         self.required_sections = self.get_required_sections()
+        self.run_file = None
 
     def __str__(self):
         s = "target is %s" % self.__class__.__name__
@@ -41,17 +42,21 @@ class RoadmapCanvasTarget(object):
         for sect_name in self.required_section_names:
             required_sections[sect_name] = get_section(self.config_handler, sect_name)
         return required_sections
+
+    def show_required_sections(self):
+        print 'showing required sections:\n' + '-' * 36
+        for name, sect in self.required_sections.iteritems():
+            print name
+            print sect        
     
     def pre_process(self):
         print 'pre-processing for %s\n' % self.__class__.__name__
         
-        # work on required sections
-        for name, sect in self.required_sections.iteritems():
-            print name
-            print sect
+        #self.show_required_sections()
         
         if 'PageMapSection' in self.all_section_names:
-            print 'skip this target because PageMapSection exists already\n'
+            raise Exception('PageMapSection of config exists already: %s' % self.config_handler.ini_file)
+            
         else:
             print 'create and fill PageMapSection of config and rewrite file\n'
             
@@ -81,7 +86,12 @@ class RoadmapCanvasTarget(object):
             # FIXME this should write to like gutwrench.run
             
             # write to screen
-            self.config.write(sys.stdout)
+            #self.config.write(sys.stdout)
+            
+            # write to new "dot run" file
+            run_fname = self.config_handler.ini_file.replace('.ini', '.run')
+            with open(run_fname, 'wt') as f:
+                self.config.write(f)
     
     def main_process(self):
         print 'main processing for %s\n' % self.__class__.__name__
