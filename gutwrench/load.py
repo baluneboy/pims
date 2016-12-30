@@ -3,9 +3,9 @@
 import ConfigParser
 
 
-def load_config(ini_file):
+def load_config(cfg_file):
     config = ConfigParser.ConfigParser()
-    config.read(ini_file)
+    config.read(cfg_file)
     return config
 
 
@@ -23,7 +23,7 @@ def show_config(config):
     
 
 if __name__ == '__main__':
-    ini_file = '/Users/ken/dev/programs/python/pims/gutwrench/gutwrench.ini'
-    config = load_config(ini_file)
+    cfg_file = '/Users/ken/dev/programs/python/pims/gutwrench/gutwrench.ini'
+    config = load_config(cfg_file)
     show_config(config)
     

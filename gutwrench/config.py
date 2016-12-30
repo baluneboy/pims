@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-"""Get and handle configuration, usually from gutwrench.ini file."""
+"""Get and handle configuration, usually from gutwrench.ini (or .run) file."""
 
 import os
 import sys
@@ -55,71 +55,119 @@ class PimsConfigParser(ConfigParser.SafeConfigParser):
     
 class ConfigHandler(object):
     
-    def __init__(self, base_path, ini_file='gutwrench.ini'):
+    def __init__(self, base_path, cfg_file='gutwrench.ini'):
         self.base_path = base_path
-        self.set_ini_file(ini_file)
+        self.set_cfg_file(cfg_file)
         self.file_tree = self.get_file_tree()
         self.files = self.get_files()
-        #self.config = ConfigParser.SafeConfigParser()
         self.config = PimsConfigParser()
         
     @property
     def base_path(self):
-        #print('Getting base_path')
         return self._base_path
 
     @base_path.setter
     def base_path(self, some_path):
         if not os.path.exists(some_path):
             raise IOError("base_path (%s) does not exist" % some_path)        
-        #print('Setting base_path to %s' % some_path)
         self._base_path = some_path
         
     def get_file_tree(self):
-        #print('get_file_tree')
         return FilesystemTree(root=self.base_path)
 
     def get_files(self):
-        #print('get_files')
         ft = self.get_file_tree()
         return os.listdir(ft.root)
 
-    def set_ini_file(self, ini_file):
+    def set_cfg_file(self, cfg_file):
         ft = self.get_file_tree()
         files = self.get_files()
-        if not ini_file in files:
-           print('the ini file (%s) does not exist -> create one' % ini_file)
-           self.create_ini_file(ft, ini_file)
-        self.ini_file = ft.resolve(ini_file)
+        if not cfg_file in files:
+        #   print('the ini file (%s) does not exist -> create one' % cfg_file)
+        #   self.create_cfg_file(ft, cfg_file)
+            raise Exception('the config file (%s) does not exist' % cfg_file)
+        self.cfg_file = ft.resolve(cfg_file)
 
     def load_config(self):
-        self.config.read(self.ini_file)
+        self.config.read(self.cfg_file)
         
-    def create_ini_file(self, ft, ini_file):
-        ft.mk((ini_file, '''
+    def create_cfg_file(self, ft, cfg_file):
+        ft.mk((cfg_file, '''
+        # auto-generated configuration file
+        
+        # NOTE: this is where you can create default file as needed
+        #
+        # NOTE: if param name has underscore suffix that matches globals
+        #       in ~/dev/programs/python/pims/gutwrench/config.py, then
+        #       those parameter values will be cast to that type; other-
+        #       wise they fallback to strings
+        
+        [HeadingSection]
+        t1_dtm   = 2016-12-20 16:00
+        x2_float = 17.23
+        
+        [ResourceSection]
+        host = jimmy
+        port = 1234
+        # NOTE YOU CAN DO SUBSTITUTION LIKE THIS POORLY FORMATTED URL
+        url = http://%(host)s:%(port)s/
+        '''))
+
+
+class PimsConfigHandler(ConfigHandler):
+
+    def set_cfg_file(self, cfg_file):
+        """handle pims config files with extension: {ini|run}"""
+        
+        _ok_exts = ['ini', 'run']
+        
+        # get extension and check it
+        ext = cfg_file.split('.')[-1]
+        if not ext in _ok_exts:
+            okstr = ','.join(_ok_exts)
+            raise Exception('%s ONLY HANDLES CONFIG FILES ENDING WITH ONE OF THESE: %s' % (self.__class__.__name__, okstr))
+        
+        ft = self.get_file_tree()
+        files = self.get_files()
+        if not cfg_file in files:
+        #   print('the ini file (%s) does not exist -> create one' % cfg_file)
+        #   self.create_cfg_file(ft, cfg_file)
+            raise Exception('the config file (%s) does not exist' % cfg_file)
+        self.cfg_file = ft.resolve(cfg_file)
+        
+    def create_cfg_file(self, ft, cfg_file):
+        ft.mk((cfg_file, '''
         # auto-generated gutwrench.ini
+        
+        # NOTE: if param name has underscore suffix that matches globals
+        #       in ~/dev/programs/python/pims/gutwrench/config.py, then
+        #       those parameter values will be cast to that type; other-
+        #       wise they fallback to strings
         
         [HeadingSection]
         source   = An Interesting Experiment
         regime   = vibratory
         category = equipment
+        t1_dtm   = 2016-12-20 16:00
+        x2_float = 17.23
         
         [OutputSection]
         target = RoadmapCanvasTarget
         topdir = /misc/yoda/www/plots/user/handbook/source_docs
         
         [GmtSpanSection]
-        gmtstart = 2016-12-20 16:00
-        gmtstop  = 2016-12-25
+        # NOTE: gmtstart_dtm <= t < gmtstop_dtm (closed lower bound, open upper)
+        gmtstart_dtm = 2016-12-20 00:00
+        gmtstop_dtm  = 2016-12-22 00:00
         
         [SensorSection]
-        sensor_1 = 121f02
-        sensor_2 = 121f03
-        sensor_3 = 121f05
-        sensor_4 = 121f08
+        sensor01 = 121f02
+        sensor02 = 121f03
+        sensor03 = 121f05
+        sensor04 = 121f08
         
         [AncillarySection]
-        ini_last_modified = 2016-12-27 13:26
+        lastmodified_dtm = 2016-12-27 13:26
         expression = %(bar)s is %(baz)s!
         baz = yummy
         
