@@ -7,6 +7,8 @@ import sys
 import ConfigParser
 from dateutil.parser import parse
 from filesystem_tree import FilesystemTree
+import warnings
+
 
 #################################################################
 # Any config file suffix (types) should be added to globals here:
@@ -52,7 +54,14 @@ class PimsConfigParser(ConfigParser.SafeConfigParser):
         
         return value       
 
+
+class SafeFilesystemTree(FilesystemTree):
     
+    def remove(self):
+        msg = 'we will not remove the filesystem tree at root = %s' % self.root
+        warnings.warn(msg)
+
+
 class ConfigHandler(object):
     
     def __init__(self, base_path='/tmp', cfg_file='gutwrench.ini'):
@@ -74,7 +83,7 @@ class ConfigHandler(object):
         self._base_path = some_path
         
     def get_file_tree(self):
-        return FilesystemTree(root=self.base_path)
+        return SafeFilesystemTree(root=self.base_path)
 
     def get_files(self):
         ft = self.get_file_tree()
