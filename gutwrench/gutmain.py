@@ -44,33 +44,41 @@ def process_data(params):
     # get config handler based on cfg_file
     cfgh = PimsConfigHandler(parameters['base_path'], cfg_file=parameters['cfg_file'])
    
-    # announce start
+    # emit start message
     print 'start processing %s' % cfgh.cfg_file
-   
-    # if cfg_file endswith .ini, then check that .run does not exist yet
-    if cfgh.cfg_file.endswith('.ini'):
-        run_fname = cfgh.cfg_file.replace('.ini', '.run')
-        if os.path.basename(run_fname) in cfgh.files:
-            raise Exception('running ini, but run file exists already %s (NO OVERWRITE)' % run_fname)    
     
     # load cfg_file
     cfgh.load_config()
            
     # get target based on output section of cfg_file using target parameter there
     target = get_target(cfgh)
+    
     if target:
         print 'got target = %s' % target.__class__.__name__
 
-        # do target pre-processing
-        blnPre = target.pre_process()
-        
-        # do target main processing
-        blnMain = target.main_process()
+        if cfgh.ext == 'ini':
+            # do target pre-processing
+            pre_msg = target.pre_process()
+            status_msg = 'done with pre-processing, ' + pre_msg
             
-        # do target post-processing
-        blnPost = target.post_process()
+        elif cfgh.ext == 'run':
+            # do target main-processing
+            main_msg = target.main_process()
+            status_msg = 'done with main-processing, ' + main_msg
+        
+        elif cfgh.ext == 'post':
+            # do target post-processing
+            post_msg = target.post_process()
+            status_msg = 'done with post-processing, ' + post_msg    
+        
+        else:
+            # unhandled extension on cfg_file
+            status_msg = 'nothing to do when config file extension is "%s"' + cfgh.ext
+        
+        return status_msg
         
     else:
+        
         raise Exception('no target found in OutputSection of config %s' % cfgh.cfg_file)
 
 
@@ -91,6 +99,7 @@ def main(argv):
             nr = NiceResult(process_data, parameters)
             nr.do_work()
             result = nr.get_result()
+            print result
             return 0 # zero for unix success
         
     print_usage()  

@@ -22,6 +22,7 @@ class RoadmapCanvasTarget(object):
         self.required_section_names = self.get_required_section_names()
         self.verify_required_sections()
         self.required_sections = self.get_required_sections()
+        self.page_str_prefix = 'RoadmapWholeDayPage'
 
     def __str__(self):
         s = "target is %s" % self.__class__.__name__
@@ -54,14 +55,14 @@ class RoadmapCanvasTarget(object):
             print sect        
     
     def pre_process(self):
+
+        print 'pre-processing for %s -> use .ini file to create .run file' % self.__class__.__name__
         
         # if cfg_file is run file, then skip pre-processing completely
         if self.cfg_file.endswith('.run'):
             print 'SKIP pre-processing because cfg_file endswith ".run"\n'
             return False
-        
-        print 'pre-processing for %s (USE INI FILE TO CREATE RUN FILE)\n' % self.__class__.__name__
-        
+
         #self.show_required_sections()
         
         # special page map section should not exist in ini file (need it for run file, but not ini file)
@@ -89,13 +90,12 @@ class RoadmapCanvasTarget(object):
                 daystr = day.strftime('%Y-%m-%d')
                 for sensor_key, sensor in self.required_sections['SensorSection'].params_dict.iteritems():
                     page_name = 'page%02d' % page_num
-                    page_str = 'RoadmapWholeDayPage_' + daystr + '_' + sensor
+                    page_str = self.page_str_prefix + '_' + daystr + '_' + sensor
                     self.config.set(new_sect_name, page_name, page_str)
                     page_num += 1
                 day += relativedelta.relativedelta(days = 1)
-            
-            # FIXME this should write to like gutwrench.run
-            
+            page_count = page_num - 1
+                       
             # write to screen
             #self.config.write(sys.stdout)
             
@@ -103,22 +103,24 @@ class RoadmapCanvasTarget(object):
             run_fname = self.config_handler.cfg_file.replace('.ini', '.run')
             with open(run_fname, 'wt') as f:
                 self.config.write(f)
-            print 'wrote run file %s\n' % run_fname
-
-            return True
+            
+            return 'count=%02d %s(s) now in PageMapSection of %s' % (page_count, self.page_str_prefix, run_fname)
     
     def main_process(self):
 
-        # if cfg_file is not run file, then skip main processing completely
-        if not self.cfg_file.endswith('.run'):
-            print 'SKIP main processing because cfg_file does NOT end with ".run"\n'
-            return False
+        print 'main processing for %s -> use PageMapSection of .run file to build pages in target dir' % self.__class__.__name__
+
+        run_fname = self.cfg_file
+        
+        # if cfg_file is NOT ".run: file, then skip main processing completely
+        if not run_fname.endswith('.run'):
+            return 'SKIPPED main processing because cfg_file does NOT end with ".run"'
         
         # verify page map section exists in run file
         if not 'PageMapSection' in self.all_section_names:
-            raise Exception('PageMapSection of config does NOT exist in %s' % self.cfg_file)
+            return 'SKIPPED main processing because PageMapSection does NOT exist in %s' % run_fname
 
-        # get target dir name
+        # get target dir name (e.g. /TOPDIR/HB_REGIME_CATEGORY_SOURCE/RoadmapCanvasTarget)
         target_dir = self.config.get('OutputSection', 'targetdir', 0) # LAST ARG = 0 -> USE INTERPOLATION
                
         # if target dir exists, then squawk about it, MOVE IT OUT OF THE WAY and continue
@@ -132,8 +134,6 @@ class RoadmapCanvasTarget(object):
         print 'mkdir %s' % target_dir
         mkdir_p(target_dir)
 
-        print 'main processing for %s (USE RUN TO CREATE/COPY SVGs/PDFs TO TARGET DIR)\n' % self.__class__.__name__
-
         # process section that maps pages
         pages = [] # container for page objects
         for page_numstr, page_str in self.config.items('PageMapSection'):
@@ -141,12 +141,13 @@ class RoadmapCanvasTarget(object):
             page = get_page(self.config_handler, page_fullstr)
             page.build()
             pages.append(page)
-       
-        return True
+        page_count = len(pages)
+
+        return 'count=%02d %s(s) built from PageMapSection of %s' % (page_count, self.page_str_prefix, run_fname)
     
     def post_process(self):
-        print 'post-processing for %s (SVGLUE USING OUTPUT DIR FILE LIST)\n' % self.__class__.__name__
-        return True
+        print 'post-processing for %s -> use .post for WHAT?' % self.__class__.__name__
+        return 'did nothing'
 
 
 # try to create a target object (from one of classes in this module) based on config output section's target parameter

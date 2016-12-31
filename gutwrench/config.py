@@ -55,9 +55,10 @@ class PimsConfigParser(ConfigParser.SafeConfigParser):
     
 class ConfigHandler(object):
     
-    def __init__(self, base_path, cfg_file='gutwrench.ini'):
+    def __init__(self, base_path='/tmp', cfg_file='gutwrench.ini'):
         self.base_path = base_path
         self.set_cfg_file(cfg_file)
+        self.ext = self.get_ext()
         self.file_tree = self.get_file_tree()
         self.files = self.get_files()
         self.config = PimsConfigParser()
@@ -78,6 +79,9 @@ class ConfigHandler(object):
     def get_files(self):
         ft = self.get_file_tree()
         return os.listdir(ft.root)
+
+    def get_ext(self):
+        return self.cfg_file.split('.')[-1]
 
     def set_cfg_file(self, cfg_file):
         ft = self.get_file_tree()
@@ -121,20 +125,36 @@ class PimsConfigHandler(ConfigHandler):
         
         _ok_exts = ['ini', 'run']
         
+        # FIXME make ext a property (robust setter/getter that matches init sequence)
+        
         # get extension and check it
-        ext = cfg_file.split('.')[-1]
-        if not ext in _ok_exts:
+        if not cfg_file.split('.')[-1] in _ok_exts:
             okstr = ','.join(_ok_exts)
             raise Exception('%s ONLY HANDLES CONFIG FILES ENDING WITH ONE OF THESE: %s' % (self.__class__.__name__, okstr))
         
-        ft = self.get_file_tree()
+        # FIXME the base class can properly handle this whole file tree business better
+        ft = self.get_file_tree() # use method (not property), so we "refresh" tree
         files = self.get_files()
         if not cfg_file in files:
-        #   print('the ini file (%s) does not exist -> create one' % cfg_file)
-        #   self.create_cfg_file(ft, cfg_file)
             raise Exception('the config file (%s) does not exist' % cfg_file)
-        self.cfg_file = ft.resolve(cfg_file)
         
+        # resolve full path
+        cfg_file = ft.resolve(cfg_file)
+        
+        # verify we will not clobber ".run" when ".ini" is set as cfg_file
+        self.verify_no_clobber(cfg_file)
+        
+        # finally, set cfg_file attribute
+        self.cfg_file = cfg_file
+    
+    def verify_no_clobber(self, cfg_file):
+        ext = cfg_file.split('.')[-1]
+        # if cfg_file endswith "ini", then check that ".run" file does NOT exist yet
+        if ext == 'ini':
+            run_fname = cfg_file.replace('.ini', '.run')
+            if os.path.basename(run_fname) in self.get_files():
+                raise Exception('running ini, but run file exists already %s (NO CLOBBER)' % run_fname)
+    
     def create_cfg_file(self, ft, cfg_file):
         ft.mk((cfg_file, '''
         # auto-generated gutwrench.ini
