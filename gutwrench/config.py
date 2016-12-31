@@ -9,7 +9,9 @@ from dateutil.parser import parse
 from filesystem_tree import FilesystemTree
 import warnings
 
-
+# FIXME this globals note needs MUCH better details on how used in config file
+#       like [GmtSpanSection] has gmtstart_dtm item where "_dtm" gets parse here
+#
 #################################################################
 # Any config file suffix (types) should be added to globals here:
 #          SUFFIX     CALLABLE
@@ -35,7 +37,15 @@ def show_config(config):
 class PimsConfigParser(ConfigParser.SafeConfigParser):
     
     def get_formatted_option(self, section, option):
-        
+        """Given section and option, return its formatted value.
+
+        :param string section: A section name
+
+        :param string option: An option name, presumably with "_callable" suffix
+
+        :returns: Value after it's formatted via the option name's "_callable" suffix 
+
+        """    
         # check for special option (parameter) with underscored suffix
         if '_' in option:
             func_str = option.split('_')[-1]
@@ -63,24 +73,35 @@ class SafeFilesystemTree(FilesystemTree):
 
 
 class ConfigHandler(object):
+    """Handle a configuration file that resides at a prescribed base path.
+
+    :param string base_path: The root of the filesystem tree. Throws an
+        exception if path does not exits.
+
+    :param str cfg_file: The configuration file to be handled.
+
+    """
     
     def __init__(self, base_path='/tmp', cfg_file='gutwrench.ini'):
-        self.base_path = base_path
-        self.set_cfg_file(cfg_file)
-        self.ext = self.get_ext()
-        self.file_tree = self.get_file_tree()
-        self.files = self.get_files()
+        self.base_path = self._set_base_path(base_path)
+        self.cfg_file = self._set_cfg_file(cfg_file)
+        self.ext = self.cfg_file.split('.')[-1]
         self.config = PimsConfigParser()
-        
-    @property
-    def base_path(self):
-        return self._base_path
 
-    @base_path.setter
-    def base_path(self, some_path):
+    def _set_base_path(self, some_path):
         if not os.path.exists(some_path):
             raise IOError("base_path (%s) does not exist" % some_path)        
-        self._base_path = some_path
+        return some_path
+    
+    def _set_cfg_file(self, cfg_file):
+        ft = self.get_file_tree()
+        files = self.get_files()
+        if not cfg_file in files:
+        #   print('the config file (%s) does not exist -> create one' % cfg_file)
+        #   self.create_cfg_file(ft, cfg_file)
+            raise Exception('the config file (%s) does not exist' % cfg_file)
+        cfg_fullfile = ft.resolve(cfg_file)
+        return cfg_fullfile
         
     def get_file_tree(self):
         return SafeFilesystemTree(root=self.base_path)
@@ -88,18 +109,6 @@ class ConfigHandler(object):
     def get_files(self):
         ft = self.get_file_tree()
         return os.listdir(ft.root)
-
-    def get_ext(self):
-        return self.cfg_file.split('.')[-1]
-
-    def set_cfg_file(self, cfg_file):
-        ft = self.get_file_tree()
-        files = self.get_files()
-        if not cfg_file in files:
-        #   print('the ini file (%s) does not exist -> create one' % cfg_file)
-        #   self.create_cfg_file(ft, cfg_file)
-            raise Exception('the config file (%s) does not exist' % cfg_file)
-        self.cfg_file = ft.resolve(cfg_file)
 
     def load_config(self):
         self.config.read(self.cfg_file)
@@ -129,40 +138,27 @@ class ConfigHandler(object):
 
 class PimsConfigHandler(ConfigHandler):
 
-    def set_cfg_file(self, cfg_file):
-        """handle pims config files with extension: {ini|run}"""
-        
+    def _set_cfg_file(self, cfg_file):
+        """only handle pims config files with extension: {ini|run}"""
+
         _ok_exts = ['ini', 'run']
         
-        # FIXME make ext a property (robust setter/getter that matches init sequence)
-        
+        # call super first to make sure that much works
+        cfg_fullfile = super(PimsConfigHandler, self)._set_cfg_file(cfg_file)
+               
         # get extension and check it
-        if not cfg_file.split('.')[-1] in _ok_exts:
+        ext = cfg_fullfile.split('.')[-1]
+        if not ext in _ok_exts:
             okstr = ','.join(_ok_exts)
             raise Exception('%s ONLY HANDLES CONFIG FILES ENDING WITH ONE OF THESE: %s' % (self.__class__.__name__, okstr))
         
-        # FIXME the base class can properly handle this whole file tree business better
-        ft = self.get_file_tree() # use method (not property), so we "refresh" tree
-        files = self.get_files()
-        if not cfg_file in files:
-            raise Exception('the config file (%s) does not exist' % cfg_file)
-        
-        # resolve full path
-        cfg_file = ft.resolve(cfg_file)
-        
         # verify we will not clobber ".run" when ".ini" is set as cfg_file
-        self.verify_no_clobber(cfg_file)
-        
-        # finally, set cfg_file attribute
-        self.cfg_file = cfg_file
-    
-    def verify_no_clobber(self, cfg_file):
-        ext = cfg_file.split('.')[-1]
-        # if cfg_file endswith "ini", then check that ".run" file does NOT exist yet
         if ext == 'ini':
-            run_fname = cfg_file.replace('.ini', '.run')
-            if os.path.basename(run_fname) in self.get_files():
-                raise Exception('running ini, but run file exists already %s (NO CLOBBER)' % run_fname)
+            run_fullfile = cfg_fullfile.replace('.ini', '.run')
+            if os.path.basename(run_fullfile) in self.get_files():
+                raise Exception('running ini, but run file exists already %s (NO CLOBBER)' % run_fullfile)
+        
+        return cfg_fullfile
     
     def create_cfg_file(self, ft, cfg_file):
         ft.mk((cfg_file, '''
