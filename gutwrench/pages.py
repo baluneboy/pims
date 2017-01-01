@@ -2,11 +2,31 @@
 
 """Class containers for pages, which come from PageMapSection of '.run' config file."""
 
+"""
+For dynamic class assignment, see:
+http://code.activestate.com/recipes/285262-create-objects-from-variable-class-names/
+and esp. comment by Hamish Lawson:
+
+You can specify the class directly rather than by name. Python classes can be
+passed around, so you can refer them to directly rather than by name:
+
+def get_object(cond):
+    if cond:
+        cls = A
+    else:
+        cls = B
+    return cls()
+    
+If you need a multiway decision you can use a dictionary that has the candidate
+classes as its values.
+"""
+
 import sys, inspect
 from dateutil.parser import parse
+from pims.gutwrench.base import TargetPage
 
 
-# FIXME make this a robust abstract base class using ABC metaclass pattern
+# FIXME can we make this a abstract base class using ABC metaclass pattern (in base.py)?
 class RoadmapWholeDayPage(object):
     
     def __init__(self, config_handler, page_fullstr):
@@ -56,6 +76,26 @@ class RoadmapWholeDayPage(object):
 
     def build(self):
         print 'building %s' % self
+
+
+class RoadmapAxisWholeDayPage(TargetPage):
+    
+    def get_page_dict(self):
+        d = dict()
+        # split str that comes in like 'page01_RoadmapWholeDayPage_2016-12-20_121f02'
+        _split = self.page_fullstr.split('_')
+        d['_num'] =   _split[0] # use setter/getter because it comes in as like "page01"
+        d['name'] =   _split[1]
+        d['_day'] =   _split[2] # use setter/getter because it comes in as string like "2016-12-30"
+        d['sensor'] = _split[3]
+        return d
+    
+    #def __str__(self):
+    #    d = self.page_dict
+    #    #s = "page #%02d for day %s with sensor %s (%s)" % (d['_num'], d['day'], d['sensor'], self.__class__.__name__)
+    #    s = "page #%s for day %s with sensor %s (%s)" % (d['_num'], d['_day'], d['sensor'], self.__class__.__name__)
+    #    return s
+
 
 def get_page_classes():
     # get page class members in this module (this file)

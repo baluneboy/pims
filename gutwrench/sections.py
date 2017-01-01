@@ -4,53 +4,15 @@
 
 import sys, inspect
 from collections import OrderedDict
-
-# FIXME make this a robust abstract base class using ABC metaclass pattern
-class ConfigSection(object):
+from pims.gutwrench.base import ConfigSection
+   
     
-    def __init__(self, config_handler):
-        self.config_handler = config_handler
-        self.config = self.config_handler.config
-        self.all_param_names = self.get_all_param_names()
-        self.required_param_names = self.get_required_param_names()
-        self.verify_required_params()
-        self.params_dict = self.get_params()
-
-    def __str__(self):
-        #s = "%s\n" % self.__class__.__name__
-        s = ""
-        for k, v in self.params_dict.iteritems():
-            s += "%s: %s\n" % (k, v)
-        return s
-    
-    def get_required_param_names(self):
-        raise NotImplementedError('it is responsibility of subclass to return list of required parameter names')
-        
-    def verify_required_params(self):
-        
-        is_subset = set(self.required_param_names).issubset(set(self.all_param_names))
-        if not is_subset:
-            print 'your %s is missing at least one of these required parameter(s):' % self.__class__.__name__,
-            print self.required_param_names
-            raise Exception('missing required configuration parameter(s)')
-    
-    def get_all_param_names(self):
-        return self.config.options(self.__class__.__name__)
-    
-    def get_params(self):
-        params_dict = OrderedDict()
-        section = self.__class__.__name__
-        for name, value in self.config.items(section):
-            params_dict[name] = self.config.get_formatted_option(section, name)
-        return params_dict
-
-
 class HeadingSection(ConfigSection):
     
     def get_required_param_names(self):
         return ['source', 'regime', 'category']
 
-
+    
 class OutputSection(ConfigSection):
     
     def get_required_param_names(self):
@@ -116,7 +78,7 @@ def demo_sect():
     from pims.gutwrench.targets import get_target
 
     # get config handler based on cfg_file
-    cfgh = PimsConfigHandler('/Users/ken/temp/gutone', cfg_file='gutwrench.ini')
+    cfgh = PimsConfigHandler(base_path='/Users/ken/temp/gutone', cfg_file='gutwrench.ini')
     
     # load config from config file
     cfgh.load_config()
@@ -128,7 +90,18 @@ def demo_sect():
     
     target.pre_process()
 
-
+def demo_dynamic_instance():
+    from pims.gutwrench.pages import RoadmapAxisWholeDayPage
+    import importlib
+    my_module = importlib.import_module("pims.gutwrench.config")
+    MyClass = getattr(my_module, "PimsConfigHandler")
+    instance = MyClass(base_path='/Users/ken/temp/gutone', cfg_file='gutwrench.ini')
+    print instance.base_path, instance.cfg_file
+    
+    config_handler = instance
+    rawdp = RoadmapAxisWholeDayPage(config_handler, 'one_two_three_four')
+    print rawdp
 
 if __name__ == '__main__':
-    demo_sect()
+    #demo_sect()
+    demo_dynamic_instance()
