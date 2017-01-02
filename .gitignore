@@ -68,3 +68,5 @@ target/
 *.tmLanguage.cache
 *.tmLanguage.cache
 *Control.cache
+sams/sublime/User/Package\ Control.sublime-settings
+sams/sublime/User/Preferences.sublime-settings

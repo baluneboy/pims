@@ -1,15 +1,18 @@
 {
+	"bootstrapped": true,
 	"in_process_packages":
 	[
+		"LineEndings",
+		"Package Control"
 	],
 	"installed_packages":
 	[
-		"AAAPackageDev",
 		"ApplySyntax",
 		"FuzzyFileNav",
 		"HighlightWords",
 		"LineEndings",
 		"Package Control",
+		"PackageDev",
 		"SchemeCycler",
 		"WordHighlight"
 	]
