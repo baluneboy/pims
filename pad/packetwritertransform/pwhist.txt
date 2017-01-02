@@ -1,0 +1,9 @@
+# 1. WRITE TO SSA
+~/dev/programs/python/pims/pad/packetwritertransform/packetWriterFromChef.py tables=121f03 cutoffDelay=0 delete=0 ancillaryHost=kyle startTime=1455705000 endTime=1455706200 | head -44 | tee pwF03out.txt
+
+~/dev/programs/python/pims/pad/packetwritertransform/packetWriterFromChef.py tables=121f05 cutoffDelay=0 delete=0 ancillaryHost=kyle startTime=1455705000 endTime=1455706200 | head -44 | tee pwF05out.txt
+
+# 2. WRITE TO SENSOR
+~/dev/programs/python/pims/pad/packetwritertransform/packetWriterFromChef.py tables=121f03 cutoffDelay=0 delete=0 ancillaryHost=None startTime=1455705000 endTime=1455706200 | head -44 | tee pwF03outSensor.txt # EMPTY B/C NO ROTATION
+
+~/dev/programs/python/pims/pad/packetwritertransform/packetWriterFromChef.py tables=121f05 cutoffDelay=0 delete=0 ancillaryHost=None startTime=1455705000 endTime=1455706200 | head -44 | tee pwF05outSensor.txt # EMPTY B/C NO ROTATION

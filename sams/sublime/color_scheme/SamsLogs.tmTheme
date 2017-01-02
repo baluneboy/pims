@@ -110,6 +110,105 @@
 		</dict>
 		<dict>
 			<key>name</key>
+			<string>Orange</string>
+			<key>scope</key>
+			<string>orange</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#FF7300</string>
+			</dict>
+		</dict>	
+		<dict>
+			<key>name</key>
+			<string>Tangerine</string>
+			<key>scope</key>
+			<string>tangerine</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#DA70D6</string>
+			</dict>
+		</dict>			
+		<dict>
+			<key>name</key>
+			<string>Greenish</string>
+			<key>scope</key>
+			<string>greenish</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#80D555</string>
+			</dict>
+		</dict>		
+		<dict>
+			<key>name</key>
+			<string>Lime</string>
+			<key>scope</key>
+			<string>lime</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#80D357</string>
+			</dict>
+		</dict>	
+		<dict>
+			<key>name</key>
+			<string>SkyBlue</string>
+			<key>scope</key>
+			<string>skyblue</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#428BCD</string>
+			</dict>
+		</dict>						
+		<dict>
+			<key>name</key>
+			<string>Yellow</string>
+			<key>scope</key>
+			<string>yellow</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#F8BB00</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Green</string>
+			<key>scope</key>
+			<string>green</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#80D500</string>
+			</dict>
+		</dict>		
+		<dict>
+			<key>name</key>
+			<string>Blue</string>
+			<key>scope</key>
+			<string>blue</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#428BDD</string>
+			</dict>
+		</dict>
+		<dict>
+			<key>name</key>
+			<string>Red</string>
+			<key>scope</key>
+			<string>red</string>
+			<key>settings</key>
+			<dict>
+				<key>foreground</key>
+				<string>#FF2837</string>
+			</dict>
+		</dict>			
+		<dict>
+			<key>name</key>
 			<string>Id EE</string>
 			<key>scope</key>
 			<string>id.ee</string>
@@ -501,24 +600,9 @@
 				<string>#E6DB74</string>
 			</dict>
 		</dict>
-		<dict>
-			<key>name</key>
-			<string>Section Header Line</string>
-			<key>scope</key>
-			<string>line.header.section</string>
-			<key>settings</key>
-			<dict>
-				<key>fontStyle</key>
-				<string> bold</string>
-				<key>foreground</key>
-				<string>#f8f3f3</string>
-				<key>background</key>
-				<string>#071138</string>
-			</dict>
-		</dict>
 	</array>
 	<key>uuid</key>
-	<string>383f263a-e872-4ea3-8583-ff63e45666d1</string>
+	<string>194fbc0d-5113-4f71-b22a-6272d92fc033</string>
 	<key>colorSpaceName</key>
 	<string>sRGB</string>
 	<key>semanticClass</key>

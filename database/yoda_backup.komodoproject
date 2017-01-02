@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" kpf_version="5" name="yoda_backup.komodoproject">
+<file id="1e97a976-a822-4c4a-a3d1-4787c2f6fa8b" idref="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" name="prune_samsnew_db.sql" url="file:///home/pims/dev/mysql/prune_samsnew_db.sql">
+</file>
+<file id="3a79726e-a7a7-4e8e-979e-f747ec326699" idref="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" name="samsquery.py" url="samsquery.py">
+</file>
+<file id="5433e7a5-09f2-444c-a510-4a4b4c4e25ef" idref="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" name="pimsdateutil.py" url="file:///home/pims/dev/programs/python/pims/utils/pimsdateutil.py">
+</file>
+<file id="a3d30cfc-57cf-47bc-b305-9cf931881180" idref="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" name="backup_dumps_info.py" url="backup_dumps_info.py">
+</file>
+<file id="a8b4d345-4164-4f86-b581-ebdba4a3cb46" idref="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" name="backup_dumps.py" url="backup_dumps.py">
+</file>
+<file id="d3da364c-6d20-48a9-b90c-865f730d3a0e" idref="203d5cd3-f6a7-4d2b-b1e4-e1d3f8197b5a" name="readme_backup_dumps.sql" url="readme_backup_dumps.sql">
+</file>
+</project>

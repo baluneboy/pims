@@ -18,7 +18,7 @@ def remedy_start(fname):
     rem_start = stop + datetime.timedelta(seconds=1)
     return rem_start
 
-def remedy_cmd_prefix(fname):
+def remedy(fname):
     #                                                                           LESS_THAN_DATETME
     #python /home/pims/dev/programs/python/packet/resample.py fcNew=6 dateStart=2015_08_07_00_00_00.000 dateStop=2015_08_08_00_00_00.000 sensor=121f02
     date_start = remedy_start(fname)

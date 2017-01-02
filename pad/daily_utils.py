@@ -90,6 +90,20 @@ if __name__ == "__main__":
         my_subdirs = [ sd for sd in SENSOR_SUBDIRS if sd.endswith('006') ]
     elif my_set == 'cut':
         my_subdirs = [ sd for sd in SENSOR_SUBDIRS if not sd.endswith('006') ]
-    
+    elif my_set == 'EML':
+        my_subdirs = [
+                    'sams2_accel_121f02001',
+                    'sams2_accel_121f03001',
+                    'sams2_accel_121f02010',
+                    'sams2_accel_121f03010',
+                    'sams2_accel_121f02030',
+                    'sams2_accel_121f03030',
+                    ]  
+    elif my_set == 'ADCO':
+        my_subdirs = [
+                    'sams2_accel_121f02',
+                    'sams2_accel_121f03',
+                    ]
+        
     #show_pad_hours_for_day('2015-07-02', SENSOR_SUBDIRS)
     show_pad_hours_for_day(date_str, my_subdirs)

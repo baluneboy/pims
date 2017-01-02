@@ -2,6 +2,7 @@
 
 import wx
 import time
+import numpy as np
 
 from pims.bigtime.timemachine import TimeGetter
 from pims.utils.pimsdateutil import unix2dtm
@@ -31,18 +32,23 @@ class SmallWindow(wx.PyWindow):
     """
     A small window that is used to show SAMS rt db table timestamp.
     """
-    def __init__(self, parent, text, fgcolor=wx.BLACK, bgcolor=wx.WHITE, pos=wx.DefaultPosition, size=wx.DefaultSize):
+    def __init__(self, parent, text, fgcolor=wx.BLACK, bgcolor=wx.WHITE, pos=wx.DefaultPosition, size=wx.DefaultSize, total_width=1540, num_wins=13):
         
         wx.PyWindow.__init__(self, parent, -1, style=wx.SIMPLE_BORDER)
 
         self.text = text        
         self.fgcolor = fgcolor
         self.bgcolor = bgcolor
+        self.total_width = total_width
+        self.num_wins = num_wins
 
         if size != wx.DefaultSize:
             self.bestsize = size
         else:
-            self.bestsize = (194, 33)
+            raw_width = self.total_width / self.num_wins
+            #best_width = int(round(raw_width, -1))
+            best_width = np.floor(raw_width)
+            self.bestsize = (best_width, 33)
         self.SetSize(self.GetBestSize())
 
         self.SetBackgroundColour(self.bgcolor)
@@ -131,7 +137,7 @@ if __name__ == "__main__":
         ('es06rt',   'manbearpig'),
     ]
     
-    FAKE_tables = ['121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt', 'es03rt', 'es05rt', 'es06rt']
+    FAKE_tables = ['121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt', 'es03rt', 'es05rt', 'es06rt', '122f02', '122f03', '122f04', '122f05', '122f07']
     run(FAKE_tables, sample_external_long_running)
     raise SystemExit
 

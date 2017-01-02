@@ -6,6 +6,14 @@ import datetime
 from pims.utils.pimsdateutil import days_ago_to_date, days_ago_to_date_time
 from dateutil import parser
 
+# A generator to yield datetime date object every day starting on d1
+def next_day(d1):
+    """A generator to yield datetime date object every day starting on d1."""
+    dtm = d1 - datetime.timedelta(days=1)
+    while True:
+        dtm += datetime.timedelta(days=1)
+        yield ( datetime.date( *dtm.timetuple()[0:3] ) )
+
 class BaseRange(object):
     """ A class to handle date/time range(s). """
     def __init__(self, start=None, stop=None):

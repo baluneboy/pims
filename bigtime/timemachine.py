@@ -2,11 +2,13 @@
 
 import time
 import datetime
+import socket
 from itertools import cycle
 from collections import deque
 from nose.tools import assert_true, assert_false
 from statemachine import event, Machine, transition_to, transition_from
-from onerowquery import query_onerow_unixtime, table_exists, query_timestamp, query_ku_timestamp, query_hirap
+from onerowquery import query_onerow_unixtime, table_exists, query_timestamp
+from onerowquery import query_timestamp_jimmy, query_ku_timestamp, query_hirap
 
 from pims.utils.pimsdateutil import unix2dtm
 from pims.utils.pimsdateutil import dtm2unix
@@ -15,6 +17,7 @@ DEBUG = 0
 
 def debug_print(s):
     if DEBUG: print s
+
 
 # get real-time db table unix time (like from es05rt table)
 class TimeGetter(object):
@@ -34,6 +37,19 @@ class TimeGetter(object):
     def _get_time(self):
         return query_onerow_unixtime(self.table, host=self.host)
 
+
+class LocalTimeGetter(TimeGetter):
+
+    def __init__(self, host=socket.gethostname()):
+        self.table = None
+        self.host = host
+        self._get_time_func = self._get_time
+    
+    def _get_time(self):
+        d = datetime.datetime.now()
+        return time.mktime(d.timetuple())
+
+
 class HirapTimeGetter(TimeGetter):
     
     def _get_time(self):
@@ -49,6 +65,29 @@ class EeTimeGetter(TimeGetter):
 
     def _get_time(self):
         return query_timestamp(self.ee_id, self.table, host=self.host)    
+    
+    
+###etg = EeTimeGetter('ee_packet_rt', host='yoda', ee_id='122-f07')
+###print unix2dtm(etg._get_time())
+###raise SystemExit
+
+
+# get pims db ee_packet table timestamp [typically from jimmy]
+class CcsdsEeTimeGetter(EeTimeGetter):
+    """get jimmy pims db ee_packet table timestamp"""
+
+    #def __init__(self, *args, **kwargs):
+    #    self.ee_id = kwargs.pop('ee_id')       
+    #    super(CcsdsEeTimeGetter, self).__init__(*args, **kwargs)
+
+    def _get_time(self):
+        return query_timestamp_jimmy(self.table, host=self.host)
+  
+    
+#etg2 = CcsdsEeTimeGetter('122f07', ee_id='122-f07', host='jimmy')
+#print unix2dtm(etg2._get_time())
+#raise SystemExit
+
 
 # get yoda samsmon db gse_packet table latest ku_timestamp
 class KuTimeGetter(TimeGetter):
@@ -56,6 +95,7 @@ class KuTimeGetter(TimeGetter):
 
     def _get_time(self):
         return query_ku_timestamp(self.table, host=self.host) 
+
 
 # dummy unix time getter that utiliizes sequence of deltas (sec) via generator
 class RapidTimeGetter(TimeGetter):
@@ -78,6 +118,7 @@ class RapidTimeGetter(TimeGetter):
         if delta is None:
             return None
         return self._init_time + delta
+
 
 # a 3-state machine for db unix times (fresh, stale, rotten)
 class TimeMachine(Machine):
@@ -202,6 +243,7 @@ class TimeMachine(Machine):
         debug_print('  after transition from rotten (%s)' % self.state)
         self.went_stale_when_leaving_rotten = self.state == 'stale'
 
+
 class LargeTimeMachine(TimeMachine):
     rect_color = None
     
@@ -214,6 +256,7 @@ class LargeTimeMachine(TimeMachine):
     def less_fresh(self):
         super(LargeTimeMachine, self).less_fresh()
         debug_print(' AND I MEAN BIG TIME')
+    
     
 def test_transition_to():
     tg = RapidTimeGetter(None, host=None)
@@ -257,6 +300,7 @@ def test_transition_to():
     assert_false(m.left_rotten)
     assert_true(m.became_rotten)
     
+    
 def test_transition_from():
     tg = RapidTimeGetter(None, host=None)
     m = TimeMachine(tg)
@@ -278,6 +322,7 @@ def test_transition_from():
     #m.update() # goes from rotten straight to fresh
     
     assert_true(m.state=='rotten')
+
 
 def test_transitions():
     tg = RapidTimeGetter(None, host=None)

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" kpf_version="5" name="histpad.komodoproject">
+<file id="0d5f92ad-7c7f-4374-84a8-b464359c7ca3" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="pad_filter_pipeline.py" url="file:///home/pims/dev/programs/python/histpad/pad_filter_pipeline.py">
+</file>
+<file id="20557933-9ee5-461e-981f-bd20b642c82a" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="dailyproducts.py" url="patterns/dailyproducts.py">
+</file>
+<file id="84bc9bb9-256d-441d-8dd5-bab2160c0edd" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="load.py" url="file:///home/pims/dev/programs/python/histpad/load.py">
+</file>
+<file id="a41db8d3-8506-4913-8509-8754fca1dd2e" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="daily.py" url="file:///home/pims/dev/programs/python/histpad/daily.py">
+</file>
+<file id="c182a934-0361-435d-b193-9f0b058b42b9" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="histogram_example.py" url="sandbox/histogram_example.py">
+</file>
+<file id="d04edb0b-53a9-45ea-8984-15faf91e3d44" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="file_filt_example.py" url="files/file_filt_example.py">
+</file>
+<file id="e893b989-0b8e-478c-8ce9-4c613db8ee3b" idref="dc18eb6f-0bf2-49f2-b867-8a0e73f56b69" name="filter_pipeline.py" url="files/filter_pipeline.py">
+</file>
+</project>

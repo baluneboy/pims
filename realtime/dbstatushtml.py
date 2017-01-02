@@ -7,10 +7,6 @@ from cStringIO import StringIO
 import pandas as pd
 from pims.patterns.dbstatuspats import _DBSTATUSLINE_PATTERN
 
-# TODO
-# - new column for sensor location info from kyle
-# - new column for [cutoff/sample rate?] from packet header
-
 # max age (seconds) of packet max time; otherwise, turn red
 _MAX_AGE_SEC = 1 * 60 * 60 # try 1 hour for now
 
@@ -41,21 +37,26 @@ _FOOTER = """<BR><FORM><INPUT type='Button' VALUE='Close' onClick='self.close();
 </CENTER>
 </BODY></HTML>"""
 
+
 # function to format location
 def loc_fmt(s):
     """function to format location"""
     return s.replace(';', ',')
 
+
 # function to format age
 def age_fmt(x):
     """function to format age"""
+
     if x > _MAX_AGE_SEC: s = '<span style="color: red">%d' % x
     else:                s = '%d' % x
     return s
 
+
 # function to format DOY GMT
 def doy_fmt(x):
     """function to format DOY GMT"""
+
     d = pd.to_datetime(x)
     delta = datetime.datetime.now() - d
     deltasec = delta.total_seconds()
@@ -65,9 +66,11 @@ def doy_fmt(x):
         s = '<span style="color: red">%s' % d.strftime('%j/%H:%M:%S ')
     return s
 
+
 # return dataframe converted from stdin (file) object
 def stdin_to_dataframe():
     """return dataframe converted from stdin (file) object"""
+
     buf = StringIO()
     buf.write('Host,Sensor,PktCount,FirstPkt,LastPkt,AgeSec,Rate,Location\n')
     got_topline = False
@@ -100,9 +103,11 @@ def stdin_to_dataframe():
     
     return df
 
+
 # write right-aligned html converted from dataframe to stdout
 def right_align_html(df):
     """write right-aligned html converted from dataframe to stdout"""
+
     buf_html = StringIO()
     df.to_html(buf_html, formatters={
         'LastPkt': doy_fmt,
@@ -113,9 +118,11 @@ def right_align_html(df):
     s = s.replace('<tr>', '<tr style="text-align: right;">')
     return s
 
-# filter dataframe to get rid of non-interesting sensors (table names, that is)
+
+# filter dataframe to get rid of non-interesting sensors (sensors are really just table names)
 def filter_active_sensors(df):
-    """filter dataframe to get rid of non-interesting sensors (table names, that is)"""
+    """filter dataframe to get rid of non-interesting sensors (sensors are really just table names)"""
+    
     # get rid of some sensor (rows)
     df = df[~df['Sensor'].isin(_IGNORE_SENSORS)]
     
@@ -129,16 +136,22 @@ def filter_active_sensors(df):
     df = df[['Location', 'Sensor', 'LastPkt', 'FirstPkt', 'Age(sec)', 'Rate(sa/sec)', 'PktCount', 'Host']]
     return df
 
+
 # drop unwanted columns from dataframe
 def drop_unwanted_columns(df):
     """drop unwanted columns from dataframe"""
+    
     unwanted_columns = [ 'FirstPkt', 'PktCount' ]
     for uc in unwanted_columns:
         df = df.drop(uc, 1)    
     return df
 
-# dbstatus.py | dbstatushtml.py > /tmp/trash2.html
+
+# USAGE EXAMPLE: dbstatus.py | dbstatushtml.py > /tmp/trash2.html
 if __name__ == "__main__":
+    """USAGE EXAMPLE: dbstatus.py | dbstatushtml.py > /tmp/trash2.html"""
+    
+    # convert stdin to dataframe
     df = stdin_to_dataframe()
 
     # filter out for "Active Sensors" page

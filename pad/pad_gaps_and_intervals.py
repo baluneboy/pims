@@ -19,6 +19,7 @@ from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers, 
 from pims.utils.iterabletools import pairwise
 from ugaudio.load import padread
 
+
 # find header files for given year/month/day
 def find_headers_without006(ymd_dir):
     """find header files for given year/month/day
@@ -51,6 +52,7 @@ def find_headers_without006(ymd_dir):
 #print len(F03)
 #raise SystemExit
 
+
 # get loose pad interval set from header filenames
 def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
     """get loose pad interval set from header filenames
@@ -74,6 +76,7 @@ def get_loose_interval_set_from_header_filenames(header_files, maxgapsec):
         dtStartFilename, dtStopFilename = pad_fullfilestr_to_start_stop(header_file)
         interval_set.add( Interval( dtStartFilename, dtStopFilename ) )
     return interval_set
+
 
 # headers, intervals, and gaps per sensor-day combination
 class LooseSensorDayIntervals(object):
@@ -231,6 +234,7 @@ class LooseSensorDayIntervals(object):
             s += '\nTOTAL HOURS = {0:<4.1f} for {1:s} on {2:s}'.format(total_sec / 3600.0, sensor, str(day))
         return s
 
+
 # FIXME is this obsolete?
 def compare_yoda_jimmy_files(tup1, tup2, ok_path_parts=['/data/pad/', '/misc/yoda/pub/pad/']):
     """
@@ -259,6 +263,7 @@ def compare_yoda_jimmy_files(tup1, tup2, ok_path_parts=['/data/pad/', '/misc/yod
         jimmy_tup = (hdr_file1, cmp_interval1)
     return yoda_tup, jimmy_tup
 
+
 # FIXME keep this in case of emergency
 def rough_kpi_merge_for_march2015(higJimmy, higYoda):
     """merge played back intervals (for SAMS) with PAD on yoda to improve estimate of PAD hours"""
@@ -279,6 +284,7 @@ def rough_kpi_merge_for_march2015(higJimmy, higYoda):
         s += '\n{2:s},{1:s},{0:.1f}'.format(total_sec / 3600.0, sensor, str(day))
     return s
 
+
 # FIXME keep this in case of emergency
 def rough_kpi_for_march2015():
     dstart = parser.parse('2015-03-01')
@@ -288,6 +294,7 @@ def rough_kpi_for_march2015():
     higYoda = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     s = rough_kpi_merge_for_march2015(higJimmy, higYoda)
     print s
+
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
@@ -312,12 +319,14 @@ def demo_intervals():
 demo_intervals()
 raise SystemExit
 
+
 # prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path
 def preprocess_trim(yoda_headers, header_file, new_path):
     """prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path"""
     yoda_headers.remove(header_file)
     old_header = move_pad_pair(header_file, new_path)
     return old_header
+
 
 # get SampleRate and string contents from PAD header file
 def get_samplerate_contents(hdr_file):
@@ -341,6 +350,7 @@ def get_samplerate_contents(hdr_file):
         else:
             fs = None
     return fs, contents
+
 
 # write new, trimmed PAD files (both header and data are changed)
 def trim_pad(old_hdr_file, side, sec):
@@ -422,6 +432,7 @@ def trim_pad(old_hdr_file, side, sec):
     # write new PAD data file
     data.astype('float32').tofile(new_dat_file)
 
+
 # for given (sensor, day) combination with associated yoda header files and jimmy intervals, trim PAD files
 def process_yoda_header_files(yoda_headers, jimmy_intervals, new_path):
     """for given (sensor, day) combination with associated yoda header files and jimmy intervals, trim PAD files"""
@@ -450,6 +461,7 @@ def process_yoda_header_files(yoda_headers, jimmy_intervals, new_path):
         print 'now have %d yoda headers' % len(yoda_headers)
         print '-' * 11
 
+
 # do PAD trim from start to stop with results going into YODA_DIR based on gap fill from JIMMY_DIR
 def trim_span(start, stop, maxgapsec=17, JIMMY_DIR='/data/pad', YODA_DIR='/misc/yoda/pub/pad'):
     """do PAD trim from start to stop with results going into YODA_DIR based on gap fill from JIMMY_DIR"""
@@ -477,6 +489,7 @@ def trim_span(start, stop, maxgapsec=17, JIMMY_DIR='/data/pad', YODA_DIR='/misc/
 #my_demo()
 #raise SystemExit
 
+
 # iterate over day directory (only sams2 subdirs for now)
 def main(daydir):
     """iterate over day directory (only sams2 subdirs for now)"""
@@ -489,6 +502,7 @@ def main(daydir):
         count2 = process_amplitudes(sams2dir)
         print 'length of quarantined list is %d + %d = %d for %s' % (count1, count2, count1 + count2, sams2dir)
 
+
 def do_main():
     if len(sys.argv) < 2:
         d2 = datetime.datetime.now().date() - datetime.timedelta(days=2)
@@ -496,7 +510,9 @@ def do_main():
     else:
         daydir = sys.argv[1]
     main(daydir)
+
     
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
+    #do_main()

@@ -54,7 +54,8 @@ from pims.utils.pimsdateutil import unix2dtm
 from pims.gui.plotutils import smart_ylims, round2multiple
 from pims.gui.pimsticker import CushionedLinearLocator
 from pims.gui import DUMMYDATA
-from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
+#from pims.database.samsquery import SimpleQueryAOS, get_samsops_db_params
+from pims.database.samsquery import SimpleQueryAOS, get_db_params
 
 from obspy.core.utcdatetime import UTCDateTime
 from obspy.realtime import RtTrace

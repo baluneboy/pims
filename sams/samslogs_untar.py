@@ -203,13 +203,9 @@ def get_latest_tgz():
     
     # get most recent tgz file along a default dir
     tgz_file = most_recent_file_with_suffix('/misc/yoda/secure/' + subdir, '.tgz')
-
-    # check if dir exists that we might overwrite
-    #if os.path.exists( tgz_dir ):
-    #    print "Abort: already have XLSX file %s for\nthe latest stofile = %s" % (xlsxfile, stofile)
-    #    return
-
-    # at this point, the dir does not exist, so return full path for tgz_file
+    #tgz_file = most_recent_file_with_suffix('/media/trek21/Downlinks', '.tgz')
+    
+    # at this point, the directory does not exist, so return full path for tgz_file
     return tgz_file
 
 if __name__ == '__main__':
@@ -263,11 +259,16 @@ if __name__ == '__main__':
     gunzip_walker(dirpath, pattern)
     print 'done unzipping'
 
+# FIXME path issue AND probably mismatch on expected filename for summary
     # Now get latest samslist file and apply revised JK checklist on it
-    dirpath = '/misc/yoda/secure/%d_downlink' % datetime.datetime.today().year
-    samslist_file = get_latest_samslist_file(dirpath)   
-    summary_file = summarize_samslist(samslist_file)
-    print 'wrote summary file %s' % summary_file
+    #dirpath = '/misc/yoda/secure/%d_downlink' % datetime.datetime.today().year
+    if True:
+        print 'skipping summary file'
+    else:
+        dirpath = '/media/trek21/Downlinks'
+        samslist_file = get_latest_samslist_file(dirpath)   
+        summary_file = summarize_samslist(samslist_file)
+        print 'wrote summary file %s' % summary_file
     
     # Now open FOLDER using sublime
     #if len(sys.argv) == 1:

@@ -10,13 +10,14 @@ import time
 from dateutil import parser
 from warnings import warn
 
+
 MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
 
 (JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE,
  JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER) = range(1, 13)
 
 _DAY = datetime.timedelta(1)
-
+        
 def timedelta_hours(td):
     """Return timedelta in hours.
     
@@ -95,6 +96,14 @@ def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     """
     return os.path.join( base_dir, d.strftime('year%Y/month%m/day%d') )
 
+
+# return string for "yesterday's" year/month/day PAD path
+def yesterday_pad_ymd_path(base_dir='/misc/yoda/pub/pad'):
+    """return string for "yesterday's" year/month/day PAD path"""
+    yesterday = datetime.date.today() - datetime.timedelta(days=1)
+    return datetime_to_ymd_path(yesterday, base_dir=base_dir)
+
+
 def timestr_to_datetime(timestr):
     """
     Return datetime representation of a time string.
@@ -124,7 +133,7 @@ def samsops_timestamp_to_datetime(timestr):
     Examples
     --------
     
-    >>> samsmon_timestamp_to_datetime('2015-06-02 11:50:35')
+    >>> samsops_timestamp_to_datetime('2015-06-02 11:50:35')
     datetime.datetime(2015, 6, 2, 11, 50, 35)
     
     """
@@ -160,6 +169,19 @@ def datetime_to_doytimestr(dtm):
     if not dtm: return None
     return dtm.strftime('%Y:%j:%H:%M:%S.%f')
 
+# convert datetime object to string like 2016-11-27,332/00:02:00.000
+def datetime_to_longtimestr(dtm):
+    """convert datetime object to string like 2016-11-27,332/01:02:03.456
+    
+    >>> datetime_to_longtimestr(datetime.datetime(2016, 11, 27, 1, 2, 3, 456543))
+    '2016-11-27,332/01:02:03.457'
+    """
+    if not dtm: return None
+    s = dtm.strftime('%Y-%m-%d,%j/%H:%M:%S.%f')
+    f = round(float(s[-7:]), 3)
+    temp = "%.3f" % f
+    return "%s%s"% (s[:-7], temp[1:])
+
 # convert string like 2014-05-02 to datetime object
 def datestr_to_datetime(timestr):
     """convert string like 2014-05-02 to datetime object"""
@@ -167,6 +189,29 @@ def datestr_to_datetime(timestr):
         raise ValueError('string does not match expected pattern')
     fmt = '%Y-%m-%d'
     return datetime.datetime.strptime(timestr, fmt)
+
+
+# convert northfield html filename to date (from like 072616.htm)
+def northfield_fullfilestr_to_date(fullfilestr):
+    """convert northfield html filename to date object   
+    >>> fstr = '/tmp/raw/072616.htm'
+    >>> northfield_fullfilestr_to_date(fstr)
+    datetime.date(2016, 7, 26)
+    """    
+    # get rid of header ext if there is one, and just work with basename
+    fstr = os.path.basename(fullfilestr.replace('.htm', ''))
+    if not re.match('^\d{6}$', fstr):
+        raise ValueError('basename str %s does not match expected pattern' % fstr)
+    try:
+        yr = int('20' + fstr[-2:])
+        mo = int(fstr[0:2])
+        da = int(fstr[2:4])
+        d = datetime.date(yr, mo, da)
+    except ValueError, e:
+        warn( 'fstr %s did not nicely convert to date' % fstr )
+        d = None
+    return d
+
 
 # convert string like YODA_YMD_PATH/.../2014_05_31_20_49_60.000-2014_05_31_21_00_00.001.SENSOR to datetime object
 def pad_fullfilestr_to_start_stop(fullfilestr):
@@ -188,6 +233,28 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         warn( 'stopstr %s did not nicely convert to datetime in timestr_to_datetime' % stopstr )
         d2 = None
     return d1, d2
+
+# convert start string like 2015_01_02_03_04_05.678_blah to datetime object for start GMT
+def handbook_pdf_startstr_to_datetime(startstr):
+    """convert start string to datetime object for start GMT"""
+    # get rid of header ext if there is one, and just work with basename
+    ymdhms = [1970, 1, 1, 0, 0, 0, 0]
+    pattern = '(?:\d*\.)?\d+_'
+    i = 0
+    for x in re.findall(pattern, startstr):
+        if i > 4 and ('.' in x):
+            xx = x.rstrip('_').split('.')
+            v1 = int(xx[0])
+            v2 = int(xx[1]) * 1000
+            ymdhms[i] = v1
+            ymdhms[i+1] = v2
+            i += 2
+        else:
+            v = int(x.rstrip('_'))
+            ymdhms[i] = v
+            i += 1
+    args = tuple(ymdhms)
+    return datetime.datetime( *args )
 
 def format_datetime_as_pad_underscores(dtm):
     """
@@ -308,7 +375,18 @@ def hours_in_month(dt):
     """
     days = days_in_month(dt)
     return days * 24
-    
+   
+def first_day_of_previous_month(d):
+    """First day of previous month, where current month is given by input date, d.
+
+    >>> d = datetime.date(2016, 4, 6)
+    >>> first_day_of_previous_month(d)
+    datetime.date(2016, 3, 1)
+    """
+    d = datetime.date(d.year, d.month, 1)
+    d -= datetime.timedelta(days=1)
+    return datetime.date(d.year, d.month, 1)
+
 def first_weekday_on_or_after(weekday, dt):
     """First day of kind MONDAY .. SUNDAY on or after date.
 

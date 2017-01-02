@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+##############################################
+# FOR QUICK TEST, RUN demo IN onerowquery.py #
+##############################################
+
 import os
 import time
 import datetime
@@ -10,11 +14,13 @@ from pygame.locals import QUIT
 import pandas as pd
 
 from fontmgr import FontManager
-from timemachine import RapidTimeGetter, TimeGetter, EeTimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
+from timemachine import RapidTimeGetter, TimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
+from timemachine import EeTimeGetter, CcsdsEeTimeGetter
 
 from pims.utils.pimsdateutil import unix2dtm
 
 # some constants
+SLOPTIME = datetime.timedelta(seconds=20) # GMT slop for timestamp still close enough to HOST's now
 SLEEP = 0.7           # seconds between event loop updates
 VERTOFFSET = 200      # vertical offset between gray rect bars (default 200)
 SCREEN_PCT =  90      # screen width/height that window occupies
@@ -27,26 +33,46 @@ COLORS = {
     'black':  (  0,   0,   0),
 }
 
+#FORMATTERS = {
+#    'GMT':    lambda x: '%17s' % x,
+#    'Device': lambda x: '%8s' % x,
+#    'Type':   lambda x: '%4s'  % x,    
+#}
+
 FORMATTERS = {
-    'GMT':    lambda x: '%17s' % x,
-    'Device': lambda x: '%8s' % x,
-    'Type':   lambda x: '%4s'  % x,    
+    'GMT':    lambda x: '%s' % x,
+    'Device': lambda x: '%s' % x,
+    'Type':   lambda x: '%s' % x,    
 }
 
 #FF0000 is RED
 #000000 is BLACK
 #FFFFFF is WHITE
+###HEADER = '''
+###<html>
+###    <head>
+###        <title>
+###            SAMS Device Times
+###        </title>
+###        <style>
+###            .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 14px; }
+###            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
+###            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }          
+###            .okay td { width="360px"; text-align: center; }
+###            .olds td { width="360px"; text-align: center; }                   
+###        </style>
+###    </head>
+###    <body>
+###'''
 HEADER = '''
 <html>
+    <link rel="stylesheet" type="text/css" href="device_tables.css" media="screen"/>
     <head>
-        <title>
-            SAMS Device Times
-        </title>
-        <style>
-            .okay tbody tr { background-color: #FFFFFF; color: #000000; white-space: pre; font-family: monospace; font-size: 14px; }
-            .olds tbody tr { background-color: #FFFFFF; color: #FF0000; white-space: pre; font-family: monospace; font-size: 14px; }
-        </style>
+        <META HTTP-EQUIV=Refresh CONTENT='30'>
     </head>
+    <title>
+        SAMS Device Times
+    </title>
     <body>
 '''
 
@@ -64,7 +90,7 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 14:
+    if len(time_machines) != 15:
         raise Exception('expected exactly 14 timemachine objects as input')
 
     disp_host = socket.gethostname()
@@ -117,10 +143,13 @@ def run(time_machines):
         font_mgr.Draw(screen, 'arial', 24, txt, rect, COLORS['gray'], 'right', 'center', True)
         rect.top += VERTOFFSET / 4
 
+        ################################################################################################################
+        # HTML UPDATE CODE STARTS HERE
         # when host_now.second is zero this triggers overwrite plots/user/sams/status/sensortimes.txt and .html file too
         f = None
         html_rows = []
-        dict_row = {}
+        dict_row0 = {}
+        dict_row1 = {}
         if host_now.second == 0:
             txt_file = '/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
             htm_file = txt_file.replace('.txt', '.html')
@@ -130,11 +159,19 @@ def run(time_machines):
             f.write('\n' + '-' * 38)
             f.write('\nbegin')
             f.write('\n%s %s HOST' % (host_now.strftime('%Y:%j:%H:%M:%S'), disp_host))
+            f.write('\n%s %s %s' % (host_now.strftime('%Y:%j:00:00:00'), host_now.strftime('%d-%b-%Y'), host_now.strftime('%A').upper()[0:3]))
             
-            dict_row['GMT'] = host_now.strftime('%Y:%j:%H:%M:%S')
-            dict_row['Device'] = disp_host
-            dict_row['Type'] = 'HOST'
-            html_rows.append(dict_row)
+            # row/entry for line that shows HOST (butters) as a device with its current/local time
+            dict_row0['GMT'] = host_now.strftime('%Y:%j:%H:%M:%S')
+            dict_row0['Device'] = disp_host
+            dict_row0['Type'] = 'HOST'
+            html_rows.append(dict_row0)
+
+            # row/entry for line that shows date as DOY in left column and like dd-Mmm-YYYY im middle column
+            dict_row1['GMT'] = host_now.strftime('%Y:%j:00:00:00')
+            dict_row1['Device'] = host_now.strftime('%d-%b-%Y')
+            dict_row1['Type'] = host_now.strftime('%A').upper()[0:3]                      
+            html_rows.append(dict_row1)
             
         # spare gray text in gray rect
         txt = 'unused spare gray text inside gray bar'
@@ -164,14 +201,33 @@ def run(time_machines):
                 font_mgr.Draw(screen, 'arial', FONTSIZE, txt, rect, COLORS[color], 'right', 'center', True)
                 rect.top += VERTOFFSET
             
+            #if f:
+            #    dict_row = {}
+            #    dict_row['GMT'] = logstr
+            #    if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
+            #        devi, dtab = tm.time_getter.table.split('_')[0:2]
+            #        msg = '\n%s %s %s' % (logstr, tm.prefix, devi.upper())
+            #        dict_row['Device'] = tm.prefix
+            #        dict_row['Type'] = devi.upper()                
+            #    else:
+            #        msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
+            #        dict_row['Device'] = tm.time_getter.table
+            #        dict_row['Type'] = tm.prefix                       
+            #    f.write(msg)
+            #    html_rows.append(dict_row)
+
             if f:
                 dict_row = {}
                 dict_row['GMT'] = logstr
-                if tm.prefix.startswith('122') or tm.prefix.startswith('Ku'):
+                if tm.prefix.startswith('Ku'):
                     devi, dtab = tm.time_getter.table.split('_')[0:2]
                     msg = '\n%s %s %s' % (logstr, tm.prefix, devi.upper())
                     dict_row['Device'] = tm.prefix
-                    dict_row['Type'] = devi.upper()                
+                    dict_row['Type'] = devi.upper()
+                elif tm.prefix.startswith('122'):
+                    msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
+                    dict_row['Device'] = tm.time_getter.table
+                    dict_row['Type'] = 'EE'
                 else:
                     msg = '\n%s %s %s' % (logstr, tm.time_getter.table, tm.prefix)
                     dict_row['Device'] = tm.time_getter.table
@@ -196,7 +252,8 @@ def run(time_machines):
             df = df[ ['GMT', 'Device', 'Type'] ]
             
             # sort rows by GMT descending
-            df = df.sort( ['GMT'], ascending = [False] )
+            #df = df.sort( ['GMT'], ascending = [False] )
+            df = df.sort_values(by=['GMT'], ascending = [False] )
             
             # write 2 tables and footer
             to_html(df, h) # this writes 2 tables
@@ -212,11 +269,24 @@ def run(time_machines):
 
     pygame.quit()
 
+# TODO instead of 2 stacked tables:
+#      (1) black okay on top
+#      (2) red olds on bottom
+#
+#      how about 4 stacked tables:
+#      (1) LEAD  20 <= delta      : gray  for devices more than 20 seconds ahead of butters host (e.g. hirap)
+#      (2) OKAY   0 <= delta <  20: black for devices with butters/host delta from 0s lag to 20s lead
+#      (3) LAGS -30 <= delta <   0: gray  for devices with butters/host delta from 30s lag to  0s lag
+#      (4) OLDS        delta < -30: red   for devices with butters/host delta from inf lag to 30s lag
 def to_html(df, h):
     df_host = df[ df['Type'] == 'HOST' ]
     host_gmt = df_host['GMT'].values[0]
+    # FIXME the next 2 lines of code (non-comment lines) should allow rows with 30 lag behind host_gmt as okay
+    # FIXME the next 2 lines need to do math on GMT times (do not attempt math on strings)
     df_okay = df[ df['GMT'] >= host_gmt ]
-    df_olds = df[ df['GMT'] < host_gmt ]
+    df_olds = df[ df['GMT'] <  host_gmt ]
+    #df_okay = df[ df['GMT'] >= ( host_gmt - SLOPTIME ) ]
+    #df_olds = df[ df['GMT'] <  ( host_gmt - SLOPTIME ) ]    
     h.write( df_okay.to_html(classes='okay', index=False, formatters=FORMATTERS) )
     # FIXME need to account for empty dataframe possibility for df_olds
     h.write( df_olds.to_html(classes='olds', index=False, formatters=FORMATTERS, header=False) )
@@ -242,16 +312,35 @@ def demo_on_park():
 
     run(time_machines)
 
+def check_df():
+    df = pd.read_pickle('/tmp/df.pik')
+    df_host = df[ df['Type'] == 'HOST' ]
+    print df_host
+    host_gmt = df_host['GMT'].values[0]
+    df_okay = df[ df['GMT'] >= host_gmt ]
+    df_olds = df[ df['GMT'] <  host_gmt ]
+    print df_host
+    print host_gmt
+    print df_okay
+    print df_olds
+    
+#check_df()
+#raise SystemExit
+    
 if __name__ == '__main__':
 
     # TODO find true expected delta instead of empirical value
     bigs = [
-        #    table  prefix  ExpDeltaSec   db host        time getter
+        #    table        prefix  ExpDeltaSec  db host        time getter
         # -----------------------------------------------------------
         ('gse_packet',   'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
-        ('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
-        ('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),
+        #('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
+        #('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
+        #('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),\
+        ('122f02',       '122-f02', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        ('122f03',       '122-f03', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        ('122f04',       '122-f04', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),        
+        ('122f07',       '122-f07', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
         ('es03rt',       'MSG',     SLEEP/6,  'chef',        TimeGetter),
         ('es05rt',       'CIR',     SLEEP/6,  'manbearpig',  TimeGetter),
         ('es06rt',       'FIR',     SLEEP/6,  'manbearpig',  TimeGetter),

@@ -9,6 +9,14 @@ from time import *
 from commands import *
 from accelPacket import guessPacket
 from pims.database.pimsquery import db_connect
+from pims.database.ee_packets import dbstat
+from pims.database.pimsquery import get_ee_table_list
+
+# FIXME I had to manually add es05 and 121f05 when those sensors were inactive.
+#       I did not dig to see if db table empty was issue or what, but both
+#       those sensors being inactive for a while eventually made it so that
+#       we get NameError: name 'packet' is not defined on line commented
+#       below with this string: "FIXME WHY NameError FOR [STALE] SENSORS?"
 
 # table names (i.e. sensors) to ignore that would otherwise get displayed note
 # that these might not have sensor sample rate or location, so it's not an
@@ -45,8 +53,8 @@ def get_samplerate(p):
 		return pkt.rate()
 
 if __name__ == '__main__':
-	pimsComputers = ['chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
-	#pimsComputers.remove('manbearpig')
+	pimsComputers = ['jimmy', 'chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
+	pimsComputers.remove('manbearpig')
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
 
@@ -75,8 +83,15 @@ if __name__ == '__main__':
 			if c == myname:
 				n = 'localhost' # mysql permissions require localhost if you are local
 			
+			if c == 'jimmy':
+				ee_tables = get_ee_table_list()
+				for eetab in ee_tables:
+					count, minTime, maxTime, age, rate, loc = dbstat(c, eetab)
+					print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, eetab, count, minTime, maxTime, age, rate, loc)
+				continue
+			
 			# iterate over tables (i.e. sensors) on this computer
-			results = db_connect('show tables', n)
+			results = db_connect('show tables', n)			
 			
 			# flatten nested tuple (results) using list comprehension
 			table_list = [element for tupl in results for element in tupl]
@@ -97,6 +112,7 @@ if __name__ == '__main__':
 						minTime = 0
 						maxTime = 0
 						age = time() # time now
+						packet = None
 					else:
 						# get three values in one pass in case slow database is not indexed
 						r = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
@@ -114,7 +130,10 @@ if __name__ == '__main__':
 						loc = 'kyle down'
 					
 					# get sample rate from packet blob
-					rate = '%.1f' % get_samplerate(packet)
+					if packet:
+						rate = '%.1f' % get_samplerate(packet) # "FIXME WHY NameError FOR [STALE] SENSORS?"
+					else:
+						rate = '0.0' # "FIXME WHY NameError FOR [STALE] SENSORS?" This may be the fix!?
 					
 					# output text
 					if (c == 'manbearpig') and (sensor != 'es03'): continue

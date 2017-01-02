@@ -41,6 +41,7 @@ defaults = {
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
     ('es03',        'manbearpig',   'pims',     '3.92'),
+    #('es03',        'butters',      'pims',     '3.92'),
     ('es05',        'ike',          'pims',     '7.84'),
     ('es06',        'butters',      'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),    
@@ -114,7 +115,8 @@ class DatabaseHourlyGapsHoursAgo(object):
         query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
         #print query
         con = mysql_con(host=self.host, db='pims')
-        self.dataframe = psql.frame_query(query, con=con)
+        #self.dataframe = psql.frame_query(query, con=con)
+        self.dataframe = psql.read_sql(query, con=con)
         
     def filt_min_pct(self):
         """if min_pct is non-zero, then return filtered dataframe"""
@@ -211,7 +213,8 @@ class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
         query += 'AND timestamp < "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')
         query += "GROUP BY DATE_FORMAT(timestamp, '%H') ORDER BY timestamp;"
         con = mysql_con_yoda(host=self.host, db='samsnew')
-        self.dataframe = psql.frame_query(query, con=con)        
+        #self.dataframe = psql.frame_query(query, con=con)
+        self.dataframe = psql.read_sql(query, con=con)        
 
 # function to format percentages
 def percentage_fmt(x):
@@ -307,7 +310,8 @@ def pims_dbgaps():
         #print msg or 'done'
         print msg
     
-    df_merged.sort(columns=['hour'], inplace=True)
+    #df_merged.sort(columns=['hour'], inplace=True)
+    df_merged.sort_values(by=['hour'], inplace=True)
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
@@ -340,7 +344,8 @@ def samsnew_dbgaps(d, d2):
         #print msg or 'done'
         print msg
     
-    df_merged.sort(columns=['hour'], inplace=True)
+    #df_merged.sort(columns=['hour'], inplace=True)
+    df_merged.sort_values(by=['hour'], inplace=True)    
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')

@@ -58,6 +58,7 @@ target/
 
 # Mac OSX stuff
 .DS_Store
+.AppleDouble
 
 # Sublime stuff
 *.sublime-settings
@@ -70,3 +71,16 @@ target/
 *Control.cache
 sams/sublime/User/Package\ Control.sublime-settings
 sams/sublime/User/Preferences.sublime-settings
+*sams_apply_syntax.sublime-project
+*sams_apply_syntax.sublime-workspace
+
+# Android
+.idea/
+
+# Handbook templates
+*handbook_template_BEFORE_MOVING_BOTTOM_TEXTBOX.odt
+*handbook_template_ORIGINAL.odt
+
+# Blue Origin
+blueorigin/
+BlueOrigin.komodoproject

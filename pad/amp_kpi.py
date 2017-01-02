@@ -151,8 +151,13 @@ def normalize_cir_fir_power(v):
     else:
         return np.nan
 
+
+def show_len(df):
+    print 'dataframe has length = %d' % len(df)
+
+
 # read NRT List Request output (sto, tab delimited) file into dataframe
-def msg_cir_fir_sto2dataframe(stofile):
+def generic_sto2dataframe(stofile, query_chain=None, predicate=None):
     """read ascii sto file into dataframe"""
     s = StringIO()
     with open(stofile, 'r') as f:
@@ -180,6 +185,105 @@ def msg_cir_fir_sto2dataframe(stofile):
         if clabel.startswith('Unnamed'):
             df = df.drop(clabel, 1)
 
+    # FIXME verify these mappings, especially for MSG...
+    # use Jen's nomenclature to rename column labels    
+    msid_map = {
+        'ULZL02RT0471C': 'MSG_Outlet_2_Current',
+        'ULZL02RT0477J': 'MSG_Outlet_2_Status',
+        'UFZF07RT0114V': 'MSG_Outlet1_28V',
+        'UFZF07RT0118V': 'MSG_Outlet2_28V',
+        'UFZF07RT0121J': 'MSG_Outlet1_Status',
+        'UFZF07RT0125J': 'MSG_Outlet2_Status',
+        'UFZF07RT0046T': 'MSW_WV_Air_Temp',
+        'UFZF13RT7420J': 'TSH_ES05_CIR_Power_Status',
+        'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
+        'UEZE03RT1384C': 'ER3_Embedded_EE_Current',
+        'UEZE03RT1548J': 'ER3_EE_F04_Power_Status',
+        'UEZE04RT1394C': 'ER4_Drawer2_Current',
+        'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
+        'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE06RT1578J': 'ER6_Locker3_Status',
+        'UEZE06RT1389C': 'ER6_Locker3_Current',        
+        }
+    for k, v in msid_map.iteritems():
+        df.rename(columns={k: v}, inplace=True)
+
+    # apply query chain if it's not None
+    if query_chain:
+        for query_str in query_chain:
+            df = df.query(query_str)
+
+    # apply predicate to resultant dataframe if it's not None
+    if predicate:
+        predicate(df)
+        
+    return df
+
+#predicate = show_len
+#query1 = 'MSG_Outlet_2_Current > 0'
+##query2 = 'TSH_ES06_FIR_Power_Status == "Power Off"'
+##query_chain = [ query1, query2 ]
+#query_chain = [ query1, ]
+#stofile = '/home/pims/Downloads/PBRE_ISS.IN48.Flight.0003-sam20000018971000-16.sto'
+#df = generic_sto2dataframe(stofile, query_chain=query_chain, predicate=predicate)
+##df_filt = df.query(query1).query(query2)
+##print df
+##pd.set_option('display.expand_frame_repr', False)
+#with pd.option_context('display.max_rows', 999, 'display.max_columns', 99):
+#    print df.GMT
+#raise SystemExit
+
+# read NRT List Request output (sto, tab delimited) file into dataframe for MSG/CIR/FIR
+def msg_cir_fir_sto2dataframe(stofile):
+    """read ascii sto file into dataframe for MSG/CIR/FIR"""
+    s = StringIO()
+    with open(stofile, 'r') as f:
+        # Read and ignore header lines
+        header = f.readline() # labels
+        s.write(header)
+        is_data = False
+        for line in f:
+            if line.startswith('#Start_Data'):
+                is_data = True
+            if line.startswith('#End_Data'):
+                is_data = False
+            if is_data and not line.startswith('#Start_Data'):
+                s.write(line)
+    s.seek(0) # "rewind" to the beginning of the StringIO object
+    df = pd.read_csv(s, sep='\t')
+    
+    # drop the unwanted "#Header" column
+    df = df.drop('#Header', 1)
+    column_labels = [ s.replace('Timestamp : Embedded GMT', 'GMT') for s in df.columns.tolist()]
+    df.columns = column_labels
+    
+    # drop Unnamed columns
+    for clabel in column_labels:
+        if clabel.startswith('Unnamed'):
+            df = df.drop(clabel, 1)
+
+    """
+         MSID             Technical Name
+        --------------------------------------------
+        'ULZL02RT0471C': 'ESEM 4B OUTLET 2 CURRENT',
+        'ULZL02RT0477J': 'ESEM 4B OUTLET 2 STATUS',
+        'UFZF07RT0114V': '+28V OUTLET 1',
+        'UFZF07RT0118V': '+28V OUTLET 2',
+        'UFZF07RT0121J': '+28V OUTLET 1 ON',
+        'UFZF07RT0125J': '+28V OUTLET 2 ON',
+        'UFZF07RT0046T': 'TEMP INLET',
+        'UFZF13RT7420J': 'IOP_MP_PWR_CTRL_SAMS',
+        'UFZF12RT7452J': 'IOP_MP_PWR_CTRL_SAMS',
+        'UEZE03RT1384C': 'SSPCM O/P 14',
+        'UEZE03RT1548J': 'SSPCM CONF (T4-63) 68',
+        'UEZE04RT1394C': 'SSPCM O/P 24',
+        'UEZE04RT1608J': 'SSPCM CONF (T4-63) 118',
+        'UEZE04RT1841J': 'HRLC BIT 21',
+        'UEZE06RT1578J': 'SSPCM CONF (T4-63) 93',
+        'UEZE06RT1389C': 'SSPCM O/P 19',        
+    """
+
+    # FIXME verify these mappings, especially for MSG...
     # use Jen's nomenclature to rename column labels    
     msid_map = {
         'ULZL02RT0471C': 'MSG_Outlet_2_Current',
@@ -464,7 +568,8 @@ def dataframe_subset(df, label, value_column, column_list):
 
     # rename status column from like 'status.7' to like 'status.cir'
     new_status_column = 'status.' + label
-    df_sub.rename(columns={status_column: new_status_column}, inplace=True)
+    #df_sub.rename(columns={status_column: new_status_column}, inplace=True)
+    df_sub = df_sub.rename(columns={status_column: new_status_column})
 
     # drop the unwanted columns in brute force fashion
     for c in df_sub.columns:
@@ -615,7 +720,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     column_list = df.columns.tolist()
     #df.to_csv(stofile.replace('.sto', '_from_dataframe.csv'))
     
-    # convert like 2014:077:00:02:04 to datetimes
+    # convert like 2014:077:00:02:04 to dates
     df['Date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
 
     # get date range from sto file
@@ -625,18 +730,21 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # convert datetimes to str and overwrite GMT with those strings
     df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.Date ]
 
+    ################################
     ### CIR ###
-    # new dataframe (subset) for CIR
+    # new dataframe (subset) for CIR with grouped_cir being sum of payload hours on daily basis
     df_cir, grouped_cir = process_cir_fir(df, 'cir', 'TSH_ES05_CIR_Power_Status', column_list, stofile)
 
+    ################################
     ### FIR ###
-    # new dataframe (subset) for FIR
+    # new dataframe (subset) for FIR with grouped_fir being sum of payload hours on daily basis
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
     
     # FIXME
     # - move zero_list and one_list up to here
     # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
     
+    ################################
     ### ER3 ###
     # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
     df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
@@ -646,9 +754,10 @@ def convert_sto2xlsx(stofile, xlsxfile):
     one_list =  ['on' , 'power on' , 'closed']
     df_er3.ER3_EE_F04_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er3.ER3_EE_F04_Power_Status.values ]        
     
-    # pivot to aggregate daily sum for "rack hours" column
+    # pivot to aggregate daily sum for "rack hours" column (similar to grouped_cir)
     grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
     
+    ################################    
     ### ER4 ###    
     # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
     df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
@@ -659,6 +768,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
 
+    ################################
     ### MSG OUTLET #1 ###
     # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
     df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
@@ -672,6 +782,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
 
+    ################################
     ### MSG OUTLET #2 ###
     # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
     df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
@@ -685,6 +796,8 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column
     grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
 
+    ################################
+    ### CU ###
     # get dataframe with CU hour count info
     cu = CuMonthlyQuery(_HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS, date_min, date_max)
     cu_querystr = cu._get_query(date_min, date_max)
@@ -692,11 +805,13 @@ def convert_sto2xlsx(stofile, xlsxfile):
     s.write(str(cu))
     s.seek(0) # "rewind" to the beginning of the StringIO object
     df_cu = pd.read_csv(s, sep='\t', parse_dates=True, index_col = [0])
-    
+
+    ################################
+    ### PAD ###    
     # get dataframe for padtimes
     df_tmp = pd.read_csv('/misc/yoda/www/plots/batch/padtimes/padtimes.csv', parse_dates=True, index_col = [0])
     df_pad = df_tmp.filter(regex='Date|.*_hours')
-    
+        
     # create wall clock dataframe
     df_wall_clock = grouped_er3.copy(deep=True)
 
@@ -704,8 +819,14 @@ def convert_sto2xlsx(stofile, xlsxfile):
     df_wall_clock.rename(columns={'ER3_EE_F04_Power_Status':  'Wall_Clock'}, inplace=True)
     df_wall_clock['Wall_Clock'] = 24
     
-    # merge dataframes and just add those on to df_pad
-    bamf_df = df_wall_clock.join([grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu, df_pad])
+    # merge (union via how='outer') all dataframes except for df_pad...
+    #bamf_df = df_wall_clock.join([grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu, df_pad])
+    bamf_df = df_wall_clock   
+    for gr in [grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
+        bamf_df = bamf_df.merge(gr, left_index=True, right_index=True, how='outer')
+        
+    #...now merge df_pad too, but now get intersection (based on Date index) using how='inner' this time
+    bamf_df = bamf_df.merge(df_pad, left_index=True, right_index=True, how='inner')
 
     # drop unwanted columns
     unwanted_columns = ['mams_ossbtmf_hours', 'iss_radgse_hours', 'mma_0bba_hours', 'mma_0bbb_hours', 'mma_0bbc_hours', 'mma_0bbd_hours']
@@ -749,7 +870,8 @@ def main(csvfile, resource_csvfile):
     ndf = df.filter(regex='Date|Year|Month|Day|' + regex_sensor_hours)
     
     # pivot to aggregate monthly sum for each "sensor_hours" column
-    t = pd.pivot_table(ndf, rows=['Year','Month'], aggfunc=np.sum)
+    #t = pd.pivot_table(ndf, rows=['Year','Month'], aggfunc=np.sum)
+    t = pd.pivot_table(ndf, index=['Year','Month'], aggfunc=np.sum)
     
     # drop the unwanted "Day" column
     df_monthly_hours = t.drop('Day', 1)
@@ -872,6 +994,8 @@ def sto2mat(stofile, msid_map):
 #df.to_csv( stofile.replace('.sto', '.csv') )
 #print df
 #raise SystemExit
+
+# SEE /usr/local/lib/python2.7/dist-packages/pandas/core/generic.py
 
 if __name__ == '__main__':
     

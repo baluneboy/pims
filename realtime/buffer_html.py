@@ -337,8 +337,10 @@ def disclaimer():
     d = Text('Plots linked below may show time gaps due to LOS, however, those will get filled in ')
     d.append( Href('http://pims.grc.nasa.gov/roadmap','roadmap PDFs.') )
     d.append(BR(1))
-    d = Text('Near real-time plots Interval RMS plots are buffered more frequently at ')
-    d.append( Href('http://pims.grc.nasa.gov/plots/user/buffer/intrms.html','this link.') )
+    #d = Text('Near real-time plots of Interval RMS are buffered more frequently at ')
+    #d.append( Href('http://pims.grc.nasa.gov/plots/user/buffer/intrms.html','this link.') )
+    d = Text('Near real-time plots of Interval RMS can be arranged in advance of your needs ')
+    d.append(Href('mailto:pimsops@grc.nasa.gov?Subject=Request%20Near%20Real-Time%20Interval%20RMS%20Plots','via email to pimsops@grc.nasa.gov'))
     d.append(BR(1))    
     d.append('For help, contact')
     d.append(Href('mailto:pimsops@grc.nasa.gov','pimsops@grc.nasa.gov'))
@@ -360,7 +362,7 @@ def otherLinksTable(clean_msg):
 def updateIndexHTML(clean_msg, sensorSuperset):
 
     # Create HTML doc with title and heading
-    doc = createDoc('PIMS ~30-Day Buffer for Real-Time Screenshots')
+    doc = createDoc('PIMS Buffer for Near Real-Time Screenshots')
 
     # Append disclaimer
     doc.append(disclaimer())

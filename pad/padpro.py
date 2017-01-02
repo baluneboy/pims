@@ -706,12 +706,12 @@ def processData():
 ##            raise SystemExit
 ##        s = p + q
 ##        print s
-    pts.sort()
-    dur.sort()
-    print 'Median number of points: %.3f' % np.median(pts)
-    print 'Median duration in secs: %.3f' % np.median(dur)
-    print 'done'
-    raise SystemExit
+    #pts.sort()
+    #dur.sort()
+    #print 'Median number of points: %.3f' % np.median(pts)
+    #print 'Median duration in secs: %.3f' % np.median(dur)
+    #print 'done'
+    #raise SystemExit
 
 ##    from matplotlib.matlab import *
 ##    q = PadFile(sys.argv[1],offsetRecs=0,numRecs=3)

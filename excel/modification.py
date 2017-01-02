@@ -3,6 +3,7 @@
 import calendar
 import datetime
 import numpy as np
+import pandas as pd
 from openpyxl.workbook import Workbook
 from openpyxl.writer.excel import ExcelWriter
 from openpyxl.cell import Cell, get_column_letter, column_index_from_string, coordinate_from_string
@@ -35,7 +36,7 @@ def OBSOLETE_insert_wall_clock_column(ws, left_of_column=2):
     return ws
 
 # if month GMT range okay, then overwrite last row with per-column totals
-def reckon_month(ws):
+def OLD_reckon_month(ws):
     """if month GMT range okay, then overwrite last row with per-column totals"""
     if ws.cell('A2').value == 'Date':
         gmt_start = ws.cell('A3').value
@@ -59,6 +60,42 @@ def reckon_month(ws):
             print 'gmt_start is not day one'
     else:
         print 'A2 is not Date'
+    return ws, gmt_start, gmt_end
+
+# if month GMT range okay, then overwrite last row with per-column totals
+def reckon_month(ws):
+    """if month GMT range okay, then overwrite last row with per-column totals"""
+    try:
+        gmt_start = ws.cell('A2').value.date()
+        if gmt_start.day != 1: raise Exception('DID NOT GET FIRST DAY OF MONTH IN "raw" ws.cell("A2")')
+    
+    except Exception, e:
+        print 'TRYING TO GET GMT DATE (START OF MONTH), BUT AN EXCEPTION HAPPENED: %s' % e.message
+        gmt_start, gmt_end = None, None
+    
+    else:
+        print "found first day of month in 'raw' sheet's cell 'A2'"
+        last_day = calendar.monthrange(gmt_start.year, gmt_start.month)[1]
+        gmt_end = datetime.datetime(gmt_start.year, gmt_start.month, last_day).date()
+        # go to bottom of Date column to get last GMT
+        last_row = ws.get_highest_row()
+        last_gmt = ws.cell('A' + str(last_row)).value.date()
+        delta_days = (last_gmt - gmt_end).days
+        if delta_days == 1:
+            #gmt_range_str = 'GMT range is %s through %s' % (gmt_start.strftime('%Y-%m-%d'), gmt_end.strftime('%Y-%m-%d'))
+            totals_row = last_row - 1
+            ws.cell(row=(totals_row), column=0).value = 'TOTAL'
+            for c in range(ws.get_highest_column())[1:]:
+                letter = get_column_letter(c + 1).upper()
+                formula_str = "=SUM(%s2:%s%d)" % (letter, letter, (totals_row))
+                ws.cell(row=(totals_row), column=c).value = formula_str
+        else:
+            print 'Abort: last_gmt = %s is not end of month = %s' % (last_gmt, gmt_end)        
+    
+    finally:
+        #print 'this is where we would do any clean-up with finally clause (this runs regardless of try result)'
+        pass
+    
     return ws, gmt_start, gmt_end
 
 # get totals from column labels
@@ -92,9 +129,12 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
     _cell = ws.cell('A1')
     _cell.value = '/</-/'
 
-     # keep only rows >= gmt_start and <= gmt_end
-    df_crux = bamf_df[ (bamf_df.index >= gmt_start.date()) & (bamf_df.index <= gmt_end.date()) ]
-    raw_sum = df_crux.sum() 
+    # FIXME, the df_crux line that tries to keep only "this one month's worth" below may not be needed?
+    # keep only rows >= gmt_start and <= gmt_end
+    #df_crux = bamf_df[ (bamf_df.index >= gmt_start.date()) & (bamf_df.index <= gmt_end.date()) ]
+    #df_crux = bamf_df[ (bamf_df.index >= pd.Timestamp(gmt_start)) & (bamf_df.index <= pd.Timestamp(gmt_end)) ]
+    #raw_sum = df_crux.sum()
+    raw_sum = bamf_df.sum()
  
     # iterate over rows to fill num, den, and formulas for kpi   
     for r in range(2, len(df_config) + 2):

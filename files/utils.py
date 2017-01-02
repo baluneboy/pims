@@ -10,10 +10,12 @@ from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_
 from pims.utils.pimsdateutil import timestr_to_datetime
 from pims.strings.utils import remove_non_ascii
 
+
 def file_age_days(fname):
     utime_file = os.path.getmtime(fname)
     utime_now = time.time()
     return int( (utime_now - utime_file) // 86400 )
+
 
 def mkdir_p(path):
     try:
@@ -24,6 +26,22 @@ def mkdir_p(path):
         else:
             raise
 
+
+# return list of lines extracted from text file between 2 delimiting lines
+def extract_between_lines_as_list(text_file, line1, line2):
+    with open(text_file, 'rb') as f:
+        textfile_temp = f.read()
+        if line1 and line2:
+            s = textfile_temp.split(line1 + '\n')[1].split('\n' + line2)[0]
+        elif not line1 and line2:
+            s = textfile_temp.split('\n' + line2)[0]
+        elif line1 and not line2:
+            s = textfile_temp.split(line1 + '\n')[1]
+        else:
+            s = textfile_temp
+        return s.split('\n')
+
+    
 # get most recent file along pth that ends with suffix
 def most_recent_file_with_suffix(pth, suffix):
     """get most recent file along pth that ends with suffix"""
@@ -205,7 +223,7 @@ def move_pad_pair(header_file, dest_dir):
     return os.path.join(dest_dir, os.path.basename(header_file))
 
 def listdir_filename_pattern(dirpath, fname_pattern):
-    """Listdir files that match fname_pattern."""
+    """Get list of files that match fname_pattern."""
     if not os.path.exists(dirpath):
         return None
     files = [os.path.join(dirpath, f) for f in os.listdir(dirpath) if re.match(fname_pattern, f)]
@@ -214,10 +232,15 @@ def listdir_filename_pattern(dirpath, fname_pattern):
 
 def filter_filenames(dirpath, predicate):
     """
-    #>>> filePattern = '\d{14}.\d{14}/\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}.\d{3}.*'
-    #>>> dirpath = '/misc/jaxa'
-    #>>> predicate = re.compile(r'/misc/jaxa/' + filePattern).match
-    #>>> for filename in filter_filenames(dirpath, predicate): print filename
+    >>> sensor = '121f03'
+    >>> fullfile_pattern = r'(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_%s)/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.%s\Z' % (sensor, sensor)
+    >>> dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
+    >>> for f in list(filter_filenames(dirpath, re.compile(fullfile_pattern).match))[0:5]: print f
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_06_05.702+2015_03_17_00_16_05.708.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_16_05.710+2015_03_17_00_26_05.719.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_26_05.721+2015_03_17_00_36_05.728.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_36_05.730+2015_03_17_00_46_05.737.121f03
+    /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_46_05.739+2015_03_17_00_56_05.747.121f03
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:
@@ -228,13 +251,13 @@ def filter_filenames(dirpath, predicate):
 def filter_dirnames(dirpath, predicate):
     """
     >>> subdirPattern = 'sams2_accel_121f0[28].*'
-    >>> dirpath = r'/misc/yoda/pub/pad/year2015/month01/day01'
+    >>> dirpath = r'/misc/yoda/pub/pad/year2016/month01/day01'
     >>> predicate = re.compile(os.path.join(dirpath, subdirPattern)).match
     >>> for dirname in filter_dirnames(dirpath, predicate): print dirname
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f02
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f02006
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f08
-    /misc/yoda/pub/pad/year2015/month01/day01/sams2_accel_121f08006
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f08
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f08006
+    /misc/yoda/pub/pad/year2016/month01/day01/sams2_accel_121f02006
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for dirname in dirnames:
@@ -242,6 +265,17 @@ def filter_dirnames(dirpath, predicate):
             #print abspath
             if predicate(abspath):
                 yield abspath
+
+def grep_r(pattern, topdir):
+    r = re.compile(pattern)
+    for parent, dnames, fnames in os.walk(topdir):
+        for fname in fnames:
+            filename = os.path.join(parent, fname)
+            if os.path.isfile(filename):
+                with open(filename) as f:
+                    for line in f:
+                        if r.search(line):
+                            yield line
 
 # transfer file uploaded (by JAXA) FROM fromdir TO todir
 def ike_jaxa_file_transfer(fromdir, todir):
@@ -279,5 +313,5 @@ def remove_old_files(folder, numdays):
 
 if __name__ == "__main__":
     import doctest
-    doctest.testmod()
+    doctest.testmod(verbose=True)
     
