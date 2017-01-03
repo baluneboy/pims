@@ -69,8 +69,13 @@ target/
 *.tmLanguage.cache
 *.tmLanguage.cache
 *Control.cache
+sams/sublime/User/Package\ Control.sublime-settings
+sams/sublime/User/Preferences.sublime-settings
 *sams_apply_syntax.sublime-project
 *sams_apply_syntax.sublime-workspace
+
+# Android
+.idea/
 
 # Handbook templates
 *handbook_template_BEFORE_MOVING_BOTTOM_TEXTBOX.odt

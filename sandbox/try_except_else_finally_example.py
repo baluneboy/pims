@@ -52,9 +52,8 @@ class DelayedResult(object):
         raise Exception("Something bad happened here.")
     
     def get_result(self):
-        if self.exc_info:
-            # odd, heritage tuple dance here
-            raise self.exc_info[1], None, self.exc_info[2]
+        # odd, heritage tuple dance here
+        if self.exc_info: raise self.exc_info[1], None, self.exc_info[2]
         return self.result
 
 # stupid demo example of try catch
