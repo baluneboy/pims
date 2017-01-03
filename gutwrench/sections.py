@@ -4,51 +4,19 @@
 
 import sys, inspect
 from collections import OrderedDict
-
-# FIXME make this a robust abstract base class using ABC metaclass pattern
-class ConfigSection(object):
+from pims.gutwrench.base import ConfigSection
+   
     
-    def __init__(self, config_handler):
-        self.config_handler = config_handler
-        self.config = self.config_handler.config
-        self.all_param_names = self.get_all_param_names()
-        self.required_param_names = self.get_required_param_names()
-        self.verify_required_params()
-        self.params_dict = self.get_params()
-
-    def __str__(self):
-        #s = "%s\n" % self.__class__.__name__
-        s = ""
-        for k, v in self.params_dict.iteritems():
-            s += "%s: %s\n" % (k, v)
-        return s
-    
-    def get_required_param_names(self):
-        raise NotImplementedError('it is responsibility of subclass to return list of required parameter names')
-        
-    def verify_required_params(self):
-        
-        is_subset = set(self.required_param_names).issubset(set(self.all_param_names))
-        if not is_subset:
-            print 'your %s is missing at least one of these required parameter(s):' % self.__class__.__name__,
-            print self.required_param_names
-            raise Exception('missing required configuration parameter(s)')
-    
-    def get_all_param_names(self):
-        return self.config.options(self.__class__.__name__)
-    
-    def get_params(self):
-        params_dict = OrderedDict()
-        section = self.__class__.__name__
-        for name, value in self.config.items(section):
-            params_dict[name] = self.config.get_formatted_option(section, name)
-        return params_dict
-
-
 class HeadingSection(ConfigSection):
     
     def get_required_param_names(self):
         return ['source', 'regime', 'category']
+
+    
+class OutputSection(ConfigSection):
+    
+    def get_required_param_names(self):
+        return ['target', 'topdir']
 
     
 class GmtSpanSection(ConfigSection):
@@ -56,18 +24,22 @@ class GmtSpanSection(ConfigSection):
     def get_required_param_names(self):
         return ['gmtstart_dtm', 'gmtstop_dtm']
 
+
 class SensorSection(ConfigSection):
     
     def get_required_param_names(self):
         return []
+
 
 class PageMapSection(ConfigSection):
     
     def get_required_param_names(self):
         return []
 
-# get section class members in this module (this file)
-section_classes = inspect.getmembers(sys.modules[__name__], inspect.isclass)
+
+def get_section_classes():
+    # get section class members in this module (this file)
+    return inspect.getmembers(sys.modules[__name__], inspect.isclass)
 
 
 # try to create a section object (from one of classes in this module) based on config output section camel-case name
@@ -75,7 +47,8 @@ def get_section(config_handler, section_str):
     """try to create a section object (from one of classes in this module) based on config output section camel-case name"""
         
     try:
-        config = config_handler.config        
+        config = config_handler.config
+        section_classes = get_section_classes()
         # get section from class members in this module (this file)
         section_class = [t[1] for t in section_classes if t[0] == section_str]
         if len(section_class) == 0:
@@ -86,7 +59,8 @@ def get_section(config_handler, section_str):
             section_class = section_class[0]
             section_obj = section_class(config_handler)
     except Exception, e:
-        print 'Using config from %s' % config_handler.ini_file
+        print "registered classes =", section_classes
+        print 'Using config from %s' % config_handler.cfg_file
         print "Could not get section object for %s." % section_str
         raise e
     
@@ -95,28 +69,39 @@ def get_section(config_handler, section_str):
 
 
 # set variable that gives all classes via "from pims.gutwrench.sections import *"
-__all__ = [t[0] for t in section_classes]
+__all__ = [t[0] for t in get_section_classes()]
 __all__.append('get_section')
 
 
 def demo_sect():
-    from pims.gutwrench.config import ConfigHandler
+    from pims.gutwrench.config import PimsConfigHandler
     from pims.gutwrench.targets import get_target
 
-    # get config handler based on ini file
-    cfgh = ConfigHandler('/Users/ken/temp/gutone', ini_file='gutwrench.ini')
+    # get config handler based on cfg_file
+    cfgh = PimsConfigHandler(base_path='/Users/ken/temp/gutone', cfg_file='gutwrench.ini')
     
-    # load config from config (ini) file
+    # load config from config file
     cfgh.load_config()
         
-    # get target based on output section of config (ini) file using target parameter there
-    print 'processing %s' % cfgh.ini_file
+    # get target based on output section of config file using target parameter there
+    print 'processing %s' % cfgh.cfg_file
     target = get_target(cfgh)
     print target
     
     target.pre_process()
 
-
+def demo_dynamic_instance():
+    from pims.gutwrench.pages import RoadmapAxisWholeDayPage
+    import importlib
+    my_module = importlib.import_module("pims.gutwrench.config")
+    MyClass = getattr(my_module, "PimsConfigHandler")
+    instance = MyClass(base_path='/Users/ken/temp/gutone', cfg_file='gutwrench.ini')
+    print instance.base_path, instance.cfg_file
+    
+    config_handler = instance
+    rawdp = RoadmapAxisWholeDayPage(config_handler, 'one_two_three_four')
+    print rawdp
 
 if __name__ == '__main__':
-    demo_sect()
+    #demo_sect()
+    demo_dynamic_instance()

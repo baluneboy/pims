@@ -3,13 +3,13 @@
 import os
 import sys
 from pims.lib.niceresult import NiceResult
-from pims.gutwrench.config import ConfigHandler
+from pims.gutwrench.config import PimsConfigHandler
 from pims.gutwrench.targets import get_target
 
 # input parameters
 defaults = {
 'base_path':    '/Users/ken/temp/gutone',   # path of interest
-'ini_file':     'gutwrench.ini',            # ini (config) file
+'cfg_file':     'gutwrench.ini',            # config file {.ini|.run}
 }
 parameters = defaults.copy()
 
@@ -41,34 +41,45 @@ def print_usage():
 def process_data(params):
     """process data with parameters here (after we checked them earlier)"""
        
-    # get config handler based on ini file
-    cfgh = ConfigHandler(parameters['base_path'], ini_file=parameters['ini_file'])
+    # get config handler based on cfg_file
+    cfgh = PimsConfigHandler(parameters['base_path'], cfg_file=parameters['cfg_file'])
    
-    # quick check to see that "dot run" file does not exist yet
-    run_fname = cfgh.ini_file.replace('.ini', '.run')
-    if os.path.basename(run_fname) in cfgh.files:
-        raise Exception('dot run file exists already %s' % run_fname)    
+    # emit start message
+    print 'start processing %s' % cfgh.cfg_file
     
-    # load config from config (ini) file
+    # load cfg_file
     cfgh.load_config()
            
-    # get target based on output section of config (ini) file using target parameter there
-    print 'processing %s' % cfgh.ini_file
+    # get target based on output section of cfg_file using target parameter there
     target = get_target(cfgh)
+    
     if target:
         print 'got target = %s' % target.__class__.__name__
 
-        # do target pre-processing
-        target.pre_process()
-        
-        # do target main processing
-        target.main_process()
+        if cfgh.ext == 'ini':
+            # do target pre-processing
+            pre_msg = target.pre_process()
+            status_msg = 'done with pre-processing, ' + pre_msg
             
-        # do target post-processing
-        target.post_process()
+        elif cfgh.ext == 'run':
+            # do target main-processing
+            main_msg = target.main_process()
+            status_msg = 'done with main-processing, ' + main_msg
+        
+        elif cfgh.ext == 'post':
+            # do target post-processing
+            post_msg = target.post_process()
+            status_msg = 'done with post-processing, ' + post_msg    
+        
+        else:
+            # unhandled extension on cfg_file
+            status_msg = 'nothing to do when config file extension is "%s"' + cfgh.ext
+        
+        return status_msg
         
     else:
-        raise Exception('no target found in OutputSection of config %s' % cfgh.ini_file)
+        
+        raise Exception('no target found in OutputSection of config %s' % cfgh.cfg_file)
 
 
 # describe main routine here
@@ -88,6 +99,7 @@ def main(argv):
             nr = NiceResult(process_data, parameters)
             nr.do_work()
             result = nr.get_result()
+            print result
             return 0 # zero for unix success
         
     print_usage()  
