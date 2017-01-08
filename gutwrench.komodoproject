@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="f1d1bc47-0bd9-4326-9037-372e163f5a43" kpf_version="5" name="gutwrench.komodoproject">
+<file id="0ff7f50f-80a0-a34c-aa4f-1a947a70d2f1" idref="74c44a79-e4df-de40-a849-a3c9265fb6be" name="test_gutwrenchpats.py" url="patterns/tests/test_gutwrenchpats.py">
+</file>
+<file id="af44d48a-98d6-3145-9bb6-a0820cd84d5c" idref="74c44a79-e4df-de40-a849-a3c9265fb6be" name="__init__.py" url="patterns/tests/__init__.py">
+</file>
 <file id="1f4d4397-2ec6-6341-8635-c15c0befb640" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="load.py" url="gutwrench/load.py">
 </file>
 <file id="315bd056-db45-42ab-bc6a-fd0fad1c8487" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="load_spreadsheet.py" url="gutwrench/load_spreadsheet.py">
@@ -13,9 +17,13 @@
 </file>
 <file id="4e7f903f-6214-4bf7-8e05-1e1442e58017" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="__init__.py" url="gutwrench/__init__.py">
 </file>
+<folder id="74c44a79-e4df-de40-a849-a3c9265fb6be" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="tests">
+</folder>
 <file id="858956d0-9952-e643-870e-cf18b644483c" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="gutmain.py" url="gutwrench/gutmain.py">
 </file>
 <file id="8c4455f7-22ce-5e47-8547-625b0d943d68" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="sections.py" url="gutwrench/sections.py">
+</file>
+<file id="c1e1f14a-188d-954c-b6a8-b1d59081d957" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="gutwrenchpats.py" url="patterns/gutwrenchpats.py">
 </file>
 <file id="caf1e9ff-1849-be48-a59e-1ec1f5cd3127" idref="f1d1bc47-0bd9-4326-9037-372e163f5a43" name="base.py" url="gutwrench/base.py">
 </file>

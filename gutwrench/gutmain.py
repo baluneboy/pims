@@ -5,6 +5,10 @@ import sys
 from pims.lib.niceresult import NiceResult
 from pims.gutwrench.config import PimsConfigHandler
 from pims.gutwrench.targets import get_target
+from pims.patterns.gutwrenchpats import *
+
+print _CHIMPDF_PATTERN
+raise SystemExit
 
 # input parameters
 defaults = {

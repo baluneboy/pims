@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-"""Get and handle configuration, usually from gutwrench.ini (or .run) file."""
+"""
+Classes to handle configuration of grand unified processing.
+"""
 
 import os
 import sys
@@ -72,6 +74,7 @@ class SafeFilesystemTree(FilesystemTree):
         warnings.warn(msg)
 
 
+# Handle a configuration file that resides at a prescribed base path.
 class ConfigHandler(object):
     """Handle a configuration file that resides at a prescribed base path.
 
