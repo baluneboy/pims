@@ -104,7 +104,8 @@ class DatabaseHourlyGapsHoursAgo(object):
 
     def _dataframe_query(self):
         """count number of packets expected for hourly chunks""" 
-        query =  'SELECT FROM_UNIXTIME(time) as "hour", '
+        #query =  'SELECT FROM_UNIXTIME(time) as "hour", ' # <<< WORKED BEFORE mariadb
+        query =  'SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "hour", '
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
         #query += 'COUNT(*) as "pkts" from %s ' % self.sensor
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s<br>%%", ' % self.sensor
@@ -115,8 +116,9 @@ class DatabaseHourlyGapsHoursAgo(object):
         query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
         #print query
         con = mysql_con(host=self.host, db='pims')
-        #self.dataframe = psql.frame_query(query, con=con)
+        #self.dataframe = psql.frame_query(query, con=con) # <<< before pandas update
         self.dataframe = psql.read_sql(query, con=con)
+        #if self.host in ['chef', 'tweek']: print self.dataframe # <<< debug
         
     def filt_min_pct(self):
         """if min_pct is non-zero, then return filtered dataframe"""

@@ -12,6 +12,22 @@ from pims.database.pimsquery import db_connect
 from pims.database.ee_packets import dbstat
 from pims.database.pimsquery import get_ee_table_list
 
+# FIXME this is crappy kludge to quickly fix issue with mariadb query of new butters
+def new_butters_time_triplet(sensor, host):
+	from pims.utils.pimsdateutil import unix2dtm
+	r3 = db_connect('select max(time), min(time) from %s' % sensor, host)
+	maxdtm = unix2dtm(r3[0][0])
+	mindtm = unix2dtm(r3[0][1])
+	return ((r3[0][0], mindtm, maxdtm),)
+
+r1 = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % 'es03', 'manbearpig')
+r2 = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % 'es06', 'butters')
+r3 = new_butters_time_triplet('es06', 'butters')
+print r1
+print r2
+print r3
+raise SystemExit
+
 # FIXME I had to manually add es05 and 121f05 when those sensors were inactive.
 #       I did not dig to see if db table empty was issue or what, but both
 #       those sensors being inactive for a while eventually made it so that
@@ -27,14 +43,6 @@ _IGNORE = [ 'es03rt', 'es05rt', 'es06rt', '121f05rt', '121f08badtime', '121f08go
 			'mcor_121f03', 'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
 			'powerup', 'radgse', 'sec_hirap', 'sec_oss',
 			'soss', 'soss', 'textm', 'emptytable' ] 
-
-# FIXME this is crappy kludge to quickly fix issue with mariadb query of new butters
-def mariadb_kludge_for_time_triplet(sensor, host):
-	from pims.utils.pimsdateutil import unix2dtm
-	r3 = db_connect('select max(time), min(time) from %s' % sensor, host)
-	maxdtm = unix2dtm(r3[0][0]).replace(microsecond=0)
-	mindtm = unix2dtm(r3[0][1]).replace(microsecond=0)
-	return ((r3[0][0], mindtm, maxdtm),)
 
 # convert "Unix time" to "Human readable" time
 def UnixToHumanTime(utime):
@@ -124,10 +132,7 @@ if __name__ == '__main__':
 						packet = None
 					else:
 						# get three values in one pass in case slow database is not indexed
-						if n == 'butters':
-							r = mariadb_kludge_for_time_triplet(sensor, n)
-						else:
-							r = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
+						r = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
 						maxTimeF = r[0][0]
 						minTime = r[0][1]
 						maxTime = r[0][2]					

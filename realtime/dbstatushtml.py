@@ -5,10 +5,13 @@ import sys
 import datetime
 from cStringIO import StringIO
 import pandas as pd
+from bs4 import BeautifulSoup, Tag
 from pims.patterns.dbstatuspats import _DBSTATUSLINE_PATTERN
+
 
 # max age (seconds) of packet max time; otherwise, turn red
 _MAX_AGE_SEC = 1 * 60 * 60 # try 1 hour for now
+
 
 # table names (i.e. sensors) to ignore that otherwise get displayed with dbstatus.py
 _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
@@ -18,6 +21,7 @@ _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
             'powerup', 'radgse', 'sec_hirap', 'sec_oss', 'soss', 'soss',
             'textm', 'emptytable'
             ] 
+
 
 # HTML header
 _HEADER = """<HEAD>
@@ -30,12 +34,16 @@ _HEADER = """<HEAD>
 <B>This page will automatically refresh every 5 minutes.</B><BR>
 <B>Last refreshed GMT %s<B><BR>
 <a href="http://pims.grc.nasa.gov/plots/user/sams/samsresources.html">SAMS Resources</a><BR><BR>
+<link rel="stylesheet" type="text/css" href="active_sensors.css" media="screen"/>
 """ % datetime.datetime.now().strftime('%d-%b-%Y, %j/%H:%M:%S ')
 
+
 # HTML footer
-_FOOTER = """<BR><FORM><INPUT type='Button' VALUE='Close' onClick='self.close();'></FORM>
+_FOOTER = """<BR>
 </CENTER>
-</BODY></HTML>"""
+</BODY>
+</HTML>
+"""
 
 
 # function to format location
@@ -103,10 +111,10 @@ def stdin_to_dataframe():
     
     return df
 
-
-# write right-aligned html converted from dataframe to stdout
-def right_align_html(df):
-    """write right-aligned html converted from dataframe to stdout"""
+    
+# css implementation for improved (colorized) html converted from dataframe to stdout
+def active_sensors_css_html(df, which):
+    """css implementation for improved (colorized) html converted from dataframe to stdout"""
 
     buf_html = StringIO()
     df.to_html(buf_html, formatters={
@@ -115,8 +123,38 @@ def right_align_html(df):
         'Location': loc_fmt},
         escape=False, index=False, na_rep='nan')
     s = buf_html.getvalue()
-    s = s.replace('<tr>', '<tr style="text-align: right;">')
-    return s
+    
+    # turn string into bs
+    soup = BeautifulSoup(s)
+    
+    # get the one and only table here
+    tables = soup.find_all('table')
+    if len(tables) != 1:
+        raise Exception('expected one and only one table here')
+    table = tables[0]
+    
+    # modify class and border on this table
+    table.attrs['class'] = which
+    table.attrs['border'] = 3
+    headings = table.find_all('th')
+
+    # modify 6 column headings attrs for our css formatting
+    headings[0].attrs['class'] = 'column-1 column-location'
+    headings[1].attrs['class'] = 'column-2 column-two'
+    headings[2].attrs['class'] = 'column-3 column-lastpkt'
+    headings[3].attrs['class'] = 'column-4 column-age'
+    headings[4].attrs['class'] = 'column-5 column-rate'
+    headings[5].attrs['class'] = 'column-6 column-host'
+
+    # format first 2 columns of all table rows
+    all_rows = soup.find_all('tr')
+    for row in all_rows:
+        cells = row.find_all(['th','td'])
+        cells[0].attrs['style'] = 'text-align: right'
+        cells[1].attrs['style'] = 'text-align: center'
+
+    # return stirred soup :)
+    return str(soup)
 
 
 # filter dataframe to get rid of non-interesting sensors (sensors are really just table names)
@@ -147,6 +185,42 @@ def drop_unwanted_columns(df):
     return df
 
 
+def keep_only(df, str_contains):
+    """keep only rows that have Sensor designations per str_contains"""
+    
+    df = df[df['Sensor'].str.contains(str_contains)]
+    
+    # sort by sensor (not by GMT LastPkt)
+    df.sort(columns='Sensor', axis=0, ascending=True, inplace=True)    
+    
+    return df
+
+
+def drop_MAMS(df):
+    """drop rows that have Sensor designations (oss or hirap)"""
+    
+    df = df[~df['Sensor'].str.contains('oss|hirap')]    
+    return df
+
+
+def drop_EE(df):
+    """drop rows that have EE designations (122f0*); ALREADY SORTED BY LastPkt GMT"""
+    
+    df_not_ee = df[~df['Sensor'].str.contains('^122f0')]
+    df_sams = drop_MAMS(df_not_ee)
+
+    # sort by sensor (not by GMT LastPkt)
+    df_sams.sort(columns='Sensor', axis=0, ascending=True, inplace=True)
+    
+    df_mams = keep_only(df_not_ee, 'oss|hirap')
+    
+    # change column name
+    df_mams = df_mams.rename(columns = {'Location': 'MAMS Location'})    
+    df_sams = df_sams.rename(columns = {'Location': 'SAMS SE Location'})    
+    
+    return df_sams, df_mams
+
+    
 # USAGE EXAMPLE: dbstatus.py | dbstatushtml.py > /tmp/trash2.html
 if __name__ == "__main__":
     """USAGE EXAMPLE: dbstatus.py | dbstatushtml.py > /tmp/trash2.html"""
@@ -160,8 +234,18 @@ if __name__ == "__main__":
     # drop some columns that we do not want
     df = drop_unwanted_columns(df_filt)
     
+    # top table will be EE "Unit" (not "Sensor")
+    df_EE = keep_only(df, '^122f0')
+    df_EE = df_EE.rename(columns = {'Location': 'SAMS EE Location', 'Sensor': 'Unit'})    
+    
+    # bottom table will be remainder, which should be SE "Sensor"
+    df_sams, df_mams = drop_EE(df)
+    
     # write for piped output
     sys.stdout.write(_HEADER)
-    sys.stdout.write( right_align_html(df) )
+    sys.stdout.write( active_sensors_css_html(df_EE, 'other') )
+    sys.stdout.write( '<br>')
+    sys.stdout.write( active_sensors_css_html(df_sams, 'sams') )
+    sys.stdout.write( '<br>')
+    sys.stdout.write( active_sensors_css_html(df_mams, 'mams') )    
     sys.stdout.write(_FOOTER)
-    
