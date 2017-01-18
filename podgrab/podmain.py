@@ -92,12 +92,19 @@ def secure_copy(params):
         return False
     
     for mp3file in mp3_files:
+        # FIXME is this place to see if we already grabbed mp3file via db query? if yes, continue to next mp3file (no scp)
         dest = 'ken@192.168.0.199:' + destdir
         print 'start scp from %s to %s' % (mp3file, dest) #; continue
         scp_cmd = ['scp', mp3file, dest]
         retcode = subprocess.call(scp_cmd)
         if retcode != 0:
             raise Exception('problem with scp')
+        else:
+            # FIXME this is where we write to already_grabbed_db table these columns:
+            #       Artist: Scientific American
+            #        Track: Episode 2381: January 14, 2017
+            #     Duration: << in minutes >>
+            pass
 
     return True
 
