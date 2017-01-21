@@ -113,7 +113,7 @@ def main(argv):
     """describe main routine here"""
 
     # parse command line
-    for p in sys.argv[1:]:
+    for p in argv[1:]:
         pair = p.split('=')
         if (2 != len(pair)):
             print 'bad parameter: %s' % p

@@ -34,6 +34,8 @@ import unicodedata
 import socket
 import errno
 
+from podmain import main as podtransfer
+
 
 MODE_NONE = 70
 MODE_SUBSCRIBE = 71
@@ -46,6 +48,7 @@ MODE_MAIL_DELETE = 77
 MODE_MAIL_LIST = 78
 MODE_EXPORT = 79
 MODE_IMPORT = 80
+MODE_COPY = 81
 HOSTNAME = socket.gethostname()
 
 if HOSTNAME == 'macmini3.local':
@@ -94,6 +97,7 @@ def main(argv):
 
     parser.add_argument('-io', '--import', action="store", dest="opml_import", help='Import subscriptions from OPML file')
     parser.add_argument('-eo', '--export', action="store_const", const="OPML_EXPORT", dest="opml_export", help='Export subscriptions to OPML file')
+    parser.add_argument('-scp', '--copy', action="store_const", const="COPY", dest="copy_to_macmini2", help='Call external routine for scp to macmini2')
 
     arguments = parser.parse_args()
 
@@ -106,6 +110,8 @@ def main(argv):
         else:
             print "XML data source opened\n"
             mode = MODE_SUBSCRIBE
+    elif arguments.copy_to_macmini2:
+        mode = MODE_COPY
     elif arguments.dl_feed_url:
         feed_url = arguments.dl_feed_url
         data = open_datasource(feed_url)
@@ -184,6 +190,9 @@ def main(argv):
                 except OSError:
                     print "Subscription directory has not been found - it might have been manually deleted"
                 print "Subscription '" + feed_name + "' removed"
+        elif mode == MODE_COPY:
+            print "Smart copy podcast mp3 files...\n"
+            podtransfer([])
         elif mode == MODE_LIST:
             print "Listing current podcast subscriptions...\n"
             list_subscriptions(cursor, connection)
