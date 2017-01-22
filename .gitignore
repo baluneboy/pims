@@ -84,3 +84,6 @@ sams/sublime/User/Preferences.sublime-settings
 # Blue Origin
 blueorigin/
 BlueOrigin.komodoproject
+
+# Podcast db files
+podgrab/*.db
