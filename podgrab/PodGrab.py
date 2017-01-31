@@ -34,6 +34,10 @@ import unicodedata
 import socket
 import errno
 
+from pims.podgrab.podtransfer import main as transfer
+from pims.podgrab.podutils import get_mp3_artist_title_genre, get_db_connection_cursor, insert_grabbed_podcast
+from pims.podgrab.podutils import add_easy_tags
+from pims.files.utils import get_md5
 
 MODE_NONE = 70
 MODE_SUBSCRIBE = 71
@@ -46,6 +50,7 @@ MODE_MAIL_DELETE = 77
 MODE_MAIL_LIST = 78
 MODE_EXPORT = 79
 MODE_IMPORT = 80
+MODE_COPY = 81
 HOSTNAME = socket.gethostname()
 
 if HOSTNAME == 'macmini3.local':
@@ -94,6 +99,7 @@ def main(argv):
 
     parser.add_argument('-io', '--import', action="store", dest="opml_import", help='Import subscriptions from OPML file')
     parser.add_argument('-eo', '--export', action="store_const", const="OPML_EXPORT", dest="opml_export", help='Export subscriptions to OPML file')
+    parser.add_argument('-scp', '--copy', action="store_const", const="COPY", dest="copy_to_macmini2", help='Call external routine for scp to macmini2')
 
     arguments = parser.parse_args()
 
@@ -106,6 +112,8 @@ def main(argv):
         else:
             print "XML data source opened\n"
             mode = MODE_SUBSCRIBE
+    elif arguments.copy_to_macmini2:
+        mode = MODE_COPY
     elif arguments.dl_feed_url:
         feed_url = arguments.dl_feed_url
         data = open_datasource(feed_url)
@@ -184,6 +192,9 @@ def main(argv):
                 except OSError:
                     print "Subscription directory has not been found - it might have been manually deleted"
                 print "Subscription '" + feed_name + "' removed"
+        elif mode == MODE_COPY:
+            print "Smart copy podcast mp3 files...\n"
+            transfer([])
         elif mode == MODE_LIST:
             print "Listing current podcast subscriptions...\n"
             list_subscriptions(cursor, connection)
@@ -408,11 +419,28 @@ def write_podcast(item, chan_loc, date, type):
             output.write(item_file.read())
             output.close()
             print "Podcast: ", item, " downloaded to: ", local_file
+            
+            # need this on the scp copy mode to do comparison against what's already grabbed (in db)
+            md5sum = 'md5-' + get_md5(local_file) # need this before save (which changes the sum!)
+            
+            # FIXME this is where we smartly fake tags on initial save of mp3
+            #       artist = subdir under podcasts (when there is not artist tag)
+            #       title =  first 8 chars of basename (when there is not title tag)
+            #       genre = 'md5-' + MD5SUM (always)
+            add_easy_tags(local_file)
+            
+            # FIXME this is where we add entry to GrabbedPodcasts.db
+            artist2, title2, genre2 = get_mp3_artist_title_genre(local_file)
+            conn2, cur2 = get_db_connection_cursor()
+            insert_grabbed_podcast(cur2, conn2, artist2, title2, genre2)
+            
             return 1
         except urllib2.URLError, e:
             print "ERROR - Could not write item to file: ", e
         except socket.error, e:
             print "ERROR - Socket reset by peer: ", e
+        except Exception, e:
+            print "ERROR - Probably/maybe problem with GrabbedPodcasts.db write?", e
 
 
 def does_database_exist(curr_loc):

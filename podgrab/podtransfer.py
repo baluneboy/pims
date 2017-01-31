@@ -8,7 +8,8 @@ import subprocess
 
 from pims.lib.niceresult import NiceResult
 from pims.files.utils import most_recent_file_with_suffix, filter_filenames, filter_dirnames
-from pims.files.filter_pipeline import FileFilterPipeline, EndsWith, YoungFile, MinutesLongMp3File
+from pims.files.filter_pipeline import FileFilterPipeline, ExtensionStartsWith, YoungFile, MinutesLongMp3File
+#from pims.podgrab.podutils import NotInGrabbedPodcastsDb # specialized for filter pipeline
 
 # input parameters
 defaults = {
@@ -31,7 +32,12 @@ def get_mp3_files(mp3dir):
 def get_big_young_mp3_files(topdir='/Volumes/serverHD2/data/podcasts', min_dur_minutes=0.5*1024*1024, max_age_minutes=15):
    
     # Initialize processing pipeline (prime the pipe with callables)
-    ffp = FileFilterPipeline(MinutesLongMp3File(min_minutes=0.9), EndsWith('.mp3'), YoungFile(max_age_minutes=max_age_minutes))
+    ffp = FileFilterPipeline(
+        MinutesLongMp3File(min_minutes=0.9),
+        ExtensionStartsWith('mp3'),
+        YoungFile(max_age_minutes=max_age_minutes),
+        #NotInGrabbedPodcastsDb(),
+        )
     print ffp
     
     # Apply processing pipeline input #1 (now ffp is callable)
@@ -99,12 +105,6 @@ def secure_copy(params):
         retcode = subprocess.call(scp_cmd)
         if retcode != 0:
             raise Exception('problem with scp')
-        else:
-            # FIXME this is where we write to already_grabbed_db table these columns:
-            #       Artist: Scientific American
-            #        Track: Episode 2381: January 14, 2017
-            #     Duration: << in minutes >>
-            pass
 
     return True
 
@@ -113,7 +113,7 @@ def main(argv):
     """describe main routine here"""
 
     # parse command line
-    for p in sys.argv[1:]:
+    for p in argv[1:]:
         pair = p.split('=')
         if (2 != len(pair)):
             print 'bad parameter: %s' % p

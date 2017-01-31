@@ -4,7 +4,6 @@ import os
 import re
 import time
 from mutagen.mp3 import MP3
-from mutagen.id3 import ID3
 
 class FileFilterPipeline(object):
 
@@ -86,6 +85,21 @@ class EndsWith(object):
     def __str__(self):
         return 'is a file that ends with %s' % self.ending
 
+# this because some podcasts have long extensions that start with mp3
+class ExtensionStartsWith(object):
+    
+    def __init__(self, begin='mp3'):
+        self.begin = begin
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            fname, ext = os.path.splitext(f)
+            if ext.startswith('.' + self.begin):
+                yield f
+                
+    def __str__(self):
+        return 'is a file whose extension starts with %s' % self.begin
+
 #---------------------------------------------------
 # Operator #5 is a young age callable class
 class YoungFile(object):
@@ -121,20 +135,6 @@ class MinutesLongMp3File(object):
     def get_mp3_duration_minutes(self, fname):
         audio = MP3(fname)
         return audio.info.length / 60.0
- 
-#---------------------------------------------------
-# for filter pipeline, an mp3 file callable class
-def getMutagenTags(path):
-    """"""
-    audio = ID3(path)
- 
-    print "Artist: %s" % audio['TPE1'].text[0]
-    print "Track: %s" % audio["TIT2"].text[0]
-    print "Release Year: %s" % audio["TDRC"].text[0]
-
-#path = '/Volumes/serverHD2/data/podcasts/Scientific-American-Podcast-60-Second-Science/20170116podcast.mp3fileIdC73B6AFF-1C3E-48D1-927F01ED445F.mp3'
-#getMutagenTags(path)
-#raise SystemExit
 
 #---------------------------------------------------
 # a file-missing function

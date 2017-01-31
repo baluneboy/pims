@@ -3,6 +3,7 @@ import re
 import time
 import errno
 import shutil
+import hashlib
 import pandas as pd
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
@@ -320,6 +321,18 @@ def remove_old_files(folder, numdays):
                 #os.remove( fullfile )
             else:
                 print 'keeping %s' % fullfile
+
+
+def get_md5(my_file, blocksize=65536):
+    hasher = hashlib.md5()
+    with open(my_file, 'rb') as afile:
+        buf = afile.read(blocksize)
+        while len(buf) > 0:
+            hasher.update(buf)
+            buf = afile.read(blocksize)
+    md5str = hasher.hexdigest()
+    return md5str
+
 
 if __name__ == "__main__":
     import doctest
