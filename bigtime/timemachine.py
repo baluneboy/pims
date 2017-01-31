@@ -67,9 +67,9 @@ class EeTimeGetter(TimeGetter):
         return query_timestamp(self.ee_id, self.table, host=self.host)    
     
     
-###etg = EeTimeGetter('ee_packet_rt', host='yoda', ee_id='122-f07')
-###print unix2dtm(etg._get_time())
-###raise SystemExit
+##etg = EeTimeGetter('ee_packet_rt', host='yoda', ee_id='122-f07')
+##print unix2dtm(etg._get_time())
+##raise SystemExit
 
 
 # get pims db ee_packet table timestamp [typically from jimmy]

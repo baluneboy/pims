@@ -14,6 +14,7 @@ defaults = {
 'maxgapsec':     '59',                      # consider only gaps longer than this integer max gap (sec)
 'pad_path':      '/misc/yoda/pub/pad',      # base path of interest for source of PAD files
 'csv_path':      '/misc/yoda/www/plots/user/sams/gaps/pad', # base path for output csv file
+'write_csv':     'True',                    # True to write CSV; False to just show on stdout
 }
 parameters = defaults.copy()
 
@@ -51,6 +52,14 @@ def parameters_ok():
         if not is_ok:
             return False
 
+    # write or just show results
+    try:
+        parameters['write_csv'] = eval(parameters['write_csv'])
+        assert( isinstance(parameters['write_csv'], bool))
+    except Exception, err:
+        print 'cound not handle write_csv parameter, was expecting it to eval to True or False'
+        return False    
+    
     return True # all OK; otherwise, we would've returned False above
 
 
@@ -120,7 +129,10 @@ def main(argv):
     else:
         if parameters_ok():
             # here is the main routine to check for and show gaps
-            write_strata_gaps()
+            if parameters['write_csv']:
+                write_strata_gaps()
+            else:
+                show_strata_gaps()
             return 0
 
     print_usage()

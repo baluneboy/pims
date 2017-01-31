@@ -1,0 +1,53 @@
+#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+
+import re
+import sys, inspect
+
+###############################################################################
+# roadmap PDF full path pattern
+# -----------------------------------------------------------------------------
+# like 2017_01_01_16_00_00.000_121f03one_spgs_roadmaps142.pdf
+# where filename convention is:
+# 2017_01_01_16_00_00.000_121f03one_spgs_roadmaps142.pdf
+# 1                       2         3  4         5  
+# ┬                       ┬         ┬  ┬         ┬
+# │                       │         │  │         │
+# │                       │         │  │         │
+# │                       │         │  │         └── 5: digits for new sample rate
+# │                       │         │  └──────────── 4: axis (single char like x,y,z,s)
+# │                       │         └─────────────── 3: plot type (like spg)
+# │                       └───────────────────────── 2: sensor (like 121f03one or 121f05)
+# └───────────────────────────────────────────────── 1: YMDhms (underscore delim start which 1/3 of day)
+###############################################################################
+_ROADMAP_PDF_FILENAME_PATTERN = (
+    "(?P<year>\d{4})_(?P<month>\d{2})_(?P<day>\d{2})_"             # underscore-delimited YMD
+    "(?P<hour>\d{2})_(?P<minute>\d{2})_(?P<second>\d{2}\.\d{3})_"  # underscore-delimited hms
+    "(?P<sensor>.*)_"                                              # sensor underscore
+    "(?P<plot>.*)(?P<axis>\w)_"                                    # plot type axis underscore
+    "roadmaps(?P<fsnew>.*)\.pdf\Z"                                 # roadmaps fsNew dot pdf end of string
+)
+
+
+def is_underscore_pattern(text):
+    """return boolean (True) for match of 'underscore pattern' string"""
+    if not isinstance(text, str): return False
+    ismatch = False
+    pattern = '\A_[\w_]*_PATTERN\Z' # <<<<< YOUR VAR NAMES FOR PATTERNS MUST MATCH THIS
+    if re.search(pattern, text):
+        ismatch = True
+    return ismatch
+
+
+def _get_underscore_pattern_varnames(predicate=is_underscore_pattern):
+    """return list of underscore patterns from this module"""
+    tup_list = inspect.getmembers(sys.modules[__name__])
+    var_names = [ tup[0] for tup in tup_list ]
+    uscore_pats = [ x for x in var_names if isinstance(x, str) and predicate(x) ]
+    return uscore_pats
+
+
+__all__ = _get_underscore_pattern_varnames()
+
+if __name__ == '__main__':
+    print __all__

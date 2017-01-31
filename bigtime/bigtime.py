@@ -90,8 +90,8 @@ def run(time_machines):
     """run big timestamp app mainly for ops support"""
 
     # FIXME with better handling of inputs (type check and gracefully allow 3 or less)
-    if len(time_machines) != 15:
-        raise Exception('expected exactly 14 timemachine objects as input')
+    #if len(time_machines) != 15:
+    #    raise Exception('expected exactly 15 timemachine objects as input')
 
     disp_host = socket.gethostname()
 

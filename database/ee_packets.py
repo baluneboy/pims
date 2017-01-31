@@ -8,7 +8,7 @@ import datetime
 
 from pims.utils.pimsdateutil import dtm2unix
 from pims.database.pimsquery import get_ee_table_list, delete_older_ee_packets
-from pims.database.pimsquery import get_dbstatusish_details_for_ee, get_sensor_location_from_kyle
+from pims.database.pimsquery import get_dbstatusish_details_for_ee, get_sensor_location_from_craig
 
 EEPKT_HOST = 'jimmy'
 EEPKT_RATE = 1.0
@@ -20,7 +20,7 @@ def prune(table_list):
 def dbstat(host, table):
     count, tmin, tmax = get_dbstatusish_details_for_ee(table, host=host)
     age = time.time() - dtm2unix(tmax)
-    loc = get_sensor_location_from_kyle(table, datetime.datetime.now())     
+    loc = get_sensor_location_from_craig(table, datetime.datetime.now())     
     return count, tmin, tmax, age, EEPKT_RATE, loc
     
 def main(argv):

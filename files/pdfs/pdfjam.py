@@ -3,9 +3,14 @@
 # TODO handle when output from pdfjam run contains "pdfjam ERROR: Output file not written"
 
 import os
+import datetime
 import subprocess
+import pandas as pd
+import glob
 
 from pims.utils.commands import timeLogRun, time_run
+from pims.utils.pimsdateutil import datetime_to_roadmap_ymd_path
+
 
 class PdfjamProperty(object):
     """
@@ -332,7 +337,8 @@ class PdfjoinCommand(object):
     
     def run(self, timeoutSec=10, log=None):
         """run the command"""
-        retCode, elapsedSec = timeLogRun('echo -n "Start pdfjoin cmd at "; date; %s; echo -n "End   pdfjoin cmd at "; date' % self.command, timeoutSec, log=log)
+        #retCode, elapsedSec = timeLogRun('echo -n "Start pdfjoin cmd at "; date; %s; echo -n "End   pdfjoin cmd at "; date' % self.command, timeoutSec, log=log)
+        retCode, elapsedSec = time_run('echo -n "Start pdfjoin cmd at "; date; %s; echo -n "End   pdfjoin cmd at "; date' % self.command, timeoutSec)
     
     def _verify_outfile(self, outfile):
         """outfile must not pre-exist"""
@@ -361,12 +367,41 @@ def demo(f, scale=0.5, log=False):
 
 def demojoin():
     infiles = [
-        '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/build/1qualify_2013_10_10_00_00_00.000_121f03one_spgs_roadmaps142_amazing_pdftk.pdf',
-        '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/build/2quantify_2013_10_01_00_ossbtmf_roadmap_pdftk.pdf'
+        '/misc/yoda/www/plots/batch/year2016/month04/day28/2016_04_28_00_00_00.000_121f04_pcss_roadmaps500.pdf',
+        '/misc/yoda/www/plots/batch/year2016/month04/day29/2016_04_29_00_00_00.000_121f04_pcss_roadmaps500.pdf',
     ]
-    outfile = '/home/pims/Documents/test/hb_vib_vehicle_Big_Bang/hb_FILE.pdf'
+    outfile = '/tmp/trashjoin.pdf'
     pdfjoin_cmd = PdfjoinCommand(infiles, outfile)
     pdfjoin_cmd.run()
+
+
+def flipbook_roadmap(d1, d2, sensor, plotax, out_dir):
+    """use pdfjoin to join a bunch of roadmap PDF files into one big flipbook type PDF output file"""
+    
+    # FIXME gracefully do not clobber possibly already-existing out_file
+    #       BUT for now assume it does not exist
+    out_name = 'flipbook_roadmap_' + d1.strftime('%Y-%m-%d') + '_to_' + d2.strftime('%Y-%m-%d')
+    out_name = '_'.join([d1.strftime('%Y-%m-%d'), 'to', d2.strftime('%Y-%m-%d'), sensor, plotax, 'flipbook_roadmap']) + '.pdf'
+    out_file = os.path.join(out_dir, out_name)
+
+    # get list of dates
+    date_list = pd.date_range(d1, end=d2).tolist()
+    
+    # build file list
+    files_to_join = []
+    for d in date_list:
+        ymd_path = datetime_to_roadmap_ymd_path(d.date())
+        file_pattern = '*_%s_%s_*.pdf' % (sensor, plotax)
+        results = glob.glob( os.path.join(ymd_path, file_pattern) )
+        files_to_join.extend( results )
+    
+    files_to_join.sort()
+    
+    # join a bunch of PDFs into one output file
+    pdfjoin_cmd = PdfjoinCommand(files_to_join, out_file)
+    pdfjoin_cmd.run()
+    print 'wrote %s' % out_file
+
 
 def manual_pdfjam_and_join():
     import os
@@ -388,11 +423,30 @@ def manual_pdfjam_and_join():
     pdfjoin_cmd.run()
 
 #manual_pdfjam_and_join(); raise SystemExit
-
+    
 if __name__ == "__main__":
     import doctest
     doctest.testmod()
     
     print 'Now for a demo...'
     #demo('/tmp/1qualify_2013_10_01_00_ossbtmf_roadmap.pdf', log=True)
-    demojoin()
+    
+    sensor = '121f04'
+    plotax = 'spgs'
+    out_dir = '/misc/yoda/www/plots/user/strata/roadmap_flipbook'
+    
+    d1 = datetime.datetime(2016, 4, 28)
+    d2 = datetime.datetime(2016, 5, 7)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)
+ 
+    d1 = datetime.datetime(2016, 5, 8)
+    d2 = datetime.datetime(2016, 5, 14)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)   
+
+    d1 = datetime.datetime(2016, 5, 15)
+    d2 = datetime.datetime(2016, 5, 21)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 
+
+    d1 = datetime.datetime(2016, 5, 22)
+    d2 = datetime.datetime(2016, 5, 31)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 

@@ -49,10 +49,10 @@ def ceil4(input): # the database has time to only 4 decimal places of precision
     """round a float up at the 4th decimal place"""
     return math.ceil(input*10000.0)/10000.0
 
-# fetch all entries from pad.coord_system_db table [on kyle] into dataframe
+# fetch all entries from pad.coord_system_db table [on craig] into dataframe
 class CoordQueryAsDataFrame(object):
-    """fetch all entries from pad.coord_system_db table [on kyle] into dataframe"""
-    def __init__(self, host='kyle', uname=_UNAME, passwd=_PASSWD):
+    """fetch all entries from pad.coord_system_db table [on craig] into dataframe"""
+    def __init__(self, host='craig', uname=_UNAME, passwd=_PASSWD):
         self.host = host
         self.schema = 'pad'
         self.uname = uname
@@ -65,9 +65,9 @@ class CoordQueryAsDataFrame(object):
         #return '%s,%s' % (self.gse_tiss_dtm, self.aos_los)
         return 'self.dataframe'
 
-    # fetch all entries from pad.coord_system_db table [on kyle] into dataframe
+    # fetch all entries from pad.coord_system_db table [on craig] into dataframe
     def coord_db_to_dataframe(self):
-        """fetch all entries from pad.coord_system_db table [on kyle] into dataframe"""
+        """fetch all entries from pad.coord_system_db table [on craig] into dataframe"""
         con = Connection(host=self.host, user=self.uname, passwd=self.passwd, db=self.schema)
         cursor = con.cursor()
         cursor.execute(self.query)
@@ -100,7 +100,7 @@ class CoordQueryAsDataFrame(object):
         self.dataframe = self.dataframe[ self.dataframe.sensor.str.contains(regex_pattern) ]
     
     def filter_pre2001(self):
-        """get rid of bogus entries (CIR, FIR) on kyle"""
+        """get rid of bogus entries (CIR, FIR) on craig"""
         self.dataframe = self.dataframe[ self.dataframe.gmt > datetime.datetime(2001, 1, 1) ]
     
     def consolidate_rpy_xyz(self):
@@ -183,16 +183,16 @@ def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEM
                 raise Exception(msg)
     return results
 
-# create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on kyle
-def get_sensor_location_from_kyle(sensor, dtm):
+# create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on craig
+def get_sensor_location_from_craig(sensor, dtm):
     # select from_unixtime(time), location_name from pad.coord_system_db where coord_name = "121f08" and time < unix_timestamp('2011-01-02') order by time desc limit 1;
     timestr = dtm.strftime('%Y-%m-%d %H:%M:%S')
-    loc = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" and time < unix_timestamp("%s") order by time desc limit 1' % (sensor, timestr), 'kyle')
+    loc = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" and time < unix_timestamp("%s") order by time desc limit 1' % (sensor, timestr), 'craig')
     return loc[0][0]
 
 #####################################################################################
 
-#loc = get_sensor_location_from_kyle('121f03', datetime.datetime.now())
+#loc = get_sensor_location_from_craig('121f02', datetime.datetime.now())
 #print loc
 #raise SystemExit
 
@@ -295,10 +295,10 @@ def db_insert_handbook(fname, title, regime, category, host=_HANDBOOK_HOST, user
     return err_msg
 
 class PadExpect(object):
-    """Class for dictionary of results from pad db query on kyle for expected config values.
+    """Class for dictionary of results from pad db query on craig for expected config values.
 
     Keyword arguments:
-    database: string name of db to query (default 'pad' schema on kyle)
+    database: string name of db to query (default 'pad' schema on craig)
     table: string for table name (default 'expected_config')
     sensor: string for sensor designator (like '121f03')
     values: dictionary of {'fields':values}
@@ -311,7 +311,7 @@ class PadExpect(object):
         self.table = table
         self.sensor = sensor
         self._excludeFields = ['time','sensor']
-        self._db = connect(host="kyle", user=_UNAME, passwd=_PASSWD, db=database)
+        self._db = connect(host="craig", user=_UNAME, passwd=_PASSWD, db=database)
         self._fields = self._query_fields()
         self._values = self._query_expected_values()
         self._db.close()

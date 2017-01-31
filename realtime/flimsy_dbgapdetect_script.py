@@ -15,6 +15,7 @@ from pims.utils.pimsdateutil import datetime_to_days_ago
 # - better way to get expected packets per second (SAMS/MAMS HiRAP, SampleRate, what else)
 # - some form of pivot table to show results (user choice: HTML or CSV form)
 
+
 # input parameters
 defaults = {
 'sensor':           '121f03',       # sensor = table name
@@ -25,6 +26,7 @@ defaults = {
 'num_minutes':      '30',           # check every num_minutes chunk of time
 }
 parameters = defaults.copy()
+
 
 # Info on database gaps given sensor (i.e. table), host, and expected packets per second.
 class DatabaseGaps(object):

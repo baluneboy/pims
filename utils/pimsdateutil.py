@@ -97,6 +97,23 @@ def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     return os.path.join( base_dir, d.strftime('year%Y/month%m/day%d') )
 
 
+def datetime_to_roadmap_ymd_path(d):
+    """
+    Return roadmap PDF path for datetime, d, like /misc/yoda/www/plots/batch/year2016/month04/day29
+    
+    Examples
+    --------
+    
+    >>> datetime_to_roadmap_ymd_path(datetime.date(2002, 12, 28))
+    '/misc/yoda/www/plots/batch/year2002/month12/day28'
+    
+    >>> datetime_to_roadmap_ymd_path(datetime.datetime(2009, 12, 31, 23, 59, 59, 999000))
+    '/misc/yoda/www/plots/batch/year2009/month12/day31'
+    
+    """
+    return datetime_to_ymd_path(d, base_dir='/misc/yoda/www/plots/batch')
+
+
 # return string for "yesterday's" year/month/day PAD path
 def yesterday_pad_ymd_path(base_dir='/misc/yoda/pub/pad'):
     """return string for "yesterday's" year/month/day PAD path"""

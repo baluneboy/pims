@@ -20,6 +20,12 @@ SENSOR_SUBDIRS = [
     'sams2_accel_121f08006',
     'mams_accel_hirap006' ]  
 
+# a generator to get dates from start_date to end_date
+def date_range_generator(start_date, end_date):
+    num_days = (end_date - start_date).days
+    for n in range( int ( num_days ) + 1 ):
+        yield start_date + datetime.timedelta(n)
+
 # return number of samples (16 bytes = [t,x,y,z] record is "one sample") in PAD data file
 def get_num_samples(dat_file):
     """return number of samples (16 bytes = [t,x,y,z] record is "one sample") in PAD data file"""    

@@ -241,6 +241,16 @@ def filter_filenames(dirpath, predicate):
     /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_26_05.721+2015_03_17_00_36_05.728.121f03
     /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_36_05.730+2015_03_17_00_46_05.737.121f03
     /misc/yoda/pub/pad/year2015/month03/day17/sams2_accel_121f03/2015_03_17_00_46_05.739+2015_03_17_00_56_05.747.121f03
+    >>> # EXAMPLE 2 ---------------------------------------------------------
+    >>> from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
+    >>> dirpath = os.path.join('/misc/yoda/www/plots/batch', 'year2015/month03/day17')
+    >>> pat = '.*' + _ROADMAP_PDF_FILENAME_PATTERN
+    >>> for f in list(filter_filenames(dirpath, re.compile(pat).match))[0:5]: print f
+    /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_00_00_00.000_121f03one_spgs_roadmaps142.pdf
+    /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_00_00_00.000_121f03one_spgx_roadmaps142.pdf
+    /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_00_00_00.000_121f03one_spgy_roadmaps142.pdf
+    /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_00_00_00.000_121f03one_spgz_roadmaps142.pdf
+    /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_08_00_00.000_121f03one_spgs_roadmaps142.pdf
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:
