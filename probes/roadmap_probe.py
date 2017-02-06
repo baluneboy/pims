@@ -17,6 +17,7 @@ from pims.files.utils import filter_filenames
 from pims.utils.pimsdateutil import datetime_to_ymd_path, unix2dtm
 from pims.files.filter_pipeline import FileFilterPipeline, MatchSensorAxRoadmap, BigFile
 from pims.patterns.probepats import _ROADMAP_PDF_BLANKS_PATTERN
+from pims.probes.tree_example import ExampleTreeBrowser
 
 my_pat2 = _ROADMAP_PDF_BLANKS_PATTERN.replace('SENSOR', '121f02.*').replace('PLOT', 'spg').replace('AXIS', 's')
 my_regex2 = re.compile(my_pat2)
@@ -151,6 +152,7 @@ def main(argv):
             sensor_tree = nr.get_result()
             if sensor_tree:
                 print json.dumps(sensor_tree, sort_keys=True, indent=3, separators=(',', ':'))
+                #xampleTreeBrowser(dict(sensor_tree)).main()
                 return 0 # zero for unix success
             else:
                 return -1
