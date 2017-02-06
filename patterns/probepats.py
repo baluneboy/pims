@@ -20,13 +20,15 @@ import sys, inspect
 # │                       └───────────────────────── 2: sensor (like 121f03one or 121f05)
 # └───────────────────────────────────────────────── 1: YMDhms (underscore delim start which 1/3 of day)
 ###############################################################################
-_ROADMAP_PDF_FILENAME_PATTERN = (
+_ROADMAP_PDF_BLANKS_PATTERN = (
     "(?P<year>\d{4})_(?P<month>\d{2})_(?P<day>\d{2})_"             # underscore-delimited YMD
     "(?P<hour>\d{2})_(?P<minute>\d{2})_(?P<second>\d{2}\.\d{3})_"  # underscore-delimited hms
-    "(?P<sensor>.*)_"                                              # sensor underscore
-    "(?P<plot>.*)(?P<axis>\w)_"                                    # plot type axis underscore
+    "(?P<sensor>SENSOR)_"                                          # SENSOR placeholder underscore
+    "(?P<plot>PLOT)(?P<axis>AXIS)_"                                # PLOT placeholder AXIS placeholder underscore
     "roadmaps(?P<fsnew>.*)\.pdf\Z"                                 # roadmaps fsNew dot pdf end of string
 )
+
+_ROADMAP_PDF_FILENAME_PATTERN = _ROADMAP_PDF_BLANKS_PATTERN.replace('SENSOR', '.*').replace('PLOT', '.*').replace('AXIS', '\w')
 
 
 def is_underscore_pattern(text):

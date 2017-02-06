@@ -435,18 +435,52 @@ if __name__ == "__main__":
     plotax = 'spgs'
     out_dir = '/misc/yoda/www/plots/user/strata/roadmap_flipbook'
     
-    d1 = datetime.datetime(2016, 4, 28)
-    d2 = datetime.datetime(2016, 5, 7)
-    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)
- 
-    d1 = datetime.datetime(2016, 5, 8)
-    d2 = datetime.datetime(2016, 5, 14)
-    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)   
+    #d1 = datetime.datetime(2016, 4, 28)
+    #d2 = datetime.datetime(2016, 5, 7)
+    #flipbook_roadmap(d1, d2, sensor, plotax, out_dir)
+    #
+    #d1 = datetime.datetime(2016, 5, 8)
+    #d2 = datetime.datetime(2016, 5, 14)
+    #flipbook_roadmap(d1, d2, sensor, plotax, out_dir)   
+    #
+    #d1 = datetime.datetime(2016, 5, 15)
+    #d2 = datetime.datetime(2016, 5, 21)
+    #flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 
+    #
+    #d1 = datetime.datetime(2016, 5, 22)
+    #d2 = datetime.datetime(2016, 5, 31)
+    #flipbook_roadmap(d1, d2, sensor, plotax, out_dir)
+    
+# - - -
 
-    d1 = datetime.datetime(2016, 5, 15)
-    d2 = datetime.datetime(2016, 5, 21)
+    d1 = datetime.datetime(2016, 6, 1)
+    d2 = datetime.datetime(2016, 6, 7)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)
+    
+    d1 = datetime.datetime(2016, 6, 8)
+    d2 = datetime.datetime(2016, 6, 14)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)   
+    
+    d1 = datetime.datetime(2016, 6, 15)
+    d2 = datetime.datetime(2016, 6, 21)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 
+    
+    d1 = datetime.datetime(2016, 6, 22)
+    d2 = datetime.datetime(2016, 6, 30)
     flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 
 
-    d1 = datetime.datetime(2016, 5, 22)
-    d2 = datetime.datetime(2016, 5, 31)
+    d1 = datetime.datetime(2016, 7, 1)
+    d2 = datetime.datetime(2016, 7, 7)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)
+    
+    d1 = datetime.datetime(2016, 7, 8)
+    d2 = datetime.datetime(2016, 7, 14)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir)   
+    
+    d1 = datetime.datetime(2016, 7, 15)
+    d2 = datetime.datetime(2016, 7, 21)
+    flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 
+    
+    d1 = datetime.datetime(2016, 7, 22)
+    d2 = datetime.datetime(2016, 7, 31)
     flipbook_roadmap(d1, d2, sensor, plotax, out_dir) 

@@ -37,6 +37,10 @@ class TimeGetter(object):
     def _get_time(self):
         return query_onerow_unixtime(self.table, host=self.host)
 
+#tg = TimeGetter('es03rt', host='chef')
+#tg = TimeGetter('121f02rt', host='manbearpig')
+#print unix2dtm(tg._get_time())
+#raise SystemExit
 
 class LocalTimeGetter(TimeGetter):
 
@@ -83,7 +87,7 @@ class CcsdsEeTimeGetter(EeTimeGetter):
     def _get_time(self):
         return query_timestamp_jimmy(self.table, host=self.host)
   
-    
+
 #etg2 = CcsdsEeTimeGetter('122f07', ee_id='122-f07', host='jimmy')
 #print unix2dtm(etg2._get_time())
 #raise SystemExit

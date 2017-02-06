@@ -43,12 +43,12 @@ def UnixToHumanTime(utime):
 	s[5] = atoi(s[5]) + fraction
 	return "%s-%s-%s %s:%s:%06.4f" % tuple(s)
 
-# create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on kyle
+# create dict of distinct coord_name (i.e. sensor) entries from pad.coord_system_db on craig
 def get_locations():
 	locations = {}
-	results = db_connect('select distinct(coord_name) from pad.coord_system_db', 'kyle')
+	results = db_connect('select distinct(coord_name) from pad.coord_system_db', 'craig')
 	for r in results:
-		locs = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" order by time desc limit 1' % r[0], 'kyle')
+		locs = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" order by time desc limit 1' % r[0], 'craig')
 		locations[ r[0]] = locs[0][0]
 	return locations
 
@@ -61,9 +61,8 @@ def get_samplerate(p):
 		return pkt.rate()
 
 if __name__ == '__main__':
-	pimsComputers = ['jimmy', 'chef', 'ike', 'butters', 'kyle', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie']
-	#pimsComputers.remove('butters')
-	#pimsComputers.remove('manbearpig')
+	pimsComputers = ['jimmy', 'chef', 'ike', 'butters', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie', 'craig']
+	pimsComputers.remove('mr-hankey')
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
 
@@ -77,11 +76,12 @@ if __name__ == '__main__':
 		else:
 			up[c]=1
 
-	# get locations (if kyle's up)
-	locs = get_locations() if up['kyle'] else None
+	# get locations (if craig's up)
+	locs = get_locations() if up['craig'] else None
+	pimsComputers.remove('craig')
 
 	timeNow = time()
-	print ' time now: ', UnixToHumanTime(timeNow)
+	print 49*' ', 'time now:', UnixToHumanTime(timeNow)
 	print '%11s %12s %8s %19s %19s %10s' % ('COMPUTER', '_____________TABLE', '___COUNT', '___________MIN-TIME', '___________MAX-TIME', '________AGE'),
 	print '%8s %s' % ('____RATE', 'LOCATION')
 
@@ -124,7 +124,7 @@ if __name__ == '__main__':
 						packet = None
 					else:
 						# get three values in one pass in case slow database is not indexed
-						if n == 'butters':
+						if n in ['chef', 'butters', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie', 'craig', 'localhost']:
 							r = mariadb_kludge_for_time_triplet(sensor, n)
 						else:
 							r = db_connect('select max(time), from_unixtime(min(time)), from_unixtime(max(time)) from %s' % sensor, n)
@@ -139,13 +139,16 @@ if __name__ == '__main__':
 					if locs:
 						loc = locs[sensor] if sensor in locs else 'None'
 					else:
-						loc = 'kyle down'
+						loc = 'craig down'
 					
 					# get sample rate from packet blob
 					if packet:
-						rate = '%.1f' % get_samplerate(packet) # "FIXME WHY NameError FOR [STALE] SENSORS?"
-					else:
-						rate = '0.0' # "FIXME WHY NameError FOR [STALE] SENSORS?" This may be the fix!?
+						try:
+							rate = '%.1f' % get_samplerate(packet) # "FIXME WHY NameError FOR [STALE] SENSORS?"
+						except Exception, e:
+							#print 'issue trying to get sample rate for %s on %s' % (sensor, c)
+							rate = '-1.0' # FIXME or else time will be reversed like in that movie
+							pass
 					
 					# output text
 					if (c == 'manbearpig') and (sensor != 'es03'): continue

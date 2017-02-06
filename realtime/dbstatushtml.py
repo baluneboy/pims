@@ -64,7 +64,11 @@ def age_fmt(x):
 # function to format DOY GMT
 def doy_fmt(x):
     """function to format DOY GMT"""
-
+    
+    # FIXME had to add this kludge when we moved this code from manbearpig to jimmy
+    if x == '0':
+        return '<span style="color: blue">empty'
+    
     d = pd.to_datetime(x)
     delta = datetime.datetime.now() - d
     deltasec = delta.total_seconds()
@@ -125,7 +129,7 @@ def active_sensors_css_html(df, which):
     s = buf_html.getvalue()
     
     # turn string into bs
-    soup = BeautifulSoup(s)
+    soup = BeautifulSoup(s, 'lxml')
     
     # get the one and only table here
     tables = soup.find_all('table')
@@ -165,7 +169,8 @@ def filter_active_sensors(df):
     df = df[~df['Sensor'].isin(_IGNORE_SENSORS)]
     
     # sort
-    df.sort(columns='LastPkt', axis=0, ascending=False, inplace=True)
+    #df.sort(columns='LastPkt', axis=0, ascending=False, inplace=True)
+    df.sort_values(by='LastPkt', axis=0, ascending=False, inplace=True)
     
     # clarify rate
     df.rename(columns={'Rate': 'Rate(sa/sec)', 'AgeSec': 'Age(sec)'}, inplace=True)    
@@ -191,7 +196,8 @@ def keep_only(df, str_contains):
     df = df[df['Sensor'].str.contains(str_contains)]
     
     # sort by sensor (not by GMT LastPkt)
-    df.sort(columns='Sensor', axis=0, ascending=True, inplace=True)    
+    #df.sort(columns='Sensor', axis=0, ascending=True, inplace=True)    
+    df = df.sort_values(by='Sensor', axis=0, ascending=True)    
     
     return df
 
@@ -210,7 +216,8 @@ def drop_EE(df):
     df_sams = drop_MAMS(df_not_ee)
 
     # sort by sensor (not by GMT LastPkt)
-    df_sams.sort(columns='Sensor', axis=0, ascending=True, inplace=True)
+    #df_sams.sort(columns='Sensor', axis=0, ascending=True, inplace=True)
+    df_sams = df_sams.sort_values(by='Sensor', axis=0, ascending=True)
     
     df_mams = keep_only(df_not_ee, 'oss|hirap')
     
