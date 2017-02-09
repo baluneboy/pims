@@ -124,20 +124,27 @@ class YoungFile(object):
 # for filter pipeline, an mp3 file callable class
 class MinutesLongMp3File(object):
 
-    def __init__(self, min_minutes=0.9):
+    def __init__(self, min_minutes=0.9, max_minutes=10.0):
         self.min_minutes = min_minutes
+        self.max_minutes = max_minutes
         
     def __call__(self, file_list):
         for f in file_list:
-            if self.get_mp3_duration_minutes(f) >= self.min_minutes:
+            m = self.get_mp3_duration_minutes(f)
+            if m >= self.min_minutes and m < self.max_minutes:
                 yield f
 
     def __str__(self):
-        return 'is a mp3 file with duration of at least %0.1f minutes' % self.min_minutes    
+        return 'is mp3 file with %0.1f <= duration < %.1f minutes' % (self.min_minutes, self.max_minutes)
 
     def get_mp3_duration_minutes(self, fname):
-        audio = MP3(fname)
-        return audio.info.length / 60.0
+        try:
+            audio = MP3(fname)
+            m = audio.info.length / 60.0
+        except Exception, e:
+            m = -1.0 # could not get dur minutes
+        return m
+
 
 
 # for roadmap probe (matches sensor and axis)
@@ -177,7 +184,8 @@ def file_missing(file_list):
 def demo():
     
     # Initialize processing pipeline (no file list as input yet)
-    ffp = FileFilterPipeline(FileExists(), BigFile(min_bytes=33), EndsWith('mp3'))
+    #ffp = FileFilterPipeline(BigFile(min_bytes=33), EndsWith('mp3'))
+    ffp = FileFilterPipeline(MinutesLongMp3File(min_minutes=0.9, max_minutes=10.1))
     print ffp
     
     # Apply processing pipeline input #1 (now ffp is callable)

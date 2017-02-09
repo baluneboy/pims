@@ -16,7 +16,6 @@
 #   been stripped of their garbage URL info yet. It'll say 0 bytes, but don't
 #   worry, they've downloaded.
 
-
 import os
 import sys
 import argparse
@@ -432,7 +431,9 @@ def write_podcast(item, chan_loc, date, type):
             # FIXME this is where we add entry to GrabbedPodcasts.db
             artist2, title2, genre2 = get_mp3_artist_title_genre(local_file)
             conn2, cur2 = get_db_connection_cursor()
-            insert_grabbed_podcast(cur2, conn2, artist2, title2, genre2)
+            dtm2 = datetime.datetime.now()
+            time2 = dtm2.strftime('%Y-%m-%d %H:%M:%S')
+            insert_grabbed_podcast(cur2, conn2, artist2, title2, genre2, time2)
             
             return 1
         except urllib2.URLError, e:

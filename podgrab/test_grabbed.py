@@ -3,39 +3,23 @@
 import os
 import sys
 import sqlite3
+import datetime
+
+from pims.podgrab.podutils import get_mp3_artist_title_genre, get_db_connection_cursor, insert_grabbed_podcast
+from pims.podgrab.podutils import add_easy_tags
 
 _THIS_DIR = os.path.realpath(os.path.dirname(sys.argv[0]))
 
-def does_db_exist(db_dir=_THIS_DIR, db_name='GrabbedPodcasts.db'):
-    if os.path.exists(db_dir + os.sep + db_name):
-        return True
-    else:
-        return False
 
-def connect_db(db_dir=_THIS_DIR, db_name='GrabbedPodcasts.db'):
-    conn = sqlite3.connect(db_dir + os.sep + db_name)
-    return conn
-
-def get_db_connection_cursor(db_dir=_THIS_DIR, db_name='GrabbedPodcasts.db'):
-    if does_db_exist(db_dir, db_name=db_name):
-        connection = connect_db(db_dir, db_name=db_name)
-        if not connection:
-            error_string = "Could not connect to %s database file!" % db_name
-            connection, cursor = None, None
-        else:
-            cursor = connection.cursor()
-    return connection, cursor
-
-def insert_grabbed_podcast(cur, conn, artist, title):
-    row = (artist, title)
-    cur.execute('INSERT INTO podcasts(artist, title) VALUES (?, ?)', row)
-    conn.commit()
-
-def main():
-    artist = 'Big Betty'
-    title = 'Chomp Down Betty'
-    conn, cur = get_db_connection_cursor()
-    insert_grabbed_podcast(cur, conn, artist, title)
+def demo_one():
+    artist2 = 'Charlie Chopsticks'
+    title2 = 'Beat The Monkey'
+    genre2 = 'md5-sum'
+    conn2, cur2 = get_db_connection_cursor()
+    dtm2 = datetime.datetime.now()
+    time2 = dtm2.strftime('%Y-%m-%d %H:%M:%S')
+    insert_grabbed_podcast(cur2, conn2, artist2, title2, genre2, time2)    
+    
 
 def count_match_artist_title(artist, title, table_name='podcasts', db_name='GrabbedPodcasts.db', db_dir='/Users/ken/dev/programs/python/pims/podgrab'):
 
@@ -53,5 +37,6 @@ def count_match_artist_title(artist, title, table_name='podcasts', db_name='Grab
 
 
 if __name__ == "__main__":
-    n = count_match_artist_title('Big Betty', 'Chomp Down Betty')
-    print n
+    #n = count_match_artist_title('Big Betty', 'Chomp Down Betty')
+    #print n
+    demo_one()

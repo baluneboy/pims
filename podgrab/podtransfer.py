@@ -99,7 +99,8 @@ def secure_copy(params):
     
     for mp3file in mp3_files:
         # FIXME is this place to see if we already grabbed mp3file via db query? if yes, continue to next mp3file (no scp)
-        dest = 'ken@192.168.0.199:' + destdir
+        #dest = 'ken@192.168.1.121:' + destdir
+        dest = 'ken@macmini2:' + destdir
         print 'start scp from %s to %s' % (mp3file, dest) #; continue
         scp_cmd = ['scp', mp3file, dest]
         retcode = subprocess.call(scp_cmd)
