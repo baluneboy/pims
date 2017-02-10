@@ -36,13 +36,21 @@ def str2int(s):
 # check for reasonableness of parameters
 def parameters_ok():
     """check for reasonableness of parameters"""
+   
+    # write or just show results?
+    try:
+        parameters['write_csv'] = eval(parameters['write_csv'])
+        assert( isinstance(parameters['write_csv'], bool))
+    except Exception, err:
+        print 'cound not handle write_csv parameter, was expecting it to eval to True or False'
+        return False   
     
     # verify paths exist
     if not os.path.exists(parameters['pad_path']):
         print 'the path (%s) does not exist' % parameters['pad_path']
         return False
     parameters['csv_file'] = os.path.join(parameters['csv_path'], parameters['sensor'] + '.csv')
-    if not os.path.exists(parameters['csv_file']):
+    if not os.path.exists(parameters['csv_file']) and parameters['write_csv']:
         print 'the csv file (%s) does not exist' % parameters['csv_file']
         return False
     
@@ -51,15 +59,7 @@ def parameters_ok():
         is_ok = str2int(param)
         if not is_ok:
             return False
-
-    # write or just show results
-    try:
-        parameters['write_csv'] = eval(parameters['write_csv'])
-        assert( isinstance(parameters['write_csv'], bool))
-    except Exception, err:
-        print 'cound not handle write_csv parameter, was expecting it to eval to True or False'
-        return False    
-    
+       
     return True # all OK; otherwise, we would've returned False above
 
 

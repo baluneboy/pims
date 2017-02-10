@@ -252,6 +252,14 @@ def filter_filenames(dirpath, predicate):
     /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_00_00_00.000_121f03one_spgy_roadmaps142.pdf
     /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_00_00_00.000_121f03one_spgz_roadmaps142.pdf
     /misc/yoda/www/plots/batch/year2015/month03/day17/2015_03_17_08_00_00.000_121f03one_spgs_roadmaps142.pdf
+    >>> # EXAMPLE 3 ---------------------------------------------------------
+    >>> from pims.patterns.probepats import _OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN
+    >>> dirpath = os.path.join('/misc/yoda/www/plots/batch', 'year2016/month07/day01')
+    >>> pat = '.*' + _OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN
+    >>> for f in list(filter_filenames(dirpath, re.compile(pat).match))[0:3]: print f
+    /misc/yoda/www/plots/batch/year2016/month07/day01/2016_07_01_00_ossbtmf_roadmap.pdf
+    /misc/yoda/www/plots/batch/year2016/month07/day01/2016_07_01_08_ossbtmf_roadmap.pdf
+    /misc/yoda/www/plots/batch/year2016/month07/day01/2016_07_01_16_ossbtmf_roadmap.pdf
     """
     for root, dirnames, filenames in os.walk(dirpath):
         for filename in filenames:

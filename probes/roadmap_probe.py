@@ -16,20 +16,20 @@ from pims.lib.niceresult import NiceResult
 from pims.files.utils import filter_filenames
 from pims.utils.pimsdateutil import datetime_to_ymd_path, unix2dtm
 from pims.files.filter_pipeline import FileFilterPipeline, MatchSensorAxRoadmap, BigFile
-from pims.patterns.probepats import _ROADMAP_PDF_BLANKS_PATTERN
+from pims.patterns.probepats import _ROADMAP_PDF_BLANKS_PATTERN, _OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN
 from pims.probes.tree_example import ExampleTreeBrowser
+from pims.pad.daily_set import _TWODAYSAGO
 
-my_pat2 = _ROADMAP_PDF_BLANKS_PATTERN.replace('SENSOR', '121f02.*').replace('PLOT', 'spg').replace('AXIS', 's')
-my_regex2 = re.compile(my_pat2)
 
 # input parameters
 defaults = {
-'dir_name':    '/misc/yoda/www/plots/batch',         # base path
-'first_day':   '2016-12-01',                         # first day to process
-'last_day':    '2016-12-03',                         # last day to process
-'bname_blanks_pat': _ROADMAP_PDF_BLANKS_PATTERN,     # regular expression pattern to match
-'sensors':     '121f02,121f03,121f04,121f05,121f08', # comma-sep list of sensors
-'axes':        's,x,y,z',                            # comma-sep list of axis chars
+'dir_name':     '/misc/yoda/www/plots/batch',         # base path
+'first_day':    _TWODAYSAGO,                          # first day to process
+'last_day':     _TWODAYSAGO,                          # last day to process
+'bname_blanks_pat': _ROADMAP_PDF_BLANKS_PATTERN,      # regular expression pattern to match
+'sensors':      '121f02,121f03,121f04,121f05,121f08', # comma-sep list of sensors
+'axes':         's,x,y,z',                            # comma-sep list of axis chars
+'order_by_day': 'True',                               # order_by_day; True for day/sensor; else, sensor/day
 }
 parameters = defaults.copy()
 
@@ -44,19 +44,31 @@ def get_day_roadmap_pdf_files(base_dir, day, basename_pat):
 def get_day_sensor_axis_roadmap_pdf_files(day_roadmap_pdf_files, sensor, axis):
     """return list of roadmap spg files for given day, sensor and axis"""
     # FIXME empirically determine good threshold value for min_bytes arg in BigFile
-    ffp = FileFilterPipeline(MatchSensorAxRoadmap(sensor, axis), BigFile(min_bytes=20))
+    if sensor == 'ossbtmf':
+        ffp = FileFilterPipeline(BigFile(min_bytes=20))        
+    else:
+        ffp = FileFilterPipeline(MatchSensorAxRoadmap(sensor, axis), BigFile(min_bytes=20))
     return list(ffp(day_roadmap_pdf_files))
 
 
-def get_roadmap_sensor_tree(parameters):
-    sensor_tree = tree()    
+def get_loop_params(parameters):
     dir_name = parameters['dir_name']
     start_date = parameters['first_day']
     end_date = parameters['last_day']
     sensors = parameters['sensors']
-    axes = parameters['axes']
-    basename_pat = _ROADMAP_PDF_BLANKS_PATTERN.replace('SENSOR', '.*').replace('PLOT', '.*').replace('AXIS', '\w')
+    if sensors == ['ossbtmf']:
+        axes = ['3']
+        basename_pat = _OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN
+    else:
+        axes = parameters['axes']
+        basename_pat = _ROADMAP_PDF_BLANKS_PATTERN.replace('SENSOR', '.*').replace('PLOT', '.*').replace('AXIS', '\w')
     date_range = pd.date_range(start=start_date, end=end_date)
+    return dir_name, start_date, end_date, sensors, axes, basename_pat, date_range
+
+
+def get_roadmap_sensor_tree(parameters):
+    dir_name, start_date, end_date, sensors, axes, basename_pat, date_range = get_loop_params(parameters)
+    sensor_tree = tree()    
     for day in date_range:
         day_pdf_files = get_day_roadmap_pdf_files(dir_name, day, basename_pat)
         for sensor in sensors:
@@ -64,6 +76,26 @@ def get_roadmap_sensor_tree(parameters):
                 pdf_files = get_day_sensor_axis_roadmap_pdf_files(day_pdf_files, sensor, axis)
                 sensor_tree[sensor][day.strftime('%Y-%m-%d')][axis] = [ os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') for f in pdf_files ]
     return sensor_tree
+
+
+def get_roadmap_day_tree(parameters):
+    dir_name, start_date, end_date, sensors, axes, basename_pat, date_range = get_loop_params(parameters)    
+    day_tree = tree()    
+    for sensor in sensors:
+        for day in date_range:
+            day_pdf_files = get_day_roadmap_pdf_files(dir_name, day, basename_pat)
+            for axis in axes:
+                pdf_files = get_day_sensor_axis_roadmap_pdf_files(day_pdf_files, sensor, axis)
+                day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = [ os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') for f in pdf_files ]
+    return day_tree
+
+
+def get_roadmap_tree(parameters):
+    if parameters['order_by_day']:
+        roadmap_tree = get_roadmap_day_tree(parameters)
+    else:
+        roadmap_tree = get_roadmap_sensor_tree(parameters)
+    return roadmap_tree
 
 
 def parameters_ok():
@@ -110,6 +142,13 @@ def parameters_ok():
         print 'could not get comma-sep list of axis chars: %s' % e.message,
         print parameters['axes']
         return False
+
+    # get hierarchy order
+    try:
+        parameters['order_by_day'] = eval(parameters['order_by_day'])
+    except Exception, e:
+        print 'could not cast "order_by_day" parameter as boolean: %s' % e.message,
+        return False
     
     # be sure user did not mistype or include a parameter we are not expecting
     s1, s2 = set(parameters.keys()), set(defaults.keys())
@@ -147,11 +186,11 @@ def main(argv):
             parameters[pair[0]] = pair[1]
     else:
         if parameters_ok():
-            nr = NiceResult(get_roadmap_sensor_tree, parameters)
+            nr = NiceResult(get_roadmap_tree, parameters)
             nr.do_work()
-            sensor_tree = nr.get_result()
-            if sensor_tree:
-                print json.dumps(sensor_tree, sort_keys=True, indent=3, separators=(',', ':'))
+            my_tree = nr.get_result()
+            if my_tree:
+                print json.dumps(my_tree, sort_keys=True, indent=3, separators=(',', ':'))
                 #xampleTreeBrowser(dict(sensor_tree)).main()
                 return 0 # zero for unix success
             else:

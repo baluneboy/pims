@@ -32,16 +32,20 @@ Features:
 
 import os
 import urwid
+import json
+
 
 class ExampleTreeWidget(urwid.TreeWidget):
     """ Display widget for leaf nodes """
     def get_display_text(self):
         return self.get_node().get_value()['name']
 
+
 class ExampleNode(urwid.TreeNode):
     """ Data storage object for leaf nodes """
     def load_widget(self):
         return ExampleTreeWidget(self)
+
 
 class ExampleParentNode(urwid.ParentNode):
     """ Data storage object for interior/parent nodes """
@@ -62,7 +66,8 @@ class ExampleParentNode(urwid.ParentNode):
             childclass = ExampleNode
         return childclass(childdata, parent=self, key=key, depth=childdepth)
 
-class ExampleTreeBrowser:
+
+class ExampleTreeBrowser(object):
     palette = [
         ('body', 'white', 'black'),
         ('focus', 'light gray', 'dark blue', 'standout'),
@@ -101,17 +106,18 @@ class ExampleTreeBrowser:
     def main(self):
         """Run the program."""
         self.loop = urwid.MainLoop(self.view, self.palette,
-            unhandled_input=self.unhandled_input)
+            unhandled_input = self.unhandled_input)
         self.loop.run()
 
     def unhandled_input(self, k):
         if k in ('q','Q'):
             raise urwid.ExitMainLoop()
 
+
 def get_example_tree():
     """ generate a quick leaf tree for demo purposes """
     retval = {"name":"parent","children":[]}
-    for i in range(5):
+    for i in range(11):
         retval['children'].append({"name":"child " + str(i)})
         retval['children'][i]['children']=[]
         for j in range(5):
@@ -119,9 +125,12 @@ def get_example_tree():
                                                       str(i) + "." + str(j)})
     return retval
 
+
 def main():
     sample = get_example_tree()
-    ExampleTreeBrowser(sample).main()
+    print json.dumps(sample, sort_keys=True, indent=3, separators=(',', ':'))
+    #ExampleTreeBrowser(sample).main()
+
 
 if __name__=="__main__":
     main()

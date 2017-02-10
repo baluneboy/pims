@@ -100,12 +100,12 @@ class FileTreeWidget(FlagFileWidget):
     def get_display_text(self):
         return self.get_node().get_key()
 
-    def unhandled_keys(self, size, key):
-        """
-        Overriding this method to intercept keystrokes in this subclasses.
-        Default behavior WOULD HAVE BEEN: Toggle flagged on space, ignore other keys.
-        """
-        return key
+    #def unhandled_keys(self, size, key):
+    #    """
+    #    Overriding this method to intercept keystrokes in this subclasses.
+    #    Default behavior (without just 'return key') is: Toggle flagged on space, ignore other keys.
+    #    """
+    #    return key
 
 class EmptyWidget(urwid.TreeWidget):
     """A marker for expanded directories with no contents."""

@@ -31,6 +31,30 @@ _ROADMAP_PDF_BLANKS_PATTERN = (
 _ROADMAP_PDF_FILENAME_PATTERN = _ROADMAP_PDF_BLANKS_PATTERN.replace('SENSOR', '.*').replace('PLOT', '.*').replace('AXIS', '\w')
 
 
+###############################################################################
+# ossbtmf roadmap PDF full path pattern
+# -----------------------------------------------------------------------------
+# like 2016_07_01_00_ossbtmf_roadmap.pdf
+# where filename convention is:
+# 2016_07_01_00_ossbtmf_roadmap.pdf
+# 1                       2         3  4         5  
+# ┬                       ┬         ┬  ┬         ┬
+# │                       │         │  │         │
+# │                       │         │  │         │
+# │                       │         │  │         └── 5: digits for new sample rate
+# │                       │         │  └──────────── 4: axis (single char like x,y,z,s)
+# │                       │         └─────────────── 3: plot type (like spg)
+# │                       └───────────────────────── 2: sensor (like 121f03one or 121f05)
+# └───────────────────────────────────────────────── 1: YMDhms (underscore delim start which 1/3 of day)
+###############################################################################
+_OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN = (
+    "(?P<year>\d{4})_(?P<month>\d{2})_(?P<day>\d{2})_"             # underscore-delimited YMD
+    "(?P<hour>\d{2})_"                                             # hh
+    "(?P<sensor>ossbtmf)_"                                         # SENSOR placeholder underscore
+    "roadmap\.pdf\Z"                                               # roadmap dot pdf end of string
+)
+
+
 def is_underscore_pattern(text):
     """return boolean (True) for match of 'underscore pattern' string"""
     if not isinstance(text, str): return False
