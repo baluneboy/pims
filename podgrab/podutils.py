@@ -106,9 +106,9 @@ def get_db_connection_cursor(db_dir=_THIS_DIR, db_name='GrabbedPodcasts.db'):
     return connection, cursor
 
 
-def insert_grabbed_podcast(cur, conn, artist, title, genre):
-    row = (artist, title, genre)
-    cur.execute('INSERT INTO podcasts(artist, title, genre) VALUES (?, ?, ?)', row)
+def insert_grabbed_podcast(cur, conn, artist, title, genre, time):
+    row = (artist, title, genre, time)
+    cur.execute('INSERT INTO podcasts(artist, title, genre, time) VALUES (?, ?, ?, ?)', row)
     conn.commit()
 
 

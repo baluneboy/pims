@@ -65,7 +65,7 @@ class ExampleParentNode(urwid.ParentNode):
 
 class ExampleTreeBrowser:
     palette = [
-        ('body', 'white', 'black'),
+        ('body', 'white', 'dark blue'),
         ('focus', 'light gray', 'dark blue', 'standout'),
         ('head', 'yellow', 'black', 'standout'),
         ('foot', 'light gray', 'black'),
