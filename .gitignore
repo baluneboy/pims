@@ -88,4 +88,7 @@ BlueOrigin.komodoproject
 # Podcast db files
 podgrab/*.db
 
+# Probes
 probes.komodoproject
+
+*.py.old
