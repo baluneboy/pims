@@ -143,8 +143,8 @@ class MinutesLongMp3File(object):
             m = audio.info.length / 60.0
         except Exception, e:
             m = -1.0 # could not get dur minutes
-        return m
 
+        return m
 
 
 # for roadmap probe (matches sensor and axis)
@@ -189,7 +189,11 @@ def demo():
     print ffp
     
     # Apply processing pipeline input #1 (now ffp is callable)
-    inp1 = ['/tmp/one.mp3', '/tmp/two.not', '/tmp/three.121f03.header', '/tmp/four.txt', '/tmp/five.not']
+    inp1 = ['/Users/ken/Music/iTunes/iTunes Media/Podcasts/The Math Dude Quick and Dirty Tips to Make Math Easier/227 227 TMD Polygon Puzzle_ How Many Degrees Are In a Polygon_.mp3',
+            "/Users/ken/Music/iTunes/iTunes Media/Podcasts/Merriam-Webster's Word of the Day/peradventure.mp3",
+            '/tmp/three.121f03.header',
+            '/tmp/four.txt',
+            '/tmp/five.not']
     for f in ffp(inp1):
         print f
 
@@ -209,4 +213,4 @@ def demo2():
         print f  
     
 if __name__ == "__main__":
-    demo2()
+    demo()

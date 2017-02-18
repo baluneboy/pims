@@ -86,7 +86,9 @@ blueorigin/
 BlueOrigin.komodoproject
 
 # Podcast db files
-podgrab/*.db
+podgrab/PodGrab.db
+podgrab/GrabbedPodcasts.db-journal
+podgrab/grabbed.db
 
 # Probes
 probes.komodoproject
