@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import matplotlib
+matplotlib.use('TkAgg')
+
 # update a distribution based on new data.
 import numpy as np
 import matplotlib.pyplot as plt
@@ -24,12 +27,13 @@ class UpdateDist(object):
         self.ax.axvline(prob, linestyle='--', color='black')
 
     def init(self):
+        """initialize (or reset) to empty data set"""
         self.success = 0
         self.line.set_data([], [])
         return self.line,
 
     def __call__(self, i):
-        # This way the plot can continuously run and we just keep
+        # this is way plot can continuously run and we just keep
         # watching new realizations of the process
         if i == 0:
             return self.init()
@@ -44,6 +48,5 @@ class UpdateDist(object):
 fig = plt.figure()
 ax = fig.add_subplot(1, 1, 1)
 ud = UpdateDist(ax, prob=0.7)
-anim = FuncAnimation(fig, ud, frames=np.arange(100), init_func=ud.init,
-        interval=100, blit=False)
+anim = FuncAnimation(fig, ud, frames=np.arange(100), init_func=ud.init, interval=100, blit=True, save_count=0)
 plt.show()

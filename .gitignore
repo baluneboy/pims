@@ -89,6 +89,7 @@ BlueOrigin.komodoproject
 podgrab/PodGrab.db
 podgrab/GrabbedPodcasts.db-journal
 podgrab/grabbed.db
+podgrab/GrabbedPodcasts.db
 
 # Probes
 probes.komodoproject
