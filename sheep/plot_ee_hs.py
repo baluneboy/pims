@@ -1,20 +1,20 @@
 #!/usr/bin/env python
 
-"""Example illustrating the use of plt.subplots().
-
-This function creates a figure and a grid of subplots with a single call, while
-providing reasonable control over how the individual plots are created.  For
-very refined tuning of subplot creation, you can still use add_subplot()
-directly on a new figure.
+"""make use of matplotlib plt.subplots here to do daily Plot of EE HS
 """
 
+import os
 import sys
 import numpy as np
+from datetime import datetime, timedelta
+from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter, WeekdayLocator, DayLocator, MONDAY
 from finplot import candlestick_yhltv
-from dateutil.parser import parse
-from dateutil.relativedelta import relativedelta
+from pims.lib.niceresult import NiceResult
+
+_SIXTEENDAYSAGO = str( datetime.now().date() - timedelta(days=16) )
 
 """
 EE_FIELD  maps2 VARNAME isa MTYPE
@@ -37,13 +37,30 @@ Ref +5V     --> refp5v      VOLTS
 Ref 0V      --> ref0v       VOLTS
 
 """
+# input parameters
+defaults = {
+'host':         'yoda',             # server to hit
+'schema':       'samsmon',          # schema to use
+'table':        'ee_packet',        # table to query
+'file_prefix':  '/tmp/eehsplots_',  # string 1st part of VOLTS or TEMPS png filename
+'date_start':   _SIXTEENDAYSAGO,    # date object for start time of plots
+'num_days':     '18',               # integer number of days to plot
+'minvol':       '43200',            # integer min # of samples for day; otherwise candle is gray
+}
+parameters = defaults.copy()
 
 class FigureSet(object):
+    """handle setup, plotting and figure saving for EE HS
+    for 4 EEs, there should ultimately be two of these used:
+    one figure 4x7 of voltages, and
+    one figure 4x9 of temperatures
+    """
 
-    def __init__(self, nrows, ncols, save_file):
+    def __init__(self, nrows, ncols, save_file, minvol=43200):
         self.nrows = nrows
         self.ncols = ncols
         self.save_file = save_file
+        self.minvol = minvol
         self.figsize = (10, 7.5)
         self.dpi = 300
         self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=self.figsize, dpi=self.dpi)
@@ -59,7 +76,7 @@ class FigureSet(object):
         self.axarr[r, c].xaxis.set_major_locator(self.mondays)
         self.axarr[r, c].xaxis.set_minor_locator(self.alldays)
         self.axarr[r, c].xaxis.set_major_formatter(self.weekFormatter)
-        candlestick_yhltv(self.axarr[r, c], sub_results)
+        candlestick_yhltv(self.axarr[r, c], sub_results, minvol=self.minvol)
 
         if c == 0:
             self.axarr[r, c].set_ylabel('%d%d' % (r,c))
@@ -76,14 +93,16 @@ class FigureSet(object):
         print 'done'
 
 class StatusHealthEePlot(object):
+    """query, then Status and Health EE Plot"""
 
-    def __init__(self, host, schema, table, file_prefix, date_start, num_days):
+    def __init__(self, host, schema, table, file_prefix, date_start, num_days, minvol):
         self.host = host
         self.schema = schema
         self.table = table
         self.file_prefix = file_prefix
         self.date_start = date_start
         self.num_days = num_days
+        self.minvol = minvol
         self.results = None
 
     def _DUMMY_QUERY(self):
@@ -112,11 +131,10 @@ class StatusHealthEePlot(object):
         # results = samsquery.fetch_num_days(host, schema, date1, date2)
 
         # FIXME (Year, month, day) tuples suffice as args for quotes_historical_yahoo
-        date1 = self.date_start - relativedelta(days = 1)
+        date1 = self.date_start - relativedelta(days = 1) # pre-pend extra day for "yesterday"
         date2 = self.date_start + relativedelta(days = self.num_days)
-        #date2 = (2016, 12, 14)
+        #print date1, date2
 
-        #results = quotes_historical_yahoo_ohlc('IBM', date1, date2)
         results = self._DUMMY_QUERY()
         if len(results) == 0:
             print 'no results!?'
@@ -132,8 +150,6 @@ class StatusHealthEePlot(object):
         #       low is today's min value
         #       volume is number of records for today
         self.results = results
-
-        # FIXME should we subclass candlestick so we can check "volume" num records on a day < 50% goes magenta?
 
     def plot(self, dtype):
         """plot date, open, high, low, close
@@ -162,7 +178,7 @@ class StatusHealthEePlot(object):
 
         plt.close('all')
         save_file = self.file_prefix + dtype + '.png'
-        figset = FigureSet(nrows, ncols, save_file)
+        figset = FigureSet(nrows, ncols, save_file, minvol=self.minvol)
 
         figset.fig.suptitle('%s for %d Days Starting on GMT %s' % (dtype.upper(), self.num_days, 'DAYONE'), fontsize=18)
 
@@ -191,23 +207,103 @@ class StatusHealthEePlot(object):
 
         figset.save()
 
-def main():
+def parameters_ok():
+    """check for reasonableness of parameters"""    
 
+    # FIXME with a great way to quickly verify connectivity to host.schema.table
+
+    # verify that base part of file_prefix exists
+    bpath = os.path.dirname(parameters['file_prefix'])
+    if not os.path.exists(bpath):
+        print 'file_prefix (%s) does not start with valid base path' % parameters['file_prefix']
+        return False
+    
+    # convert start day to date object
+    try:
+        parameters['date_start'] = parse( parameters['date_start'] ).date()
+    except Exception, e:
+        print 'could not get date_start input as date object: %s' % e.message
+        return False
+    
+    # make sure we can get an integer value here, as expected
+    try:
+        parameters['num_days'] = int(parameters['num_days'])
+    except Exception, e:
+        print 'could not get num_days as int: %s' % e.message
+        return False    
+    
+    # make sure we can get an integer value here, as expected
+    try:
+        parameters['minvol'] = int(parameters['minvol'])
+    except Exception, e:
+        print 'could not get minvol as int: %s' % e.message
+        return False
+    
+    # be sure user did not mistype or include a parameter we are not expecting
+    s1, s2 = set(parameters.keys()), set(defaults.keys())
+    if s1 != s2:
+        extra = list(s1-s2)
+        missing = list(s2-s1)
+        if extra:   print 'extra   parameters -->', extra
+        if missing: print 'missing parameters -->', missing
+        return False    
+
+    return True # all OK; otherwise, return False somewhere above
+
+def print_usage():
+    """print helpful text how to run the program"""
+    #FIXME with git keyword sub via following:
+    # http://stackoverflow.com/questions/11534655/git-keyword-substitution-like-those-in-subversion
+    #print version << BETTER GO AT THIS???
+    print 'usage: %s [options]' % os.path.abspath(__file__)
+    print '       options (and default values) are:'
+    for i in defaults.keys():
+        print '\t%s=%s' % (i, defaults[i])
+    
+def process_data(params):
+    """process data with parameters here (after we checked them earlier)"""
+       
     # get parameters, mostly for query of samsmon.ee_packet on yoda
-    host = 'yoda'
-    schema = 'samsmon'
-    table = 'ee_packet'
-    file_prefix = '/tmp/fileprefix'
-    date_start = parse('2016-01-11').date()
-    num_days = 18
+    host = parameters['host']
+    schema = parameters['schema']
+    table = parameters['table']
+    file_prefix = parameters['file_prefix']
+    date_start = parameters['date_start']
+    num_days = parameters['num_days']
+    minvol = parameters['minvol'] # half a day's worth, nominally
 
-    sheep = StatusHealthEePlot(host, schema, table, file_prefix, date_start, num_days)
+    # initialize object that will do query, then later produce plot(s)
+    sheep = StatusHealthEePlot(host, schema, table, file_prefix, date_start, num_days, minvol)
+    
+    # perform query
     sheep.query()
 
+    # produce plots
     sheep.plot('temps')
     sheep.plot('volts')
 
     return 0
 
+def main(argv):
+    """describe main routine here"""
+    
+    # parse command line
+    for p in sys.argv[1:]:
+        pair = p.split('=')
+        if (2 != len(pair)):
+            print 'bad parameter: %s' % p
+            break
+        else:
+            parameters[pair[0]] = pair[1]
+    else:
+        if parameters_ok():
+            nr = NiceResult(process_data, parameters)
+            nr.do_work()
+            result = nr.get_result()
+            return 0 # zero for unix success
+        
+    print_usage()  
+
 if __name__ == '__main__':
-    main()
+    """run main with cmd line args and return exit code"""
+    sys.exit(main(sys.argv))
