@@ -12,7 +12,7 @@ import sys
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter, WeekdayLocator, DayLocator, MONDAY
-from mpl_finance import candlestick_ohlc, quotes_historical_yahoo_ohlc
+from finplot import candlestick_yhltv
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
 
@@ -59,7 +59,7 @@ class FigureSet(object):
         self.axarr[r, c].xaxis.set_major_locator(self.mondays)
         self.axarr[r, c].xaxis.set_minor_locator(self.alldays)
         self.axarr[r, c].xaxis.set_major_formatter(self.weekFormatter)
-        candlestick_ohlc(self.axarr[r, c], sub_results, width=0.5, colordown='b', colorup='r')
+        candlestick_yhltv(self.axarr[r, c], sub_results)
 
         if c == 0:
             self.axarr[r, c].set_ylabel('%d%d' % (r,c))
@@ -90,7 +90,7 @@ class StatusHealthEePlot(object):
         results = [
                     (735974.0, 125.979, 127.896, 125.9274, 127.332,  4974400.0),
                     (735975.0, 127.736, 127.858, 125.3256, 127.018,  5078700.0),
-                    (735976.0, 127.591, 128.336, 125.297,  125.364,  4700100.0),
+                    (735976.0, 127.591, 128.336, 125.297,  125.364,    43199.0),
                     (735977.0, 126.094, 127.867, 125.4117, 127.026,  5709600.0),
                     (735978.0, 124.258, 125.086, 123.1651, 124.274,  8895400.0),
                     (735979.0, 124.359, 126.252, 122.3914, 122.439,  9979600.0),
@@ -99,7 +99,7 @@ class StatusHealthEePlot(object):
                     (735982.0, 119.155, 119.218, 116.379,  117.077,  9238400.0),
                     (735983.0, 116.699, 118.731, 116.255,  116.676,  5446000.0),
                     (735984.0, 116.837, 118.138, 116.8293, 117.163,  4617800.0),
-                    (735985.0, 117.293, 117.909, 115.3095, 115.605,  5026400.0),
+                    (735985.0, 117.293, 117.909, 115.3095, 115.605,    43199.0),
                     (735986.0, 115.89,  117.393, 115.6531, 116.810,  3942500.0),
                     (735987.0, 117.827, 119.266, 117.5174, 119.266,  8248100.0)
                     ]
