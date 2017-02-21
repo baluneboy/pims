@@ -412,9 +412,6 @@ def demo():
         print  '------------------------------'
         print gse_results
 
-#demo()
-#raise SystemExit
-
 def demo3():
     df = pd.DataFrame({'correlation':[0.5, 0.1,0.9], 'p_value':[0.1,0.8,0.01]})
     df.to_html('/tmp/trash3.html',
@@ -510,6 +507,19 @@ def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
     cursor.close()
     con.close()
 
+def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsmon', host='yoda'):
+    """get records from d1 to d2"""
+    t1 = d1.strftime('%Y-%m-%d')
+    t2 = d2.strftime('%Y-%m-%d')
+    query = 'select * from %s.%s where timestamp >= "%s" and timestamp < "%s";' % (schema, table, t1, t2)
+    con = mysql_con_yoda(db=schema)
+    cursor = con.cursor()
+    cursor.execute(query)
+    results = cursor.fetchall()
+    cursor.close()
+    con.close()
+    return results
+    
 # iterate over samsmon tables to delete records older than 1 day from each
 def prune_samsmon():
     """iterate over samsmon tables to delete records older than 1 day from each"""    
