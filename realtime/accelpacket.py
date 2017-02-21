@@ -2198,7 +2198,7 @@ if __name__ == "__main__":
 
     # SAMS-II test
 #    results = sqlConnect('select * from 121_e01 order by time limit 1', 'parrot.grc.nasa.gov')
-	results = sqlConnect('select * from 121f03 order by time limit 50', 'manbearpig')
+	results = sqlConnect('select * from 121f04 order by time limit 5', 'tweek')
 
     # Hirap test
 #    results = sqlConnect('select * from hirap order by time limit 1', 'vizquel.grc.nasa.gov')
@@ -2228,11 +2228,12 @@ if __name__ == "__main__":
 		print 'name:', guessPacket(i[1]).name()
 		print 'rate:', guessPacket(i[1]).rate()
 		print 'samples:', guessPacket(i[1]).samples()
+		print 'adjustment:', guessPacket(i[1]).adjustment()
 		#print 'measurementsPerSample:', guessPacket(i[1]).measurementsPerSample()
 		
 		print 'at dbTime:%.4f' % i[0], 'is a',
-		print guessPacket(i[1]).dump(1)
+		#print guessPacket(i[1]).dump(1)
 		#print guessPacket(i[1]).hexDump()
 		
 		p = guessPacket(i[1])
-		print 'Verification of Sample Rate:', (p.samples() - 1) / ( p.endTime() - p.time() )
+		print '\nVerification of Sample Rate:', (p.samples() - 1) / ( p.endTime() - p.time() )

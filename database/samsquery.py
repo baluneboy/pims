@@ -14,6 +14,8 @@ from pims.config.conf import get_db_params
 from pims.config.conf import get_config
 from pims.utils.datetime_ranger import DateRange
 
+# mysql -u root -p samsnew -e "select * from ee_packet where ee_id = '122-f07' AND timestamp > '2017-01-23 12:00' AND timestamp < '2017-01-24 12:00' order by timestamp ASC" > ee_data_bigun.csv
+
 # Get sensitive authentication credentials for internal MySQL db query
 _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
 _HOST_SAMS = 'yoda'
@@ -52,6 +54,12 @@ class EeStatusQuery(object):
         p = subprocess.Popen([cmdQuery], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
         results, err = p.communicate()
         return results
+
+class EeRtStatusQuery(EeStatusQuery):
+    
+    def _get_query(self):
+        query = 'SELECT * FROM samsmon.ee_packet ORDER BY timestamp DESC LIMIT 500;'
+        return query
 
 # FIXME this was abandoned for quicker, manual build of queries shown in comments below
 class SamsopsBak(object):
