@@ -6,7 +6,6 @@ for EE HS plotting here.
 
 from matplotlib.lines import Line2D
 from matplotlib.patches import Rectangle
-#                        alpha=alpha, ochl=False)
 
 def candlestick_yhltv(ax, quotes, width=0.4, colordown='blue', colorup='red', minvol=43200.0):
 
@@ -84,4 +83,3 @@ def candlestick_yhltv(ax, quotes, width=0.4, colordown='blue', colorup='red', mi
     ax.autoscale_view()
 
     return lines, patches
-
