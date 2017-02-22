@@ -106,6 +106,7 @@ class StatusHealthEePlot(object):
         self.results = None
 
     def _DUMMY_QUERY(self):
+        #             datenum  yestmed  todayhi   todaylo  todaymed  todayvolume
         results = [
                     (735974.0, 125.979, 127.896, 125.9274, 127.332,  4974400.0),
                     (735975.0, 127.736, 127.858, 125.3256, 127.018,  5078700.0),

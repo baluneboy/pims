@@ -3,6 +3,8 @@
 <project id="04bef6ab-62e1-7446-95e1-e0a53f032fba" kpf_version="5" name="sheep.komodoproject">
 <file id="348e5980-a445-ed43-aa92-787ca535099c" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="finplot.py" url="sheep/finplot.py">
 </file>
+<file id="57de75db-42df-b849-8f6e-20af1f836500" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="boxplot_example.py" url="sheep/boxplot_example.py">
+</file>
 <file id="7858b048-31b7-a949-9b34-cb3e3a0cdd5d" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="samsquery.py" url="database/samsquery.py">
 </file>
 <file id="93e5c767-9082-3048-95f4-7330a5e9dac0" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="plot_ee_hs.py" url="sheep/plot_ee_hs.py">

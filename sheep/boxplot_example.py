@@ -2,18 +2,18 @@
 
 import datetime
 import pandas as pd
-import mysql.connector
-from sqlalchemy import create_engine
+#import mysql.connector
+#from sqlalchemy import create_engine
 import matplotlib.pyplot as plt
 
-from pims.database.samsquery import query_ee_packet_hs
+#from pims.database.samsquery import query_ee_packet_hs
 
-def pickle_example(d1, d2):
-    t1 = d1.strftime('%Y-%m-%d')
-    print datetime.datetime.now(), '<<< BEG'
-    df = query_ee_packet_hs(d1, d2)
-    print datetime.datetime.now(), '<<< END'
-    df.to_pickle('/home/pims/temp/df_' + t1 + '.pkl')
+#def pickle_example(d1, d2):
+#    t1 = d1.strftime('%Y-%m-%d')
+#    print datetime.datetime.now(), '<<< BEG'
+#    df = query_ee_packet_hs(d1, d2)
+#    print datetime.datetime.now(), '<<< END'
+#    df.to_pickle('/home/pims/temp/df_' + t1 + '.pkl')
 
 def read_plot_pickle(fname, ee, head, ylim):
     meanprops = {
@@ -42,6 +42,6 @@ if __name__ == "__main__":
     #d2 = datetime.datetime(2017,2,19).date()
     #pickle_example(d1, d2)
     
-    read_plot_pickle('/home/pims/temp/df_2017-02-18.pkl', '122-f03', 0, [25, 26])
+    read_plot_pickle('/Users/ken/Downloads/df_ee_pkt_hs_2017-01-01.pkl', '122-f03', 0, [25, 27])
    
     
