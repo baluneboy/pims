@@ -14,7 +14,8 @@ from pims.config.conf import get_db_params
 from pims.config.conf import get_config
 from pims.utils.datetime_ranger import DateRange
 
-# mysql -u root -p samsnew -e "select * from ee_packet where ee_id = '122-f07' AND timestamp > '2017-01-23 12:00' AND timestamp < '2017-01-24 12:00' order by timestamp ASC" > ee_data_bigun.csv
+import mysql.connector
+from sqlalchemy import create_engine
 
 # Get sensitive authentication credentials for internal MySQL db query
 _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
@@ -507,18 +508,16 @@ def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
     cursor.close()
     con.close()
 
-def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsmon', host='yoda'):
+def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
     """get records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
     t1 = d1.strftime('%Y-%m-%d')
     t2 = d2.strftime('%Y-%m-%d')
-    query = 'select * from %s.%s where timestamp >= "%s" and timestamp < "%s";' % (schema, table, t1, t2)
-    con = mysql_con_yoda(db=schema)
-    cursor = con.cursor()
-    cursor.execute(query)
-    results = cursor.fetchall()
-    cursor.close()
-    con.close()
-    return results
+    query = "select * from %s.%s where timestamp >= '%s' and timestamp < '%s';" % (schema, table, t1, t2)
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
     
 # iterate over samsmon tables to delete records older than 1 day from each
 def prune_samsmon():
