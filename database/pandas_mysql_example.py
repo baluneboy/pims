@@ -4,19 +4,44 @@ import datetime
 import pandas as pd
 import mysql.connector
 from sqlalchemy import create_engine
+import matplotlib.pyplot as plt
 
 from pims.database.samsquery import query_ee_packet_hs
 
-def demo_query(host, uname, pword):
-    constr = 'mysql://%s:%s@%s/samsnew' % (uname, pword, host)
-    engine = create_engine(constr, echo=False)
-    df = pd.read_sql_query('select * from ee_packet ORDER BY timestamp DESC LIMIT 500;', con=engine)
-    print df
-
-if __name__ == "__main__":
-    d1 = datetime.datetime(2017,2,16).date()
-    d2 = datetime.datetime(2017,2,17).date()
+def pickle_example(d1, d2):
+    t1 = d1.strftime('%Y-%m-%d')
+    print datetime.datetime.now(), '<<< BEG'
     df = query_ee_packet_hs(d1, d2)
-    df_ee02 = df[ df['ee_id'] == '122-f02' ]
-    print len(df)
-    print len(df_ee02)
+    print datetime.datetime.now(), '<<< END'
+    df.to_pickle('/home/pims/temp/df_' + t1 + '.pkl')
+
+def read_plot_pickle(fname, ee, head, ylim):
+    meanprops = {
+        'marker': 'D',
+        'markeredgecolor': 'firebrick',
+        'markerfacecolor': 'lightgray',
+                  }
+    df = pd.read_pickle(fname)
+    dfss = df[ df['ee_id'] == ee ]
+    print dfss.describe()
+    h = 'head%d_temp' % head
+    ax = dfss.boxplot(column=[h + 'X', h + 'Y', h + 'Z'],return_type='axes', showmeans=True, meanprops=meanprops)
+    plt.setp(ax.set_ylim(ylim))
+    plt.title(ee)
+    plt.show()
+    
+if __name__ == "__main__":
+    
+    #d1 = datetime.datetime(2017,2,16).date()
+    #d2 = datetime.datetime(2017,2,17).date()
+    #pickle_example(d1, d2)
+    #d1 = datetime.datetime(2017,2,17).date()
+    #d2 = datetime.datetime(2017,2,18).date()
+    #pickle_example(d1, d2)
+    #d1 = datetime.datetime(2017,2,18).date()
+    #d2 = datetime.datetime(2017,2,19).date()
+    #pickle_example(d1, d2)
+    
+    read_plot_pickle('/home/pims/temp/df_2017-02-18.pkl', '122-f03', 0, [25, 26])
+   
+    
