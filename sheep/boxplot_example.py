@@ -31,7 +31,7 @@ def read_plot_pickle(fname, ee, head, ylim):
     plt.show()
     
 if __name__ == "__main__":
-    
+    pass
     #d1 = datetime.datetime(2017,2,16).date()
     #d2 = datetime.datetime(2017,2,17).date()
     #pickle_example(d1, d2)
@@ -42,6 +42,9 @@ if __name__ == "__main__":
     #d2 = datetime.datetime(2017,2,19).date()
     #pickle_example(d1, d2)
     
-    read_plot_pickle('/Users/ken/Downloads/df_ee_pkt_hs_2017-01-01.pkl', '122-f03', 0, [25, 27])
+
+    #read_plot_pickle('/Users/ken/Downloads/df_ee_pkt_hs_2017-01-01.pkl', '122-f03', 0, [25, 27])
+    read_plot_pickle('/home/pims/temp/df_2017-02-18.pkl', '122-f03', 0, [25, 26])
+
    
     
