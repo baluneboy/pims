@@ -22,19 +22,30 @@ def simple_demo():
 class MyBaseClass(object):
     foo  = 4
     
-class MyClass(MyBaseClass, NodeMixin):
+class EeMeasure(MyBaseClass, NodeMixin):
     
-    def __init__(self, name, length, width, parent=None):
-        super(MyClass, self).__init__()
+    def __init__(self, name, values=None, parent=None):
+        super(EeMeasure, self).__init__()
         self.name = name
-        self.length = length
-        self.width = width
+        self.values = values
         self.parent = parent
-        
-my0 = MyClass('my0', 0, 0)
-my1 = MyClass('my1', 1, 0, parent=my0)
-my2 = MyClass('my2', 0, 2, parent=my0)
 
-for pre, _, node in RenderTree(my0):
-    treestr = u'%s%s' % (pre, node.name)
-    print treestr, node.length, node.width
+ee0 = EeMeasure('VOLTS')
+
+ee1 = EeMeasure('122-f02', parent=ee0) # no parent, so this is root node
+me1 = EeMeasure('ref_zero', parent=ee1)
+me2 = EeMeasure('plus5V',   parent=ee1)
+today_tups = [ (1,11,111), (2,22,222), (3,33,333) ]
+me2.values = today_tups
+
+ee2 = EeMeasure('122-f03', parent=ee0) # no parent, so this is root node
+me3 = EeMeasure('ref_zero', parent=ee2)
+me4 = EeMeasure('plus5V',   parent=ee2)
+today_tups = [ (1,11,111), (2,22,222), (3,33,333) ]
+me3.values = today_tups
+
+for pre, _, node in RenderTree(ee0):
+    treestr = u'%s%s:' % (pre, node.name)
+    print treestr, node.values
+
+print me3.

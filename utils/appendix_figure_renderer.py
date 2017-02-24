@@ -217,16 +217,16 @@ if __name__ == "__main__":
     # these dict items apply to all pages (header lines) in all appendices
     title = 'Analysis of SAMS Measurements on M-Vehicle in Zero Gravity Research Facility for Characterization Drops from January 20 to February 3, 2016'
     subtitle = 'SAMS-DOC-013'
-    mon_year = 'November, 2016'    
-    total_doc_pages = 118
+    mon_year = 'February, 2017'
+    total_doc_pages = 119
     
     # FIXME -- modify these (in Word, try Ctrl+G and go to page nums shown and verify those are first fig pages)    
     # Check your Word doc to see how these value should be set:
     drop_info = {
     # DROP   APPENDIX    FIRST_FIG_PAGE_NUM
-        2:  ('C',        25),
-        3:  ('D',        54),
-        4:  ('E',        83),
+        2:  ('C',        28),
+        3:  ('D',        57),
+        4:  ('E',        86),
     }
     for drop_num, tup in drop_info.iteritems():
         appendix_letter, fig1_page_num = tup[0], tup[1]
