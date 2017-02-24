@@ -2,6 +2,9 @@
 
 import os
 import re
+import json
+import datetime
+from dateutil import relativedelta
 import pandas as pd
 from dateutil.parser import parse
 from matplotlib.dates import date2num
@@ -10,7 +13,10 @@ from pims.utils.iterabletools import pairwise
 from pims.files.utils import filter_filenames
 
 # define measures to consider for truly tracking trending
-TEMPS = [
+MEAS_DICT = {
+    
+    'TEMPS':
+        [
         'head0_tempX',
         'head0_tempY',
         'head0_tempZ',
@@ -18,9 +24,10 @@ TEMPS = [
         'head1_tempY',
         'head1_tempZ',
         'tempbase'
-        ]          
-
-VOLTS = [
+        ],
+        
+    'VOLTS':
+        [
         'head0_plus5V',
         'head0_plus15V',
         'head0_minus15V',
@@ -31,6 +38,7 @@ VOLTS = [
         'ref_plus5V',
         'ref_zeroV'        # this one never seems to change (probably not actual measurement)
         ]
+}
 
 def get_dataframe_pickle_files(df_pickle_dir='/misc/yoda/www/plots/user/sheep'):
     # FIXME refine this with date range or regexp maybe instead of always getting all files
@@ -48,6 +56,9 @@ def read_df_from_file(fname):
         df_ee = df[ df['ee_id'] == ee ]
         ee_stats[ee] = df_ee.describe()
     return ee_stats
+
+def skeleton_get_stats(measures):
+    pass
 
 # FIXME this is bad form, we should have (measures, group) as inner loop; otherwise, you read same files for each group!
 def get_stats(measures, group):
@@ -122,6 +133,23 @@ def get_stats(measures, group):
     
     return stats
             
+def process_date_range(start_date, end_date, meas_dict):
+    stats = {}
+    date_range = pd.date_range(start=start_date, end=end_date)
+    for group, measures in meas_dict.iteritems():
+        for measure in measures:
+            today_tups = []
+            for d1 in date_range:
+                t1 = d1.strftime('%Y-%m-%d')
+                today_tups.append((d1, t1))
+                d2 = d1 + relativedelta.relativedelta(days=1)
+                #print 'working on %s' % t1,
+                #print 'done'
+            stats_tree[group][measure] = today_tups
+    print json.dumps(stats_tree, sort_keys=True, indent=3, separators=(',', ':'))
+
 if __name__ == "__main__":
-    vstats = get_stats(VOLTS, 'VOLTS')
-    tstats = get_stats(TEMPS, 'TEMPS')
+    d1 = datetime.datetime(2016,12,31).date()
+    d2 = datetime.datetime(2017,1,14).date()
+    process_date_range(d1, d2, MEAS_DICT)
+    #stats = get_stats(MEAS_DICT)
