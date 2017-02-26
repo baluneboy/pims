@@ -31,9 +31,9 @@ parameters = defaults.copy()
 
 class FigureSet(object):
     """handle setup, plotting and figure saving for EE HS
-    for 4 EEs, there should ultimately be two of these used:
-    one figure 4x7 of voltages, and
-    one figure 4x9 of temperatures
+    subplots have:
+    EEs      as columns
+    measures as rows
     """
 
     def __init__(self, nrows, ncols, save_file, minvol=43200):
@@ -41,10 +41,9 @@ class FigureSet(object):
         self.ncols = ncols
         self.save_file = save_file
         self.minvol = minvol
-        self.figsize = (10, 7.5)
+        self.figsize = (7.5, 10)
         self.dpi = 300
-        #self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=self.figsize, dpi=self.dpi)
-        self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', figsize=self.figsize, dpi=self.dpi)
+        self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=self.figsize, dpi=self.dpi)
         self._get_format_info()
 
     def _get_format_info(self):
@@ -52,7 +51,7 @@ class FigureSet(object):
         self.alldays = DayLocator()                  # minor ticks on the days
         self.weekFormatter = DateFormatter('%b %d')  # e.g., Jan 12
 
-    def add_subplot(self, r, c, sub_results, title):
+    def add_subplot(self, r, c, sub_results, meas, ee):
 
         self.axarr[r, c].xaxis.set_major_locator(self.mondays)
         self.axarr[r, c].xaxis.set_minor_locator(self.alldays)
@@ -60,9 +59,11 @@ class FigureSet(object):
         candlestick_yhltv(self.axarr[r, c], sub_results, minvol=self.minvol)
 
         if c == 0:
-            self.axarr[r, c].set_ylabel('%d%d' % (r,c))
+            title = meas.replace('plus', '+').replace('minus','-')
+            title = title.replace('head', 'se')
+            self.axarr[r, c].set_ylabel(title)
         if r == 0:
-            self.axarr[r, c].set_title(title)
+            self.axarr[r, c].set_title(ee)
 
         # date axis and autoscale view
         self.axarr[r, c].xaxis_date()
@@ -194,8 +195,8 @@ class StatusHealthEePlot(object):
         # each group (figure) has RxC subplots
         measures = self.group_measures[group]
         ees = self.get_ee_ids()
-        nrows = len(ees)       # Rows are EEs
-        ncols = len(measures)  # Columns are measures
+        nrows = len(measures)  # Rows    are measures
+        ncols = len(ees)       # Columns are EEs
 
         plt.close('all')
         save_file = self.file_prefix + group + '.png'
@@ -206,17 +207,17 @@ class StatusHealthEePlot(object):
         measures = self.group_measures[group]
         ees = self.get_ee_ids()
         
-        # outer-loop is rows (of EES)
+        # outer-loop is rows for measures
         r = 0
-        for ee in ees:
-            # inner-loop is columns (of measures)
+        for measure in measures:
+            # inner-loop is columns for EEs
             c = 0
-            for measure in measures:
+            for ee in ees:
                 # key into dict that has measures stats
                 key = (group, ee, measure)
                 subplot_stats = self.stats[key]
                 # add subplot for this EE-measure combo
-                ax = figset.add_subplot(r, c, subplot_stats, measure)
+                ax = figset.add_subplot(r, c, subplot_stats, measure, ee)
                 ax.set_ylim(YLIMS[measure])
                 c += 1
             r += 1
@@ -231,7 +232,7 @@ class StatusHealthEePlot(object):
         #                # expressed as a fraction of the average axis width
         # hspace = 0.2   # the amount of height reserved for white space between subplots,
                          # expressed as a fraction of the average axis height
-        figset.fig.subplots_adjust(left=0.1, hspace=0.25, wspace=0.15)
+        figset.fig.subplots_adjust(left=0.1, hspace=0.35, wspace=0.25)
 
         # hide x ticks for top plots and y ticks for right plots
         plt.setp([a.get_xticklabels() for a in figset.axarr[0, :]], visible=False)
