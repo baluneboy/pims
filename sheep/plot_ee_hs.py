@@ -12,40 +12,20 @@ from dateutil.relativedelta import relativedelta
 import matplotlib.pyplot as plt
 from matplotlib.dates import DateFormatter, WeekdayLocator, DayLocator, MONDAY
 from finplot import candlestick_yhltv
+
 from pims.lib.niceresult import NiceResult
+from pims.sheep.gather_data import process_date_range
+from pims.sheep.limits_measures import GROUP_MEASURES, YLIMS
 
 _SIXTEENDAYSAGO = str( datetime.now().date() - timedelta(days=16) )
 
-"""
-EE_FIELD  maps2 VARNAME isa MTYPE
-----------------------------------
-SE 0 Temp X --> se0tempx    TEMPS
-SE 0 Temp Y --> se0tempy    TEMPS
-SE 0 Temp Z --> se0tempz    TEMPS
-SE 0 +5V    --> se0p5v      VOLTS
-HEAD 0 +15V --> se0p15v     VOLTS
-HEAD 0 -15V --> se0n15v     VOLTS
-SE 1 Temp X --> se1tempx    TEMPS
-SE 1 Temp Y --> se1tempy    TEMPS
-SE 1 Temp Z --> se1tempz    TEMPS
-SE 1 +5V    --> se1p5v      VOLTS
-HEAD 1 +15V --> se1p15v     VOLTS
-HEAD 1 -15V --> se1n15v     VOLTS
-Base Temp   --> basetemp    TEMPS
-PC104 +5V   --> pc104p5v    VOLTS
-Ref +5V     --> refp5v      VOLTS
-Ref 0V      --> ref0v       VOLTS
-
-"""
 # input parameters
 defaults = {
-'host':         'yoda',             # server to hit
-'schema':       'samsmon',          # schema to use
-'table':        'ee_packet',        # table to query
-'file_prefix':  '/tmp/eehsplots_',  # string 1st part of VOLTS or TEMPS png filename
-'date_start':   _SIXTEENDAYSAGO,    # date object for start time of plots
-'num_days':     '18',               # integer number of days to plot
-'minvol':       '43200',            # integer min # of samples for day; otherwise candle is gray
+'file_prefix':      '/tmp/eehsplots_',  # string 1st part of VOLTS or TEMPS png filename
+'date_start':       _SIXTEENDAYSAGO,    # date object for start time of plots
+'num_days':         '14',               # integer number of days to plot
+'minvol':           '40000',            # integer min # of samples for day (count); otherwise, gray candle
+'pickle_dir':       '/Users/ken/Downloads', # where to find ee_stats pickle files
 }
 parameters = defaults.copy()
 
@@ -63,7 +43,8 @@ class FigureSet(object):
         self.minvol = minvol
         self.figsize = (10, 7.5)
         self.dpi = 300
-        self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=self.figsize, dpi=self.dpi)
+        #self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', sharey='row', figsize=self.figsize, dpi=self.dpi)
+        self.fig, self.axarr = plt.subplots(nrows, ncols, sharex='col', figsize=self.figsize, dpi=self.dpi)
         self._get_format_info()
 
     def _get_format_info(self):
@@ -86,6 +67,8 @@ class FigureSet(object):
         # date axis and autoscale view
         self.axarr[r, c].xaxis_date()
         self.axarr[r, c].autoscale_view()
+        
+        return self.axarr[r, c]
 
     def save(self):
         print 'writing', self.save_file, '...',
@@ -95,17 +78,16 @@ class FigureSet(object):
 class StatusHealthEePlot(object):
     """query, then Status and Health EE Plot"""
 
-    def __init__(self, host, schema, table, file_prefix, date_start, num_days, minvol):
-        self.host = host
-        self.schema = schema
-        self.table = table
-        self.file_prefix = file_prefix
+    def __init__(self, date_start, num_days, minvol, file_prefix, group_measures=GROUP_MEASURES, pickle_dir='/Users/ken/Downloads'):
         self.date_start = date_start
         self.num_days = num_days
         self.minvol = minvol
-        self.results = None
+        self.file_prefix = file_prefix
+        self.group_measures = group_measures
+        self.pickle_dir = pickle_dir
+        self.stats = None
 
-    def _DUMMY_QUERY(self):
+    def _OLD_DUMMY_QUERY(self):
         #             datenum  yestmed  todayhi   todaylo  todaymed  todayvolume
         results = [
                     (735974.0, 125.979, 127.896, 125.9274, 127.332,  4974400.0),
@@ -124,8 +106,31 @@ class StatusHealthEePlot(object):
                     (735987.0, 117.827, 119.266, 117.5174, 119.266,  8248100.0)
                     ]
         return results
+    
+    def _DUMMY_QUERY(self):
+        from collections import namedtuple
+        CandlePoint = namedtuple('CandlePoint', ['datenum', 'yesterday_median', 'high', 'low', 'median', 'volume'])
 
-    def query(self):
+        #             datenum  yestmed  todayhi   todaylo  todaymed  todayvolume
+        results = [
+                    CandlePoint(735974.0, 125.979, 127.896, 125.9274, 127.332,  4974400.0),
+                    CandlePoint(735975.0, 127.736, 127.858, 125.3256, 127.018,  5078700.0),
+                    CandlePoint(735976.0, 127.591, 128.336, 125.297,  125.364,    43199.0),
+                    CandlePoint(735977.0, 126.094, 127.867, 125.4117, 127.026,  5709600.0),
+                    CandlePoint(735978.0, 124.258, 125.086, 123.1651, 124.274,  8895400.0),
+                    CandlePoint(735979.0, 124.359, 126.252, 122.3914, 122.439,  9979600.0),
+                    CandlePoint(735980.0, 113.213, 118.501, 112.7767, 116.466, 16157800.0),
+                    CandlePoint(735981.0, 115.939, 119.562, 115.2426, 117.469,  8851600.0),
+                    CandlePoint(735982.0, 119.155, 119.218, 116.379,  117.077,  9238400.0),
+                    CandlePoint(735983.0, 116.699, 118.731, 116.255,  116.676,  5446000.0),
+                    CandlePoint(735984.0, 116.837, 118.138, 116.8293, 117.163,  4617800.0),
+                    CandlePoint(735985.0, 117.293, 117.909, 115.3095, 115.605,  9943199.0),
+                    CandlePoint(735986.0, 115.89,  117.393, 115.6531, 116.810,  3942500.0),
+                    CandlePoint(735987.0, 117.827, 119.266, 117.5174, 119.266,  8248100.0)
+                    ]
+        return results
+
+    def OLDquery(self):
         """query to get results; each record (row) is for a given EE and timestamp"""
 
         # FIXME the yahoo junk below gets replaced with new samsquery
@@ -152,42 +157,69 @@ class StatusHealthEePlot(object):
         #       volume is number of records for today
         self.results = results
 
-    def plot(self, dtype):
-        """plot date, open, high, low, close
+    def gather_stats(self):
+        date_end = self.date_start + relativedelta(days=self.num_days)
+        self.stats = process_date_range(self.date_start, date_end, self.group_measures, self.pickle_dir)
 
-        high-low is a vertical line for span
-        open-close is a rectangular bar for span
+    def get_ee_ids(self):
+        ees = None
+        if self.stats:
+            tmp = [ t[1] for t in self.stats.keys() ]
+            ees = sorted(list(set(tmp)))
+        return ees
 
-        high is max value from today
-        low  is min value from today
+    def plot(self, group):
+        """candlestick plot (datenum, yesterday_median, high, low, median, volume)
 
-        open  is median value from yesterday
-        close is median value from today
+        high-low is a vertical line for that span
+        yesterday-today is a rectangular bar for median span
 
-        if close >= open, use colorup to color (red) the bar; otherwise use colordown (blue)
+        high is 75% percentile from today
+        low  is 25% percentile from today
+
+        if yesterday_median >= today_median, use colorup to color (red) the bar; otherwise use colordown (blue)
         """
 
-        if len(self.results) == 0:
-            print 'no results!?'
+        if len(self.stats) == 0:
+            print 'no stats! not gathered yet?'
 
-        if dtype == 'temps':
-            nrows, ncols = 4, 7
-        elif dtype == 'volts':
-            nrows, ncols = 4, 9
-        else:
-            error('unrecognized data type identifier: %s' % dtype)
+        ## FIXME to make this fit more than 4 EEs in 4 rows
+        #if group == 'TEMPS':
+        #    nrows, ncols = 4, 7
+        #elif group == 'VOLTS':
+        #    nrows, ncols = 4, 9
+        #else:
+        #    raise Exception('unrecognized data type identifier: %s' % group)
+
+        # each group (figure) has RxC subplots
+        measures = self.group_measures[group]
+        ees = self.get_ee_ids()
+        nrows = len(ees)       # Rows are EEs
+        ncols = len(measures)  # Columns are measures
 
         plt.close('all')
-        save_file = self.file_prefix + dtype + '.png'
+        save_file = self.file_prefix + group + '.png'
         figset = FigureSet(nrows, ncols, save_file, minvol=self.minvol)
 
-        figset.fig.suptitle('%s for %d Days Starting on GMT %s' % (dtype.upper(), self.num_days, 'DAYONE'), fontsize=18)
+        figset.fig.suptitle('%s for %d Days Starting on GMT %s' % (group, self.num_days, self.date_start), fontsize=18)
 
-        for r in range(nrows):
-            for c in range(ncols):
-                # FIXME how best to get this (r, c) subresults from uber query results?
-                subresults = self.results
-                figset.add_subplot(r, c, subresults, 'title')
+        measures = self.group_measures[group]
+        ees = self.get_ee_ids()
+        
+        # outer-loop is rows (of EES)
+        r = 0
+        for ee in ees:
+            # inner-loop is columns (of measures)
+            c = 0
+            for measure in measures:
+                # key into dict that has measures stats
+                key = (group, ee, measure)
+                subplot_stats = self.stats[key]
+                # add subplot for this EE-measure combo
+                ax = figset.add_subplot(r, c, subplot_stats, measure)
+                ax.set_ylim(YLIMS[measure])
+                c += 1
+            r += 1
 
         # make subplots a bit farther from each other
         # DEFAULTS ARE:
@@ -205,6 +237,11 @@ class StatusHealthEePlot(object):
         plt.setp([a.get_xticklabels() for a in figset.axarr[0, :]], visible=False)
         plt.setp([a.get_yticklabels() for a in figset.axarr[:, 1]], visible=False)
         plt.setp([a.get_xticklabels() for a in figset.axarr[-1, :]], rotation=90, horizontalalignment='center')
+        
+        ## for temperatures, use this range
+        #if group == 'TEMPS':
+        #    for r in range(nrows):
+        #        plt.setp([a.set_ylim([23, 30]) for a in figset.axarr[r, :]])
 
         figset.save()
 
@@ -264,24 +301,23 @@ def print_usage():
 def process_data(params):
     """process data with parameters here (after we checked them earlier)"""
        
-    # get parameters, mostly for query of samsmon.ee_packet on yoda
-    host = parameters['host']
-    schema = parameters['schema']
-    table = parameters['table']
-    file_prefix = parameters['file_prefix']
+    # get parameters for: getting data and candlestick plotting
     date_start = parameters['date_start']
     num_days = parameters['num_days']
-    minvol = parameters['minvol'] # half a day's worth, nominally
+    minvol = parameters['minvol']
+    file_prefix = parameters['file_prefix']
+    group_measures = GROUP_MEASURES # FIXME are we ever going to change what we trend track?
+    pickle_dir = parameters['pickle_dir']
 
-    # initialize object that will do query, then later produce plot(s)
-    sheep = StatusHealthEePlot(host, schema, table, file_prefix, date_start, num_days, minvol)
+    # initialize object that will get/hold stats, then later produce plot(s)
+    sheep = StatusHealthEePlot(date_start, num_days, minvol, file_prefix, group_measures, pickle_dir)
     
-    # perform query
-    sheep.query()
+    # gather stats data now
+    sheep.gather_stats()
 
-    # produce plots
-    sheep.plot('temps')
-    sheep.plot('volts')
+    # produce plots here
+    sheep.plot('TEMPS')
+    sheep.plot('VOLTS')
 
     return 0
 
