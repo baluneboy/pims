@@ -30,12 +30,8 @@ def OLDpickle_date_range(start_date, end_date, just_weekdays=False):
         df.to_pickle('/misc/yoda/www/plots/user/sheep/df_ee_pkt_hs_' + t1 + '.pkl')
         print 'done'
 
-def pickle_date_range(start_date, end_date, just_weekdays=False):
-    if just_weekdays:
-        date_range_func = pd.bdate_range # just weekdays
-    else:
-        date_range_func = pd.date_range  # all days
-    date_range = date_range_func(start=start_date, end=end_date)
+def pickle_date_range(start_date, end_date):
+    date_range = pd.date_range(start=start_date, end=end_date)
     for d1 in date_range:
         t1 = d1.strftime('%Y-%m-%d')
         d2 = d1 + relativedelta.relativedelta(days=1)
@@ -43,7 +39,7 @@ def pickle_date_range(start_date, end_date, just_weekdays=False):
         df = query_ee_packet_hs(d1, d2)
         save_file = '/misc/yoda/www/plots/user/sheep/ee_stats_' + t1 + '.pkl'
         print 'saving ee_stats to file',
-        pickle_ee_stats(df, fname)
+        pickle_ee_stats(df, save_file)
         print 'done'
 
 def temp_fix():
@@ -64,6 +60,6 @@ def temp_fix():
         
 if __name__ == "__main__":
     #temp_fix()
-    d1 = datetime.datetime(2016,12,31).date()
-    d2 = datetime.datetime(2017,1,1).date()
-    pickle_date_range(d1, d2, just_weekdays=False)
+    d1 = datetime.datetime(2016,11,1).date()
+    d2 = datetime.datetime(2016,12,30).date()
+    pickle_date_range(d1, d2)
