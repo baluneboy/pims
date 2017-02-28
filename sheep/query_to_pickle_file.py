@@ -6,6 +6,7 @@ import pandas as pd
 from dateutil import relativedelta
 
 from pims.database.samsquery import query_ee_packet_hs
+from pims.sheep.gather_data import parse_date_from_filename
 
 def pickle_ee_stats(df, fname):
     ee_stats = {}
@@ -27,7 +28,7 @@ def pickle_date_range(start_date, end_date):
         print 'saving ee_stats to file',
         pickle_ee_stats(df, save_file)
         print 'done'
-
+    
 def temp_fix():
     """let us pickle small ee_stats instead of huge df"""
     import os
@@ -36,7 +37,7 @@ def temp_fix():
     
     df_pick_files = get_dataframe_pickle_files(df_pickle_dir='/Users/ken/Downloads')    
     for f in df_pick_files:
-        t1 = parse(os.path.basename(f).split('_')[-1].split('.')[0]).date()        
+        t1 = parse_date_from_filename(f)
         ee_stats = read_df_from_file(f)
         fname = '/Users/ken/Downloads/ee_stats_' + t1.strftime('%Y-%m-%d') + '.pkl'
         print 'saving to %s' % fname,

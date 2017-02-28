@@ -4,7 +4,7 @@ import os
 import re
 import pickle
 import datetime
-from dateutil import relativedelta
+from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas as pd
 from dateutil.parser import parse
@@ -18,6 +18,29 @@ from pims.files.filter_pipeline import FileFilterPipeline, EeStatsFile
 
 #                                         datenum    yestmed          todayhi todaylo  todaymed  todayvolume
 CandlePoint = namedtuple('CandlePoint', ['datenum', 'yesterday_median', 'high', 'low', 'median', 'volume'])
+
+def parse_date_from_filename(fname):
+    return parse(os.path.basename(fname).split('_')[-1].split('.')[0]).date()
+
+def get_missing_date_range(pickle_dir):
+    """use dead reckoning to determine date range for missing ee_stats files"""
+    ee_stats_files = get_ee_stats_files(pickle_dir)
+    ee_stats_files.sort()
+    try:
+        d1 = parse_date_from_filename(ee_stats_files[-1]) + relativedelta(days=1)
+    except Exception, e:
+        d1 = None
+    if d1:
+        d2 = datetime.datetime.now().date() - relativedelta(days=2)
+    else:
+        d2 = None
+    return d1, d2
+    
+def fill_missing_date_range():
+    """let us pickle the days to fill the missing date range"""
+    #pickle_dir ='/misc/yoda/www/plots/user/sheep'
+    pickle_dir = '/Users/ken/Downloads/sheep'
+    d1, d2 = get_missing_date_range(pickle_dir)
 
 def blank_record(datenum):
     """return CandlePoint [for missing file?] with datenum & volume; other values NaN"""
@@ -46,7 +69,7 @@ def read_ee_stats_file(fname):
 def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pickle_dir='/misc/yoda/www/plots/user/sheep'):
 
     # get EE stats as dict from pickle files
-    temp_files = get_ee_stats_files(pickle_dir='/misc/yoda/www/plots/user/sheep')
+    temp_files = get_ee_stats_files(pickle_dir=pickle_dir)
     ffp = FileFilterPipeline(EeStatsFile(start_date=start_date, end_date=end_date))
     ee_stats_files = list(ffp(temp_files))
     ee_stats_files.sort()
@@ -57,8 +80,7 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
     cached_ee_stats = {}
     print 'caching EE stats from files',
     for f in ee_stats_files:
-        # note: we are splitting basenames like ee_stats_2017-01-02.pkl
-        d = parse(os.path.basename(f).split('_')[-1].split('.')[0]).date()
+        d = parse_date_from_filename(f)
         ee_stats = read_ee_stats_file(f)
         cached_ee_stats[date2num(d)] = ee_stats
         ee_set = ee_set.union(ee_stats.keys())
@@ -66,11 +88,6 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
     print 'done'
     ee_list = sorted(list(ee_set))
     
-    # FIXME candlestick plots only handle exactly 4 EEs at the moment
-    if len(ee_list) != 4:
-        msg = 'candlestick plots only handle exactly 4 (not %d) EEs right now' % len(ee_list)
-        raise Exception(msg)
-
     # initialize output dict
     stats = {}
 
@@ -87,7 +104,7 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
                 for d in date_range:
 
                     today = date2num(d)
-                    yesterday = date2num( d - relativedelta.relativedelta(days=1) )
+                    yesterday = date2num( d - relativedelta(days=1) )
 
                     if today not in cached_ee_stats:
                         candle_point = blank_record(today)
@@ -124,8 +141,13 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
     return stats
 
 if __name__ == "__main__":
-    d1 = datetime.datetime(2017,1,1).date()
-    d2 = datetime.datetime(2017,1,14).date()
-    stats = process_date_range(d1, d2)
+    d1, d2 = get_missing_date_range('/Users/ken/Downloads/sheep')
+    print d1
+    print d2
+    raise SystemExit
+
+    d1 = datetime.datetime(2016,12,2).date()
+    d2 = datetime.datetime(2016,12,15).date()
+    stats = process_date_range(d1, d2, pickle_dir='/Users/ken/Downloads/sheep')
     print stats[('TEMPS', '122-f02', 'tempbase')]
-    print stats[('VOLTS', '122-f07', 'head1_plus5V')]
+    #print stats[('VOLTS', '122-f07', 'head1_plus5V')]
