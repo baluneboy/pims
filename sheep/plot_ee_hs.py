@@ -25,7 +25,7 @@ defaults = {
 'date_start':       _SIXTEENDAYSAGO,    # date object for start time of plots
 'num_days':         '14',               # integer number of days to plot
 'minvol':           '40000',            # integer min # of samples for day (count); otherwise, gray candle
-'pickle_dir':       '/Users/ken/Downloads', # where to find ee_stats pickle files
+'pickle_dir':       '/misc/yoda/www/plots/user/sheep', # where to find ee_stats pickle files
 }
 parameters = defaults.copy()
 
@@ -87,26 +87,6 @@ class StatusHealthEePlot(object):
         self.group_measures = group_measures
         self.pickle_dir = pickle_dir
         self.stats = None
-
-    def _OLD_DUMMY_QUERY(self):
-        #             datenum  yestmed  todayhi   todaylo  todaymed  todayvolume
-        results = [
-                    (735974.0, 125.979, 127.896, 125.9274, 127.332,  4974400.0),
-                    (735975.0, 127.736, 127.858, 125.3256, 127.018,  5078700.0),
-                    (735976.0, 127.591, 128.336, 125.297,  125.364,    43199.0),
-                    (735977.0, 126.094, 127.867, 125.4117, 127.026,  5709600.0),
-                    (735978.0, 124.258, 125.086, 123.1651, 124.274,  8895400.0),
-                    (735979.0, 124.359, 126.252, 122.3914, 122.439,  9979600.0),
-                    (735980.0, 113.213, 118.501, 112.7767, 116.466, 16157800.0),
-                    (735981.0, 115.939, 119.562, 115.2426, 117.469,  8851600.0),
-                    (735982.0, 119.155, 119.218, 116.379,  117.077,  9238400.0),
-                    (735983.0, 116.699, 118.731, 116.255,  116.676,  5446000.0),
-                    (735984.0, 116.837, 118.138, 116.8293, 117.163,  4617800.0),
-                    (735985.0, 117.293, 117.909, 115.3095, 115.605,    43199.0),
-                    (735986.0, 115.89,  117.393, 115.6531, 116.810,  3942500.0),
-                    (735987.0, 117.827, 119.266, 117.5174, 119.266,  8248100.0)
-                    ]
-        return results
     
     def _DUMMY_QUERY(self):
         from collections import namedtuple
@@ -131,35 +111,8 @@ class StatusHealthEePlot(object):
                     ]
         return results
 
-    def OLDquery(self):
-        """query to get results; each record (row) is for a given EE and timestamp"""
-
-        # FIXME the yahoo junk below gets replaced with new samsquery
-        # results = samsquery.fetch_num_days(host, schema, date1, date2)
-
-        # FIXME (Year, month, day) tuples suffice as args for quotes_historical_yahoo
-        date1 = self.date_start - relativedelta(days = 1) # pre-pend extra day for "yesterday"
-        date2 = self.date_start + relativedelta(days = self.num_days)
-        #print date1, date2
-
-        results = self._DUMMY_QUERY()
-        if len(results) == 0:
-            print 'no results!?'
-
-        # FIXME next we do some pandas dataframe crap to get results into newly-defined
-        #       group by date
-        # NOTE: for candlestick, results [quotes] is list of tuples: (utime, open, high, low, close, volume)
-        # FIXME return query as list of tuples, where (for a given date)
-        #       utime is unix time
-        #       open is yesterday's median value
-        #       close is today's median value
-        #       high is today's max value
-        #       low is today's min value
-        #       volume is number of records for today
-        self.results = results
-
     def gather_stats(self):
-        date_end = self.date_start + relativedelta(days=self.num_days)
+        date_end = self.date_start + relativedelta(days=self.num_days - 1)
         self.stats = process_date_range(self.date_start, date_end, self.group_measures, self.pickle_dir)
 
     def get_ee_ids(self):
@@ -184,14 +137,6 @@ class StatusHealthEePlot(object):
         if len(self.stats) == 0:
             print 'no stats! not gathered yet?'
 
-        ## FIXME to make this fit more than 4 EEs in 4 rows
-        #if group == 'TEMPS':
-        #    nrows, ncols = 4, 7
-        #elif group == 'VOLTS':
-        #    nrows, ncols = 4, 9
-        #else:
-        #    raise Exception('unrecognized data type identifier: %s' % group)
-
         # each group (figure) has RxC subplots
         measures = self.group_measures[group]
         ees = self.get_ee_ids()
@@ -199,7 +144,7 @@ class StatusHealthEePlot(object):
         ncols = len(ees)       # Columns are EEs
 
         plt.close('all')
-        save_file = self.file_prefix + group + '.png'
+        save_file = self.file_prefix + self.date_start.strftime('%Y-%m-%d') + '_' + group.lower() + '.png'
         figset = FigureSet(nrows, ncols, save_file, minvol=self.minvol)
 
         figset.fig.suptitle('%s for %d Days Starting on GMT %s' % (group, self.num_days, self.date_start), fontsize=18)

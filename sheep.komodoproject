@@ -11,6 +11,8 @@
 </file>
 <file id="93e5c767-9082-3048-95f4-7330a5e9dac0" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="plot_ee_hs.py" url="sheep/plot_ee_hs.py">
 </file>
+<file id="a68735f1-6d29-4253-a575-09e7d5a4f05c" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="filter_pipeline.py" url="files/filter_pipeline.py">
+</file>
 <file id="b7c83a0a-5c91-4aa8-933a-fc48c86e6c5a" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="gather_data.py" url="sheep/gather_data.py">
 </file>
 <file id="e01306ad-8ec0-44ff-afc2-1e7c6be8e487" idref="04bef6ab-62e1-7446-95e1-e0a53f032fba" name="query_to_pickle_file.py" url="sheep/query_to_pickle_file.py">

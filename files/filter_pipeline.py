@@ -3,6 +3,7 @@
 import os
 import re
 import time
+from dateutil.parser import parse
 from mutagen.mp3 import MP3
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
 
@@ -146,6 +147,38 @@ class MinutesLongMp3File(object):
 
         return m
 
+class EeStatsFile(object):
+    """an ee_stats file for plotting EE HS"""
+
+    def __init__(self, start_date, end_date):
+        self.start_date = start_date
+        self.end_date = end_date
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if self.matches_regex(f):
+                d = self.get_file_date(f)
+                if d >= self.start_date and d <= self.end_date:
+                    yield f
+
+    def __str__(self):
+        return 'is ee_stats file with %s <= date <= %s' % (self.start_date, self.end_date)
+
+    def matches_regex(self, fullname):
+        fullfile_pattern = r'.*%see_stats_.*\pkl' % os.path.sep
+        if re.compile(fullfile_pattern).match(fullname):
+            return True
+        return False
+
+    def get_file_date(self, fullname):
+        try:
+            # we are splitting for basenames like ee_stats_2017-01-02.pkl
+            d = parse(os.path.basename(fullname).split('_')[-1].split('.')[0]).date()
+        except Exception, e:
+            print 'could not parse date from %s' % fullname
+            d = 0
+
+        return d
 
 # for roadmap probe (matches sensor and axis)
 class MatchSensorAxRoadmap(object):
@@ -197,6 +230,21 @@ def demo():
     for f in ffp(inp1):
         print f
 
+def demo3():
+    from datetime import datetime
+    
+    # Initialize processing pipeline (no file list as input yet)
+    ffp = FileFilterPipeline(EeStatsFile(start_date=datetime(2017,1,31).date(), end_date=datetime(2017,2,1).date()))
+    print ffp
+    
+    # Apply processing pipeline input #1 (now ffp is callable)
+    inp1 = ['/misc/yoda/www/plots/user/sheep/ee_stats_2017-01-29.pkl',
+            '/misc/yoda/www/plots/user/sheep/ee_stats_2017-01-30.pkl',
+            '/misc/yoda/www/plots/user/sheep/ee_stats_2017-01-31.pkl',
+            '/misc/yoda/www/plots/user/sheep/ee_stats_2017-02-01.pkl']
+    for f in ffp(inp1):
+        print f
+        
 def demo2():
     
     # Initialize processing pipeline (no file list as input yet)
@@ -213,4 +261,4 @@ def demo2():
         print f  
     
 if __name__ == "__main__":
-    demo()
+    demo3()
