@@ -19,9 +19,12 @@ from pims.sheep.limits_measures import GROUP_MEASURES, YLIMS
 
 _SIXTEENDAYSAGO = str( datetime.now().date() - timedelta(days=16) )
 
+# /misc/yoda/www/plots/user/sheep/year2017/month02/plots/eehsplots_2017-02-01_temps.png
+# /misc/yoda/www/plots/user/sheep/year2017/month02/plots/eehsplots_2017-02-01_volts.png
+
 # input parameters
 defaults = {
-'file_prefix':      '/tmp/eehsplots_',  # string 1st part of VOLTS or TEMPS png filename
+'file_prefix':      '/misc/yoda/www/plots/user/sheep/year%04d/month%02d/plots/eehsplots_',  # string 1st part of VOLTS or TEMPS png filename
 'date_start':       _SIXTEENDAYSAGO,    # date object for start time of plots
 'num_days':         '14',               # integer number of days to plot
 'minvol':           '40000',            # integer min # of samples for day (count); otherwise, gray candle
@@ -144,7 +147,9 @@ class StatusHealthEePlot(object):
         ncols = len(ees)       # Columns are EEs
 
         plt.close('all')
-        save_file = self.file_prefix + self.date_start.strftime('%Y-%m-%d') + '_' + group.lower() + '.png'
+        #save_file = self.file_prefix + self.date_start.strftime('%Y-%m-%d') + '_' + group.lower() + '.png'
+        y1, m1 = self.date_start.year, self.date_start.month
+        save_file = self.file_prefix % (y1, m1) + self.date_start.strftime('%Y-%m-%d') + '_' + group.lower() + '.pdf'
         figset = FigureSet(nrows, ncols, save_file, minvol=self.minvol)
 
         figset.fig.suptitle('%s for %d Days Starting on GMT %s' % (group, self.num_days, self.date_start), fontsize=18)
@@ -164,6 +169,7 @@ class StatusHealthEePlot(object):
                 # add subplot for this EE-measure combo
                 ax = figset.add_subplot(r, c, subplot_stats, measure, ee)
                 ax.set_ylim(YLIMS[measure])
+                ax.tick_params(axis='y', which='major', labelsize=8)
                 c += 1
             r += 1
 
@@ -194,13 +200,13 @@ class StatusHealthEePlot(object):
 def parameters_ok():
     """check for reasonableness of parameters"""    
 
-    # FIXME with a great way to quickly verify connectivity to host.schema.table
-
-    # verify that base part of file_prefix exists
-    bpath = os.path.dirname(parameters['file_prefix'])
-    if not os.path.exists(bpath):
-        print 'file_prefix (%s) does not start with valid base path' % parameters['file_prefix']
-        return False
+    # FIXME with good way to verify file_prefix
+    
+    ## verify that base part of file_prefix exists
+    #bpath = os.path.dirname(parameters['file_prefix'])
+    #if not os.path.exists(bpath):
+    #    print 'file_prefix (%s) does not start with valid base path' % parameters['file_prefix']
+    #    return False
     
     # convert start day to date object
     try:

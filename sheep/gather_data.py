@@ -4,14 +4,13 @@ import os
 import re
 import pickle
 import datetime
-from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas as pd
 from dateutil.parser import parse
-from matplotlib.dates import date2num
 from collections import namedtuple
+from matplotlib.dates import date2num
+from dateutil.relativedelta import relativedelta
 
-from pims.utils.iterabletools import pairwise
 from pims.files.utils import filter_filenames
 from pims.sheep.limits_measures import GROUP_MEASURES
 from pims.files.filter_pipeline import FileFilterPipeline, EeStatsFile
@@ -20,27 +19,8 @@ from pims.files.filter_pipeline import FileFilterPipeline, EeStatsFile
 CandlePoint = namedtuple('CandlePoint', ['datenum', 'yesterday_median', 'high', 'low', 'median', 'volume'])
 
 def parse_date_from_filename(fname):
+    """extract date string part of filename"""
     return parse(os.path.basename(fname).split('_')[-1].split('.')[0]).date()
-
-def get_missing_date_range(pickle_dir):
-    """use dead reckoning to determine date range for missing ee_stats files"""
-    ee_stats_files = get_ee_stats_files(pickle_dir)
-    ee_stats_files.sort()
-    try:
-        d1 = parse_date_from_filename(ee_stats_files[-1]) + relativedelta(days=1)
-    except Exception, e:
-        d1 = None
-    if d1:
-        d2 = datetime.datetime.now().date() - relativedelta(days=2)
-    else:
-        d2 = None
-    return d1, d2
-    
-def fill_missing_date_range():
-    """let us pickle the days to fill the missing date range"""
-    #pickle_dir ='/misc/yoda/www/plots/user/sheep'
-    pickle_dir = '/Users/ken/Downloads/sheep'
-    d1, d2 = get_missing_date_range(pickle_dir)
 
 def blank_record(datenum):
     """return CandlePoint [for missing file?] with datenum & volume; other values NaN"""
@@ -49,6 +29,7 @@ def blank_record(datenum):
     return CandlePoint(datenum, yesterday_median, high, low, median, volume)
 
 def get_dataframe_pickle_files(df_pickle_dir='/misc/yoda/www/plots/user/sheep'):
+    """OBSOLETE get big df files as sorted list of names"""
     # FIXME refine this with date range or regexp maybe instead of always getting all files
     # FIXME elsewhere you should probably be pruning this list of files too (keep most recent 4 months?)
     fullfile_pattern = r'%s' % os.path.join(df_pickle_dir, 'df_ee_pkt_hs_.*\.pkl')
@@ -57,7 +38,8 @@ def get_dataframe_pickle_files(df_pickle_dir='/misc/yoda/www/plots/user/sheep'):
     return files
 
 def get_ee_stats_files(pickle_dir='/misc/yoda/www/plots/user/sheep'):
-    fullfile_pattern = r'%s' % os.path.join(pickle_dir, 'ee_stats_.*\.pkl')
+    """get ee_stats pickle files as list of names"""
+    fullfile_pattern = r'%s' % os.path.join(pickle_dir, 'year....', 'month..', 'pickles', 'ee_stats_.*\.pkl')
     files = list(filter_filenames(pickle_dir, re.compile(fullfile_pattern).match))
     return files
 
@@ -70,7 +52,9 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
 
     # get EE stats as dict from pickle files
     temp_files = get_ee_stats_files(pickle_dir=pickle_dir)
-    ffp = FileFilterPipeline(EeStatsFile(start_date=start_date, end_date=end_date))
+    # we need to prime with initial "yesterday"
+    yesterdate = start_date - relativedelta(days=1)
+    ffp = FileFilterPipeline(EeStatsFile(start_date=yesterdate, end_date=end_date))
     ee_stats_files = list(ffp(temp_files))
     ee_stats_files.sort()
 
@@ -87,7 +71,7 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
         print '.',
     print 'done'
     ee_list = sorted(list(ee_set))
-    
+
     # initialize output dict
     stats = {}
 
@@ -112,7 +96,7 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
                         continue
 
                     today_stats = cached_ee_stats[today]
-                    
+
                     if yesterday not in cached_ee_stats:
                         #CandlePoint = namedtuple('CandlePoint', ['datenum', 'yesterday_median', 'high', 'low', 'median', 'volume'])
                         candle_point = CandlePoint(
@@ -137,17 +121,8 @@ def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pick
                     today_candle_pts.append(candle_point)
 
                 stats[key] = today_candle_pts
-                
+
     return stats
 
 if __name__ == "__main__":
-    d1, d2 = get_missing_date_range('/Users/ken/Downloads/sheep')
-    print d1
-    print d2
-    raise SystemExit
-
-    d1 = datetime.datetime(2016,12,2).date()
-    d2 = datetime.datetime(2016,12,15).date()
-    stats = process_date_range(d1, d2, pickle_dir='/Users/ken/Downloads/sheep')
-    print stats[('TEMPS', '122-f02', 'tempbase')]
-    #print stats[('VOLTS', '122-f07', 'head1_plus5V')]
+    print 'do nothing'
