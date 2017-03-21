@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<inkscape-extension xmlns="http://www.inkscape.org/namespace/inkscape/extension">
+
+  <_name>Stupid Square</_name>
+  <id>square.stupid</id>
+  <dependency type="executable" location="extensions">stupid_square.py</dependency>
+  <dependency type="executable" location="extensions">inkex.py</dependency>
+  <_param name="line_stuff" type="description" appearance="header">Line Stuff</_param>
+  <param name="line_len"        type="int"     min="10" max="300"  _gui-text="Line Length (px):">16</param>
+  <_param name="rect_stuff" type="description" appearance="header">Rectangle Stuff</_param>
+  <param name="width_rect"      type="float"   min="11" max="1000" _gui-text="Width of Rectangle (px):">100.0</param>
+  <param name="height_rect"     type="float"   min="12" max="1000" _gui-text="Height of Rectangle (px):">50.0</param>
+  <_param name="other_stuff" type="description" appearance="header">Other Stuff</_param>
+  <param name="draw_sq"         type="boolean"                     _gui-text="Draw Square?">false</param>
+    
+    <effect>
+          <object-type>all</object-type>
+          <effects-menu>
+                <submenu _name="Mine" />
+          </effects-menu>
+    </effect>
+
+  <script>
+    <command reldir="extensions" interpreter="python">stupid_square.py</command>
+  </script>
+
+</inkscape-extension>
