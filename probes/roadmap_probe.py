@@ -6,6 +6,7 @@ import os
 import re
 import sys
 import json
+from json2html import json2html
 import datetime
 import subprocess
 import pandas as pd
@@ -23,15 +24,34 @@ from pims.pad.daily_set import _TWODAYSAGO
 
 # input parameters
 defaults = {
-'dir_name':     '/misc/yoda/www/plots/batch',         # base path
-'first_day':    _TWODAYSAGO,                          # first day to process
-'last_day':     _TWODAYSAGO,                          # last day to process
-'bname_blanks_pat': _ROADMAP_PDF_BLANKS_PATTERN,      # regular expression pattern to match
-'sensors':      '121f02,121f03,121f04,121f05,121f08', # comma-sep list of sensors
-'axes':         's,x,y,z',                            # comma-sep list of axis chars
-'order_by_day': 'True',                               # order_by_day; True for day/sensor; else, sensor/day
+'dir_name':     '/misc/yoda/www/plots/batch',               # base path
+'first_day':    _TWODAYSAGO,                                # first day to process
+'last_day':     _TWODAYSAGO,                                # last day to process
+'basename_blanks_pattern': _ROADMAP_PDF_BLANKS_PATTERN,     # regular expression pattern to match
+'sensors':      '121f02,121f03,121f04,121f05,121f08',       # comma-sep list of sensors
+'axes':         's,x,y,z',                                  # comma-sep list of axis chars
+'order_by_day': 'True',                                     # order_by_day; True for day/sensor; else, sensor/day
 }
 parameters = defaults.copy()
+
+
+# HTML header
+_HEADER = """
+<HTML>
+<BODY BGCOLOR=#FFFFFF TEXT=#000000 LINK=#0000FF VLINK=#800040 ALINK=#800040>
+<TITLE>Roadmap Probe</TITLE>
+<CENTER>
+<B>Last refreshed GMT %s<B><BR>
+<link rel="stylesheet" type="text/css" href="roadmap_probe.css" media="screen"/>
+""" % datetime.datetime.now().strftime('%d-%b-%Y, %j/%H:%M:%S ')
+
+
+# HTML footer
+_FOOTER = """<BR>
+</CENTER>
+</BODY>
+</HTML>
+"""
 
 
 def get_day_roadmap_pdf_files(base_dir, day, basename_pat):
@@ -122,9 +142,9 @@ def parameters_ok():
 
     # verify pattern is good regular expression
     try:
-        re.compile(parameters['bname_blanks_pat'])
+        re.compile(parameters['basename_blanks_pattern'])
     except Exception, e:
-        print 'bname_blanks_pat "%s" would not compile as valid regular expression' % parameters['bname_blanks_pat']
+        print 'basename_blanks_pattern "%s" would not compile as valid regular expression' % parameters['basename_blanks_pattern']
     
     # get list of sensors
     try:
@@ -172,6 +192,12 @@ def print_usage():
     for i in defaults.keys():
         print '\t%s=%s' % (i, defaults[i])
 
+
+def write_html(json_str):
+    html_str = json2html.convert(json_str)
+    with open("/misc/yoda/www/plots/user/pims/roadmap_probe.html", "w") as html_file:
+        html_file.write( _HEADER + html_str + _FOOTER )         
+
     
 def main(argv):
     """describe main routine here"""
@@ -190,8 +216,10 @@ def main(argv):
             nr.do_work()
             my_tree = nr.get_result()
             if my_tree:
-                print json.dumps(my_tree, sort_keys=True, indent=3, separators=(',', ':'))
-                #xampleTreeBrowser(dict(sensor_tree)).main()
+                json_str = json.dumps(my_tree, sort_keys=True, indent=3, separators=(',', ':'))
+                print json_str
+                write_html(json_str)
+                #exampleTreeBrowser(dict(sensor_tree)).main()
                 return 0 # zero for unix success
             else:
                 return -1
