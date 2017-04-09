@@ -1,0 +1,49 @@
+<inkscape-extension>
+  <_name>SSA Coords</_name>
+  <id>kenhro.effect.ssacoords</id>
+  <dependency type="executable" location="extensions">ssacoords.py</dependency>
+  <dependency type="executable" location="extensions">inkex.py</dependency>
+  <param name="subscript" type="enum" _gui-text="To go from:">
+      <_item value="1">A to 1</_item>
+      <_item value="2">1 to 2</_item>
+      <_item value="S">2 to S</_item></param>
+  <param name="units" type="enum" _gui-text="Length Unit: ">
+      <_item value="px">px</_item>
+      <_item value="pt">pt</_item>
+      <_item value="in">in</_item>
+      <_item value="ft">ft</_item>
+      <_item value="mm">mm</_item>
+      <_item value="cm">cm</_item>
+      <_item value="m">m</_item></param>
+  <param name="translatex" type="float" min="-2000.0" max="2000.0"
+      precision="3"
+        _gui-text
+      ="Translate X."></param>
+  <param name="translatey" type="float" min="-2000.0" max="2000.0"
+      precision="3"
+        _gui-text
+      ="Translate Y."></param>
+  <param name="centerx" type="float" min="-2000.0" max="2000.0"
+      precision="3"
+        _gui-text="X coordinate of center">0</param>
+  <param name="centery" type="float" min="-2000.0" max="2000.0"
+      precision="3"
+        _gui-text="Y coordinate of center">0</param>
+  <param name="rotation" type="enum" _gui-text="Rotate CCW (deg):">
+      <_item value="0">0</_item>
+      <_item value="90">90</_item>
+      <_item value="180">180</_item>
+      <_item value="270">270</_item></param>
+  <param name="bricks" type="boolean"
+        _gui-text="Bricks">false</param>
+  <param name="log" type="string" _gui-text="Log File (optional)"></param>
+  <effect>
+    <object-type>all</object-type>
+    <effects-menu>
+       <submenu _name="PIMS"/>
+    </effects-menu>
+  </effect>
+  <script>
+    <command reldir="extensions" interpreter="python">ssacoords.py</command>
+  </script>
+</inkscape-extension>

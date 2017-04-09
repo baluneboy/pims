@@ -1,0 +1,51 @@
+<inkscape-extension>
+  <_name>SSA Transform</_name>
+  <id>kenhro.effect.ssa_xform</id>
+  <dependency type="executable" location="extensions">ssa_xform.py</dependency>
+  <dependency type="executable" location="extensions">inkex.py</dependency>
+  <param name="coordsys" type="enum" _gui-text="   Coord Sys (A,1,2,S):">
+      <_item value="A">A</_item>
+      <_item value="1">1</_item>
+      <_item value="2">2</_item>
+      <_item value="S">S</_item></param>
+  <param name="axis1" type="enum" _gui-text="Axis  #1       (X,Y,Z):">
+      <_item value="X">X</_item>
+      <_item value="Y">Y</_item>
+      <_item value="Z">Z</_item></param>
+  <param name="arrow1" type="enum" _gui-text="Arrow #1   (Dot,Cross):">
+      <_item value="Dot">Dot</_item>
+      <_item value="Cross">Cross</_item></param>
+  <param name="text1" type="enum" _gui-text="Text  #1 (NE,NW,SW,SE):">
+      <_item value="NE">NE</_item>
+      <_item value="NW">NW</_item>
+      <_item value="SW">SW</_item>
+      <_item value="SE">SE</_item></param>
+  <param name="axis2" type="enum" _gui-text="Axis  #2       (X,Y,Z):">
+      <_item value="X">X</_item>
+      <_item value="Y">Y</_item>
+      <_item value="Z">Z</_item></param>
+  <param name="arrow2" type="enum" _gui-text="Arrow #2     (N,E,W,S):">
+      <_item value="N">N</_item>
+      <_item value="E">E</_item>
+      <_item value="W">W</_item>
+      <_item value="S">S</_item></param>
+  <param name="axis3" type="enum" _gui-text="Axis  #3       (X,Y,Z):">
+      <_item value="X">X</_item>
+      <_item value="Y">Y</_item>
+      <_item value="Z">Z</_item></param>
+  <param name="arrow3" type="enum" _gui-text="Arrow #3     (N,E,W,S):">
+      <_item value="N">N</_item>
+      <_item value="E">E</_item>
+      <_item value="W">W</_item>
+      <_item value="S">S</_item></param>     
+  <param name="log" type="string" _gui-text="Log File (optional)"></param>
+  <effect>
+    <object-type>all</object-type>
+    <effects-menu>
+       <submenu _name="PIMS"/>
+    </effects-menu>
+  </effect>
+  <script>
+    <command reldir="extensions" interpreter="python">ssa_xform.py</command>
+  </script>
+</inkscape-extension>

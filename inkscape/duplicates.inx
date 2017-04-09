@@ -1,0 +1,34 @@
+<inkscape-extension>
+    <_name>Multiple Copies</_name>
+    <id>com.curran.filter.duplicates</id>
+    <dependency type="executable" location="extensions">inkex.py</dependency>
+    <dependency type="executable" location="extensions">simpletransform.py</dependency>
+    <param name="begin" type="int" min="-1000" max="1000" _gui-text="For n=">0</param>
+    <param name="end" type="int" min="-1000" max="1000" _gui-text="to">10</param>
+    <param name="horizontal" type="string" _gui-text="X translation">n</param>
+    <param name="vertical" type="string" _gui-text="Y translation">n^2</param>
+    <param name="centerx" type="string" _gui-text="X coordinate of center">0</param>
+    <param name="centery" type="string" _gui-text="Y coordinate of center">0</param>
+    <param name="unit" type="enum" _gui-text="Length Unit: ">
+        <item value="px">px</item>
+        <item value="pt">pt</item>
+        <item value="in">in</item>
+        <item value="ft">ft</item>
+        <item value="yd">yd</item>
+        <item value="mm">mm</item>
+        <item value="cm">cm</item>
+        <item value="m">m</item>
+        <item value="km">km</item>
+    </param>
+    <param name="scale" type="string" _gui-text="Scale Factor">n/2</param>
+    <param name="rot" type="string" _gui-text="Degrees Rotated CW">-90</param>
+    <effect>
+          <object-type>all</object-type>
+          <effects-menu>
+                <submenu _name="Mine" />
+          </effects-menu>
+    </effect>
+    <script>
+         <command reldir="extensions" interpreter="python">duplicates.py</command>
+    </script>
+</inkscape-extension>
