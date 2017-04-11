@@ -62,7 +62,13 @@ def get_samplerate(p):
 
 if __name__ == '__main__':
 	pimsComputers = ['jimmy', 'chef', 'ike', 'butters', 'cartman', 'stan', 'kenny', 'timmeh', 'tweek', 'mr-hankey', 'manbearpig', 'towelie', 'craig']
+	
+	# remove machines that have been doubled up (not packetGrabbing anymore)
 	pimsComputers.remove('mr-hankey')
+	pimsComputers.remove('kenny')
+	pimsComputers.remove('ike')
+	pimsComputers.remove('butters')
+	
 	myname = split(getoutput('uname -a'))[1]
 	myname = split(myname, '.')[0]
 
@@ -150,6 +156,6 @@ if __name__ == '__main__':
 							rate = '-1.0' # FIXME or else time will be reversed like in that movie
 							pass
 					
-					# output text
-					if (c == 'manbearpig') and (sensor != 'es03'): continue
+					# output text (kludged exclusion on mbp since it grabs rt tables and such)
+					if (c == 'manbearpig') and (sensor not in ['es03','es05']): continue
 					print '%11s %18s %8d %19s %19s %11d %8s %s' % (c, sensor, count, minTime, maxTime, age, rate, loc)

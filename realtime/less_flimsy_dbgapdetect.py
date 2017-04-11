@@ -35,16 +35,14 @@ from pims.files.utils import tail
 defaults = {
 'sensorhosts': [
     ('hirap',       'towelie',      'pims',     '5.21'),    
-    ('121f02',      'kenny',        'pims',     '8'),
+    ('121f02',      'timmeh',       'pims',     '8'),
     ('121f03',      'tweek',        'pims',     '8'),
-    #('121f04',      'mr-hankey',    'pims',     '8'),
     ('121f04',      'tweek',        'pims',     '8'),
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
     ('es03',        'manbearpig',   'pims',     '3.92'),
-    #('es03',        'butters',      'pims',     '3.92'),
-    ('es05',        'ike',          'pims',     '7.84'),
-    ('es06',        'butters',      'pims',     '7.84'),
+    ('es05',        'manbearpig',   'pims',     '7.84'),
+    ('es06',        'chef',         'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),    
     ('cu_packet',   'yoda',         'samsnew',  '1')
     ],          

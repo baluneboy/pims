@@ -89,7 +89,7 @@ def show_strata_gaps():
                 datetime_to_longtimestr(t1).replace(',', ' '),
                 datetime_to_longtimestr(t2).replace(',', ' '))
     else:
-            print '%s %s no gaps' % (doi, sensor)
+            print '%s %s no gaps longer than %d seconds' % (doi, sensor, maxgapsec)
 
 
 # write strata gaps to csv
@@ -111,7 +111,7 @@ def write_strata_gaps():
                     datetime_to_longtimestr(t1).replace(',', ' '),
                     datetime_to_longtimestr(t2).replace(',', ' ')])
         else:
-                writer.writerow( [doi, sensor, 'no gaps', '', ''])
+                writer.writerow( [doi, sensor, 'no gaps longer than %d sec.' % maxgapsec, '', ''])
     
     
 # get inputs, verify ok, then run main routine

@@ -5,6 +5,7 @@ import sys
 import math
 from time import sleep
 import datetime
+from dateutil import parser, relativedelta
 import socket
 from MySQLdb import *
 from _mysql_exceptions import *
@@ -44,11 +45,49 @@ def quick_test(host, schema):
 #quick_test('manbearpig', 'pims')
 #raise SystemExit
 
+def get_mams_bias_cal(last=10, host='stan', db='pims', uname=_UNAME, passwd=_PASSWD):
+    """return string showing last several records for MAMS bias cal"""
+    #select from_unixtime(time),x,y,z,T from Cbias order by time desc limit 10;
+    query_str = 'select time,x,y,z,T from Cbias order by time desc limit %d;' % last
+    #print query_str
+    con = Connection(host=host, user=uname, passwd=passwd, db='pims')
+    cursor = con.cursor()
+    cursor.execute(query_str)
+    results = cursor.fetchall()
+    #print results
+    cursor.close()
+    con.close()
+    df = pd.DataFrame( list(results) )
+    df.columns = [rec[0] for rec in cursor.description]
+    
+    #df.rename(columns={'coord_name':    'sensor',
+    #                   'r_orient':      'roll',
+    #                   'p_orient':      'pitch',
+    #                   'y_orient':      'yaw',
+    #                   'x_location':    'x',
+    #                   'y_location':    'y',
+    #                   'z_location':    'z'}, inplace=True)
+    
+    # convert unixtime to datetime and get rid of old column
+    gmt = pd.to_datetime(df['time'], unit='s')
+    df['gmt'] = gmt
+    
+    # make gmt the index
+    df.set_index(gmt, inplace=True)
+    
+    # return sorted by sensor, then by gmt
+    df = df.sort_values(by=['gmt'], ascending=[0])
+    
+    # cleanup to get rid of original unixtime column
+    df = df.drop(['time', 'gmt'], axis=1)
+    
+    return df
+
 # round a float up at 4th decimal place (db has time to only 4 decimal places of precision)
 def ceil4(input): # the database has time to only 4 decimal places of precision
     """round a float up at the 4th decimal place"""
     return math.ceil(input*10000.0)/10000.0
-
+    
 # fetch all entries from pad.coord_system_db table [on craig] into dataframe
 class CoordQueryAsDataFrame(object):
     """fetch all entries from pad.coord_system_db table [on craig] into dataframe"""
@@ -189,6 +228,17 @@ def get_sensor_location_from_craig(sensor, dtm):
     timestr = dtm.strftime('%Y-%m-%d %H:%M:%S')
     loc = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" and time < unix_timestamp("%s") order by time desc limit 1' % (sensor, timestr), 'craig')
     return loc[0][0]
+
+def OBSOLETE_get_mams_temps(host, day):
+    """get MAMS temps from housek table on stan"""
+    # select from_unixtime(time),97.5-((ascii(substring(packet,26,1))*256+ascii(substring(packet,25,1)))/512) AS mpcs1,97.5-((ascii(substring(packet,48,1))*256+ascii(substring(packet,47,1)))/512) AS mpcs2 from housek where time >= unix_timestamp('2017-03-25 00:00:00') and time < unix_timestamp('2017-03-26 00:00:00') order by time asc;
+    d2 = day + relativedelta.relativedelta(days=1)
+    t1 = day.strftime('%Y-%m-%d 00:00:00')
+    t2 = d2.strftime('%Y-%m-%d 00:00:00')
+    query_str = "select from_unixtime(time),97.5-((ascii(substring(packet,26,1))*256+ascii(substring(packet,25,1)))/512) AS mpcs1,97.5-((ascii(substring(packet,48,1))*256+ascii(substring(packet,47,1)))/512) AS mpcs2 from housek where time >= unix_timestamp('%s') and time < unix_timestamp('%s') order by time asc;" % (t1, t2)
+    #print query_str
+    results = db_connect(query_str, 'stan')
+    return results
 
 #####################################################################################
 
@@ -471,4 +521,5 @@ def ike_insert(f):
 if __name__ == "__main__":
     #demo()
     #demo_jaxapost()
-    ike_insert('/misc/yoda/www/plots/sams/params/121f05_intrms.csv')
+    #ike_insert('/misc/yoda/www/plots/sams/params/121f05_intrms.csv')
+    pass
