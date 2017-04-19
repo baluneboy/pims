@@ -1,5 +1,6 @@
 import os
 import re
+import glob
 import time
 import errno
 import shutil
@@ -284,6 +285,39 @@ def filter_dirnames(dirpath, predicate):
             #print abspath
             if predicate(abspath):
                 yield abspath
+
+def glob_padheaders(ymdpat, subdirpat, filepat='*.header', padbase=r'/misc/yoda/pub/pad'):
+    """
+    >>> ymdpat = r'year2017/month04/day01'
+    >>> subdirpat = r'sams2_accel_121f0[23]'
+    >>> for hdrfile in glob_padheaders(ymdpat, subdirpat)[0:3]: print hdrfile
+    /misc/yoda/pub/pad/year2017/month04/day01/sams2_accel_121f03/2017_04_01_00_05_02.943+2017_04_01_00_15_02.945.121f03.header
+    /misc/yoda/pub/pad/year2017/month04/day01/sams2_accel_121f03/2017_04_01_00_15_02.947+2017_04_01_00_25_02.949.121f03.header
+    /misc/yoda/pub/pad/year2017/month04/day01/sams2_accel_121f03/2017_04_01_00_25_02.951+2017_04_01_00_35_02.955.121f03.header
+    """
+    glob_pattern = os.path.join(padbase, ymdpat, subdirpat, filepat)
+    return glob.glob(glob_pattern)
+
+def glob_paddirs(ymdpat, subdirpat, padbase=r'/misc/yoda/pub/pad'):
+    """
+    >>> ymdpat = r'year201[24]/month03/day2[2-4]'
+    >>> subdirpat = r'sams2_accel_121f0[23]'
+    >>> for dirname in glob_paddirs(ymdpat, subdirpat): print dirname
+    /misc/yoda/pub/pad/year2012/month03/day22/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2012/month03/day22/sams2_accel_121f03
+    /misc/yoda/pub/pad/year2012/month03/day23/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2012/month03/day23/sams2_accel_121f03
+    /misc/yoda/pub/pad/year2012/month03/day24/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2012/month03/day24/sams2_accel_121f03
+    /misc/yoda/pub/pad/year2014/month03/day22/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2014/month03/day22/sams2_accel_121f03
+    /misc/yoda/pub/pad/year2014/month03/day23/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2014/month03/day23/sams2_accel_121f03
+    /misc/yoda/pub/pad/year2014/month03/day24/sams2_accel_121f02
+    /misc/yoda/pub/pad/year2014/month03/day24/sams2_accel_121f03
+    """
+    glob_pattern = os.path.join(padbase, ymdpat, subdirpat)
+    return glob.glob(glob_pattern)
 
 def grep_r(pattern, topdir):
     r = re.compile(pattern)

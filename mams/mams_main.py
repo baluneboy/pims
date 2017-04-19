@@ -39,7 +39,7 @@ def query_mams_temps(day, table='housek', schema='pims', host='stan', user=_UNAM
 
 def query_mams_bias_cal(last=10):
     df = get_mams_bias_cal(last=last)
-    print df
+    return df
     
 def parameters_ok():
     """check for reasonableness of parameters"""    
@@ -144,4 +144,3 @@ def main(argv):
 if __name__ == '__main__':
     """run main with cmd line args and return exit code"""
     sys.exit(main(sys.argv))
-    #query_mams_bias_cal(last=10)

@@ -6,7 +6,7 @@ import time
 from dateutil.parser import parse
 from mutagen.mp3 import MP3
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
-
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 
 class FileFilterPipeline(object):
 
@@ -205,7 +205,22 @@ class MatchSensorAxRoadmap(object):
                 return True
         else:
             return False
-  
+
+# for example, used to quarantine PAD files with filename's GMT stop time greater than start & GMT start time less than stop
+class DateRangePadFile(object):
+    
+    def __init__(self, start, stop):
+        self.start = start
+        self.stop = stop
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            fstart, fstop = pad_fullfilestr_to_start_stop(f)
+            if fstop > self.start and fstart < self.stop:
+                yield f
+                
+    def __str__(self):
+        return 'is a PAD file with fname stop > %s and fname start < %s' % (self.start, self.stop)
     
 #---------------------------------------------------
 # a file-missing function

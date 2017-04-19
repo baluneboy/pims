@@ -5,8 +5,9 @@ import re
 import datetime
 
 from pims.utils.pimsdateutil import datetime_to_ymd_path
-from pims.files.utils import listdir_filename_pattern
+from pims.files.utils import listdir_filename_pattern, glob_padheaders, mkdir_p, move_pad_pair
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
+from pims.files.filter_pipeline import FileFilterPipeline, DateRangePadFile
 from interval import Interval
 
 # return dirname (or None) for given sensor+suffix on day of datetime, dtm
@@ -21,25 +22,58 @@ def get_path_to_sensor(sensor, suffix, dtm):
     else:
         return None
 
-# return header filename (or None) for given sensor+suffix for datetime, dtm
 def get_header_file(sensor, suffix, dtm):
+    """return header filename (or None) for given sensor+suffix for datetime, dtm"""
     dirname = get_path_to_sensor(sensor, suffix, dtm)
     headers = listdir_filename_pattern(dirname, '.*header')
-    f = pad_fullfilestr_to_start_stop
-    intervals = [ Interval(f(x)[0], f(x)[1]) for x in headers ]
-    bools = [ dtm in i for i in intervals ]
-    #bools = Interval(dtm, dtm) in intervals[0]
-    #print bools
+    #f = pad_fullfilestr_to_start_stop
+    #intervals = [ Interval(f(x)[0], f(x)[1]) for x in headers ]
+    #bools = [ dtm in i for i in intervals ]
+    ##bools = Interval(dtm, dtm) in intervals[0]
+    ##print bools
     return headers
+
+def pad_quarantiner():
+    """TODO implement PAD quarantiner routine to...SEE
+    /home/pims/dev/programs/python/pims/pad/readme_padquarantine.txt
+    THEN after quarantined, packetWriter from mr-hankey, then do all again for MAMS OSS and HiRAP"""
+
+    ymdpat = r'year2017/month04/day0[89]'
     
-#sensor = '121f03'
-#suffix = '006'
-#dtm = datetime.datetime(2014, 1, 2, 3, 4, 5)
-#dirname = get_path_to_sensor(sensor, suffix, dtm)
-#print dirname
-#print len(get_header_file(sensor, suffix, dtm))
-#raise SystemExit
+    #quarantines = [
+    #    ('121f02', datetime.datetime(2017,  4,  8,  8, 33, 30, 673000), datetime.datetime(2017,  4,  9, 20, 34, 50, 758000)),
+    #    ('121f03', datetime.datetime(2017,  4,  8,  8, 33, 30, 499000), datetime.datetime(2017,  4,  9, 20, 21, 24, 913000)),
+    #    ('121f04', datetime.datetime(2017,  4,  8,  8, 33, 30, 510000), datetime.datetime(2017,  4,  9, 19, 49,  4, 344000)),
+    #    ('121f05', datetime.datetime(2017,  4,  8,  8, 33, 30, 527000), datetime.datetime(2017,  4,  9, 20, 33, 34, 653000)),
+    #    ('121f08', datetime.datetime(2017,  4,  8,  8, 31, 28, 546000), datetime.datetime(2017,  4,  9, 20, 34, 49, 438000)),
+    #    ]
+
+    quarantines = [
+        ('hirap',     datetime.datetime(2017,  4,  8,  8, 35, 49, 234000), datetime.datetime(2017,  4,  9, 23, 59, 59, 999000)),
+        ('ossbtmf',   datetime.datetime(2017,  4,  8, 10, 36,  8, 000000), datetime.datetime(2017,  4,  9, 23, 59, 59, 999000)),
+        ]
+
+    for sensor, start, stop in quarantines:
+        subdirpat = r'*ams*_accel_%s*' % sensor
+        header_files = glob_padheaders(ymdpat, subdirpat)
+        print '\nFound %d matching header files for %s*' % (len(header_files), sensor)
         
+        # Initialize processing pipeline (no file list as input yet)
+        ffp = FileFilterPipeline(DateRangePadFile(start, stop))
+        print ffp
+        
+        # Apply processing pipeline input #1 (now ffp is callable)
+        bad_dirs = []
+        quarantined_hdr_files = []
+        for f in ffp(header_files):
+            quarantined_hdr_files.append(f)
+            quarantined_dir = os.path.join( os.path.dirname(f), 'quarantined' )
+            if quarantined_dir not in bad_dirs:
+                mkdir_p(quarantined_dir)
+            move_pad_pair(f, quarantined_dir)
+            
+        print '%d file pairs for %s* were quarantined' % (len(quarantined_hdr_files), sensor)
+
 def main(argv):
     """describe what this routine does here"""
     # parse command line
@@ -57,4 +91,5 @@ def main(argv):
     printUsage()  
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    #sys.exit(main(sys.argv))
+    pad_quarantiner()
