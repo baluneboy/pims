@@ -17,6 +17,25 @@ from pims.excel.modification import overwrite_last_row_with_totals, kpi_sheet_fi
 from openpyxl.reader.excel import load_workbook
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
+JEN_MSID_MAP = {
+        'ULZL02RT0471C': 'MSG_Outlet_2_Current',
+        'ULZL02RT0477J': 'MSG_Outlet_2_Status',
+        'UFZF07RT0114V': 'MSG_Outlet1_28V',
+        'UFZF07RT0118V': 'MSG_Outlet2_28V',
+        'UFZF07RT0121J': 'MSG_Outlet1_Status',
+        'UFZF07RT0125J': 'MSG_Outlet2_Status',
+        'UFZF07RT0046T': 'MSW_WV_Air_Temp',
+        'UFZF13RT7420J': 'TSH_ES05_CIR_Power_Status',
+        'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
+        'UEZE03RT1384C': 'ER3_Embedded_EE_Current',
+        'UEZE03RT1548J': 'ER3_EE_F04_Power_Status',
+        'UEZE04RT1394C': 'ER4_Drawer2_Current',
+        'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
+        'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE06RT1578J': 'ER6_Locker3_Status',
+        'UEZE06RT1389C': 'ER6_Locker3_Current',        
+        }
+
 # FIXME mkdir as needed and write output xlsx to like /misc/yoda/www/plots/batch/padtimes/sams_monthly/2014 << YYYY subdir
 
 ############################################################################################
@@ -710,6 +729,14 @@ def read_config_template(xlsx_file='/misc/yoda/www/plots/batch/padtimes/amp_kpi_
     #dfs = {sheet_name: xl_file.parse(sheet_name) for sheet_name in xl_file.sheet_names}
     df_config = xl_file.parse('config')
     return df_config
+
+def convert_sto2csv(stofile, msid_map=JEN_MSID_MAP):
+    """convert sto file to dataframe"""
+    
+    # get dataframe from sto file
+    df = sto2dataframe(stofile, msid_map)
+    column_list = df.columns.tolist()
+    df.to_csv(stofile.replace('.sto', '.sto.csv'))
 
 # convert sto file to dataframe, then process and write to xlsx
 def convert_sto2xlsx(stofile, xlsxfile):

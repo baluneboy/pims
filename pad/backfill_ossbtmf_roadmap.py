@@ -94,12 +94,12 @@ def run_backfill(day, batch_dir, jpg_files, log):
             count += 1
     return count
 
-def run_ike_repair(years, log):
-    """Run processRoadmap.py on ike to get new PDFs into the fold"""
-    # ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 | grep nserted'
+def run_mrhankey_repair(years, log):
+    """Run processRoadmap.py on mr-hankey to get new PDFs into the fold"""
+    # ssh mr-hankey 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 | grep nserted'
     for repair_year in years:
-        log.info('Run ike repair for year %d.' % repair_year)
-        cmdstr = "ssh ike 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 repairYear=%d | grep Inserted'" % repair_year
+        log.info('Run mr-hankey repair for year %d.' % repair_year)
+        cmdstr = "ssh mr-hankey 'cd /home/pims/roadmap && python /home/pims/roadmap/processRoadmap.py logLevel=3 mode=repair repairModTime=5 repairYear=%d | grep Inserted'" % repair_year
         timeLogRun(cmdstr, 900, log) # timeout of 900 seconds for 15 minutes
 
 def backfill_ossbtmf_roadmaps(date_range, batch_dir, log):
@@ -130,9 +130,9 @@ def backfill_ossbtmf_roadmaps(date_range, batch_dir, log):
     
     log.info('Backfilled a total of %d days.' % num_days_backfilled)
     
-    # If any backfills, then do repair routine on ike
+    # If any backfills, then do repair routine on mr-hankey
     if num_days_backfilled > 0:
-        run_ike_repair(repair_years, log)
+        run_mrhankey_repair(repair_years, log)
     
 def main(argv):
     """describe what this routine does here"""
