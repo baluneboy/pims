@@ -2,8 +2,7 @@
 
 import numpy as np
 from math import atan2, sqrt, sin, cos
-from sympy.matrices import Matrix
-from sympy import pprint, symbols, eye
+
 
 def symbolic_eulerangles_from_rotation_matrix(m):
     """
