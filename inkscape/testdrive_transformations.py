@@ -3,9 +3,11 @@
 import sys
 import numpy as np
 from sympy.matrices import Matrix
-from sympy import pprint, symbols
+from sympy import pprint, symbols, eye
 from transformations import rotation_matrix, concatenate_matrices
 #from transformations import euler_matrix, is_same_transform
+
+#I = eye(4)
 
 def print_hstack(I, Rz, Rzy, Rzyx):
     """print horizontal stackof the rotation matrices left-to-right for yaw, then pitch, then roll"""

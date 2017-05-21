@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Komodo Project File - DO NOT EDIT -->
+<project id="5d6b511a-bf16-b745-bdd0-e10b81cfbeca" kpf_version="5" name="inkscapetransform.komodoproject">
+<file id="7cdf2d31-98b8-4a47-892a-b20791a4de61" idref="5d6b511a-bf16-b745-bdd0-e10b81cfbeca" name="vector.py" url="inkscape/vector.py">
+</file>
+<file id="c601409f-8cee-c243-8302-fda9017cf17f" idref="5d6b511a-bf16-b745-bdd0-e10b81cfbeca" name="transformations.py" url="inkscape/transformations.py">
+</file>
+<file id="e9a74673-954d-fc45-a03b-b0e3b7480b18" idref="5d6b511a-bf16-b745-bdd0-e10b81cfbeca" name="testdrive_transformations.py" url="inkscape/testdrive_transformations.py">
+</file>
+</project>
