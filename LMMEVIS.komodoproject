@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
-<project id="51bb1b07-d022-45f5-a6f1-78f2c2c31a75" kpf_version="5" name="padgaps.komodoproject">
+<project id="51bb1b07-d022-45f5-a6f1-78f2c2c31a75" kpf_version="5" name="LMMEVIS.komodoproject">
 <file id="06f4bc18-c350-45d2-b00b-fd502606f89c" idref="51bb1b07-d022-45f5-a6f1-78f2c2c31a75" name="remedy_helper.py" url="pad/remedy_helper.py">
 </file>
 <file id="212b5494-a09a-4d25-81c7-49c0a61bb6b0" idref="51bb1b07-d022-45f5-a6f1-78f2c2c31a75" name="pad_gaps_and_intervals.py" url="pad/pad_gaps_and_intervals.py">

@@ -296,8 +296,27 @@ def padfilename2interval(fname):
     t1, t2 = pad_fullfilestr_to_start_stop(fname)
     return Interval(t1,t2)
 
+def get_loose_pad_intervalset(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pub/pad'):
+    
+    # get day interval and "day" PAD ymd path
+    tomorrow = day + datetime.timedelta(days=1)
+    t1 = datetime.datetime.combine(day, datetime.datetime.min.time())
+    t2 = datetime.datetime.combine(tomorrow, datetime.datetime.min.time())
+    ymdpath = datetime_to_ymd_path(day, base_dir=basedir)
+    
+    # initialize loose pad interval set
+    s = LoosePadIntervalSet(maxgapsec=maxgapsec)
+    
+    # build interval set with pad filenames for "yesterday" and "day"
+    yesterday = day - datetime.timedelta(days=1)
+    file_list = get_pad_data_files(datetime_to_ymd_path(yesterday, base_dir=basedir), sensor) # "yesterday" files
+    file_list.extend(get_pad_data_files(ymdpath, sensor)) # extend list with "day" files
+    for f in file_list:
+        s.add(padfilename2interval(f))
+    
+    return s
 
-def get_loose_pad_gaps(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pub/pad'):
+def OLDget_loose_pad_gaps(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pub/pad'):
     
     # get day interval and "day" PAD ymd path
     tomorrow = day + datetime.timedelta(days=1)
@@ -324,6 +343,37 @@ def get_loose_pad_gaps(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pu
     
     return gaps   
 
+def get_whole_day_intervalset(day):
+    
+    # get day interval and "day" PAD ymd path
+    tomorrow = day + datetime.timedelta(days=1)
+    t1 = datetime.datetime.combine(day, datetime.datetime.min.time())
+    t2 = datetime.datetime.combine(tomorrow, datetime.datetime.min.time())
+
+    # build interval for day of interest (the whole day)
+    day_interval = Interval(t1, t2)
+    whole_day_intervalset = IntervalSet( (day_interval,) )
+    return whole_day_intervalset
+
+def get_loose_pad_gaps(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pub/pad'):
+    
+    # get loose pad interval set
+    s = get_loose_pad_intervalset(day, sensor=sensor, maxgapsec=maxgapsec, basedir=basedir)
+    
+    # get whole day interval set
+    whole_day_intervalset =  get_whole_day_intervalset(day)
+    
+    # difference to get set of gaps for day of interest
+    gaps = whole_day_intervalset - s
+    
+    return gaps   
+
+def get_loose_pad_nongaps(day, sensor='121f04', maxgapsec=2, basedir='/misc/yoda/pub/pad'):
+    
+    # get loose pad interval set
+    nongaps = get_loose_pad_intervalset(day, sensor=sensor, maxgapsec=maxgapsec, basedir=basedir)
+    
+    return nongaps   
 
 def get_strata_gaps(days_ago=2, sensor='121f04', maxgapsec=59, basedir='/misc/yoda/pub/pad'):
     #print days_ago, sensor, maxgapsec, basedir
