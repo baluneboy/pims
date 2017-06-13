@@ -20,6 +20,7 @@ from pims.files.filter_pipeline import FileFilterPipeline, MatchSensorAxRoadmap,
 from pims.patterns.probepats import _ROADMAP_PDF_BLANKS_PATTERN, _OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN
 from pims.probes.tree_example import ExampleTreeBrowser
 from pims.pad.daily_set import _TWODAYSAGO
+from pims.database.samsquery import query_pimsmap_roadmap, insert_pimsmap_roadmap
 
 
 # input parameters
@@ -31,6 +32,7 @@ defaults = {
 'sensors':      '121f02,121f03,121f04,121f05,121f08',       # comma-sep list of sensors
 'axes':         's,x,y,z',                                  # comma-sep list of axis chars
 'order_by_day': 'True',                                     # order_by_day; True for day/sensor; else, sensor/day
+'more_details': 'False',                                    # more_details; True to get more details
 }
 parameters = defaults.copy()
 
@@ -94,8 +96,30 @@ def get_roadmap_sensor_tree(parameters):
         for sensor in sensors:
             for axis in axes:
                 pdf_files = get_day_sensor_axis_roadmap_pdf_files(day_pdf_files, sensor, axis)
-                sensor_tree[sensor][day.strftime('%Y-%m-%d')][axis] = [ os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') for f in pdf_files ]
+                sensor_tree[sensor][day.strftime('%Y-%m-%d')][axis] = [os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') for f in pdf_files]
     return sensor_tree
+
+
+def bname_in_roadmap_recs(fname, roadmap_recs):
+    bname = os.path.basename(fname)
+    return bname in roadmap_recs['name'].values
+
+
+def get_fs(fname):
+    bname = os.path.basename(fname)    
+    return float(bname.split('_')[8].lstrip('roadmaps').rstrip('.pdf'))
+
+
+def get_pdf_file_status(f, roadmap_recs):
+    bname = os.path.basename(f)
+    tstamp = unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S')
+    fsstr = '%.2f' % get_fs(f)
+    is_roadmap_rec = bname_in_roadmap_recs(f, roadmap_recs)
+    if is_roadmap_rec:
+        insert_str = 'skip insert'
+    else:
+        insert_str = insert_pimsmap_roadmap(bname)
+    return bname, tstamp, fsstr, is_roadmap_rec, insert_str
 
 
 def get_roadmap_day_tree(parameters):
@@ -104,9 +128,20 @@ def get_roadmap_day_tree(parameters):
     for sensor in sensors:
         for day in date_range:
             day_pdf_files = get_day_roadmap_pdf_files(dir_name, day, basename_pat)
-            for axis in axes:
-                pdf_files = get_day_sensor_axis_roadmap_pdf_files(day_pdf_files, sensor, axis)
-                day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = [ os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') for f in pdf_files ]
+            if parameters['more_details']:
+                roadmap_recs = query_pimsmap_roadmap(day, sensor)
+                for axis in axes:
+                    pdf_files = get_day_sensor_axis_roadmap_pdf_files(day_pdf_files, sensor, axis)
+                    #day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = [os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') + ' ' + '%.2f' % get_fs(f) + ' ' + str(bname_in_roadmap_recs(f, roadmap_recs)) + ' ' + 'insertstr' for f in pdf_files]
+                    day_sensor_axis = list()
+                    for f in pdf_files:
+                        bname, tstamp, fsstr, is_roadmap_rec, insert_str = get_pdf_file_status(f, roadmap_recs)
+                        day_sensor_axis.append(' '.join([bname, tstamp, fsstr, str(is_roadmap_rec), insert_str]))
+                    day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = day_sensor_axis
+            else:
+                for axis in axes:
+                    pdf_files = get_day_sensor_axis_roadmap_pdf_files(day_pdf_files, sensor, axis)
+                    day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = [os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') for f in pdf_files]
     return day_tree
 
 
@@ -169,7 +204,14 @@ def parameters_ok():
     except Exception, e:
         print 'could not cast "order_by_day" parameter as boolean: %s' % e.message,
         return False
-    
+
+    # get more details (or not)
+    try:
+        parameters['more_details'] = eval(parameters['more_details'])
+    except Exception, e:
+        print 'could not cast "more_details" parameter as boolean: %s' % e.message,
+        return False
+
     # be sure user did not mistype or include a parameter we are not expecting
     s1, s2 = set(parameters.keys()), set(defaults.keys())
     if s1 != s2:
@@ -225,7 +267,6 @@ def main(argv):
                 return -1
 
     print_usage()
-
 
 if __name__ == '__main__':
     """run main with cmd line args and return exit code"""

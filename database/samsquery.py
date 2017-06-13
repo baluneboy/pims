@@ -13,6 +13,7 @@ from MySQLdb import *
 from pims.config.conf import get_db_params
 from pims.config.conf import get_config
 from pims.utils.datetime_ranger import DateRange
+from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
 
 import mysql.connector
 from sqlalchemy import create_engine
@@ -23,14 +24,17 @@ _HOST_SAMS = 'yoda'
 
 #print _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS; raise SystemExit
 
+
 def mysql_con_yoda(host=_HOST_SAMS, user=_UNAME_SAMS, passwd=_PASSWD_SAMS, db=_SCHEMA_SAMS):
     return Connection(host=host, user=user, passwd=passwd, db=db)
+
 
 def get_cronjob():
     cmd = 'crontab -l | grep samsquery.py'
     p = subprocess.Popen([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
     results, err = p.communicate()
     return results.split('#')[1] # just return the comment
+
 
 class EeStatusQuery(object):
     """workaround query for updating web page with EE status"""
@@ -56,11 +60,13 @@ class EeStatusQuery(object):
         results, err = p.communicate()
         return results
 
+
 class EeRtStatusQuery(EeStatusQuery):
     
     def _get_query(self):
         query = 'SELECT * FROM samsmon.ee_packet ORDER BY timestamp DESC LIMIT 500;'
         return query
+
 
 # FIXME this was abandoned for quicker, manual build of queries shown in comments below
 class SamsopsBak(object):
@@ -110,6 +116,7 @@ SAMSOPS_BAK = {
     'tshes_command_receipt_log'        :'Timestamp'
 }
 
+
 def show_query(tname, field, date_range):
     fmt = '%Y-%m-%d'
     d = date_range.start
@@ -121,6 +128,7 @@ def show_query(tname, field, date_range):
         #print "INSERT INTO table_subdiv_recs (tname, start, stop, count) SELECT '%s' as tname, '%s' as start, '%s' as stop, (SELECT count(*) FROM %s WHERE %s >= '%s' AND %s < '%s') as count;" % (tname, t1, t2, tname, field, t1, field, t2)
         print "INSERT INTO samsops_bak_%s.%s SELECT * FROM samsops_bak.%s WHERE %s >= '%s' AND %s < '%s';" % (y1, tname, tname, field, t1, field, t2)
         d += relativedelta(years=1)
+
 
 def compare_samsops_bak(pword, d1, d2):
     fmt = '%Y-%m-%d'
@@ -149,6 +157,7 @@ def compare_samsops_bak(pword, d1, d2):
 #compare_samsops_bak(pword, d3, d4)
 #raise SystemExit
 
+
 class CuStatusQuery(EeStatusQuery):
     """workaround query for updating web page with CU status"""
 
@@ -156,6 +165,7 @@ class CuStatusQuery(EeStatusQuery):
         #query = 'SELECT * FROM samsnew.cu_packet_rt;' # does not work, but why?
         query = 'SELECT * FROM samsnew.cu_packet ORDER BY timestamp DESC LIMIT 11;'
         return query
+
 
 class CuMonthlyQuery(EeStatusQuery):
     """monthly query for updating kpi wth CU status"""
@@ -175,12 +185,14 @@ class CuMonthlyQuery(EeStatusQuery):
                                                                         d2.strftime(fmt))
         return query
 
+
 class OldGseStatusQuery(EeStatusQuery):
     """workaround query for updating web page with GSE status"""
 
     def _get_query(self):
         query = 'SELECT * FROM samsnew.gse_packet_rt;' # ORDER BY ku_timestamp DESC LIMIT 11;'
         return query
+
 
 class GseStatusQuery(EeStatusQuery):
     """workaround query for updating web page with GSE status"""
@@ -189,6 +201,7 @@ class GseStatusQuery(EeStatusQuery):
         fivemin_agostr = (datetime.datetime.now() - relativedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
         query = "SELECT ku_timestamp, sams_cu_hs_counter FROM samsnew.gse_packet WHERE ku_timestamp >= '%s' ORDER BY ku_timestamp DESC LIMIT 5;" % fivemin_agostr
         return query
+
 
 class SimpleQueryAOS(object):
     """simple query for AOS/LOS"""
@@ -224,6 +237,7 @@ class SimpleQueryAOS(object):
         self.gse_tiss_dtm = parser.parse(gse_tiss_time)
         self.aos_los = aos_los
 
+
 def get_raw_dataframe(results):
     s = StringIO()
     header = results[0]
@@ -233,6 +247,7 @@ def get_raw_dataframe(results):
     s.seek(0) # "rewind" to the beginning of the StringIO object
     df = pd.read_csv( s, sep='\t' )
     return df
+
 
 def get_processed_dataframe(params):
     # get db query results
@@ -298,6 +313,7 @@ EE = {
     'caption'               : 'Electronics Enclosures (EEs)',
     'formatters'            : {'ee_id':lambda x: "%9s" % x[-3:].replace('-', ' ')}
 }
+
 
 # Workaround for db table where Dump2 is clobbering RealTime
 def workaroundRTtable(htmlFile='/misc/yoda/www/plots/user/sams/eetemp.html'):
@@ -397,7 +413,8 @@ def workaroundRTtable(htmlFile='/misc/yoda/www/plots/user/sams/eetemp.html'):
     fo = open(htmlFile, 'w')
     fo.write(s);
     fo.close()    
-        
+
+
 def demo():
     #right_now = (datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
     #print '%s is GMT now' % right_now
@@ -413,6 +430,7 @@ def demo():
         print  '------------------------------'
         print gse_results
 
+
 def demo3():
     df = pd.DataFrame({'correlation':[0.5, 0.1,0.9], 'p_value':[0.1,0.8,0.01]})
     df.to_html('/tmp/trash3.html',
@@ -421,7 +439,8 @@ def demo3():
                 'correlation':lambda x: "%3.1f" % x
                 })
 
-# function to format percentages
+
+
 def percentage_fmt(x):
     """function to format percentages"""
     if x < 50:               s = '<span style="color: red">%.1f</span>' % x
@@ -429,7 +448,7 @@ def percentage_fmt(x):
     else:                    s = '%.1f' % x
     return s
 
-# function to format hourlies
+
 def hourly_fmt(x):
     """function to format hourlies"""
     d = pd.to_datetime(x)
@@ -437,6 +456,7 @@ def hourly_fmt(x):
     if all_balls: s = '%s' % x
     else:         s = '<span style="color: red;">%s</span>' % x
     return s
+
 
 def demo_conditional_cell_formatting():
     buf = StringIO()
@@ -497,7 +517,7 @@ def demo_conditional_cell_formatting():
     with open("/tmp/trash4.html", "w") as html_file:
         html_file.write( s.replace('nan', '') )
 
-# delete records older than 1 day from samsmon db table
+
 def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
     """delete records older than 1 day from samsmon db table"""
     con = mysql_con_yoda(db=schema)
@@ -507,6 +527,7 @@ def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
     result = cursor.fetchall()
     cursor.close()
     con.close()
+
 
 def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
     """get records from d1 to d2"""
@@ -518,8 +539,55 @@ def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsnew', host='yoda',
     engine = create_engine(constr, echo=False)
     df = pd.read_sql_query(query, con=engine)
     return df
-    
-# iterate over samsmon tables to delete records older than 1 day from each
+
+
+def query_pimsmap_roadmap(d, sensor, host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get pimsmap.roadmap records from day for sensor"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, 'pimsmap')
+    query = "select roadmap.name, roadmap.year, roadmap.month, roadmap.day, sensor.name as 'sensor' from roadmap join sensor where sensor.id = roadmap.sensor_id and sensor.name = '%s' and roadmap.year = %d and roadmap.month = %d and roadmap.day = %d;" % (sensor, d.year, d.month, d.day)
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df    
+
+
+def query_pimsmap_plottype(abbr):
+    """SELECT id FROM pimsmap.plottype where abbr = "spgs"; # TO GO FROM abbr to plot_id"""
+    con = mysql_con_yoda(db='pimsmap')
+    cursor = con.cursor()
+    query = 'SELECT id FROM pimsmap.plottype where abbr = "%s";' % abbr
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.close()
+    con.close()    
+    return result[0][0]  
+
+
+def query_pimsmap_sensor_id(sensor):
+    """SELECT id FROM pimsmap.sensor where name = "121f03"; # TO GO FROM sensor to sensor_id"""
+    con = mysql_con_yoda(db='pimsmap')
+    cursor = con.cursor()
+    query = 'SELECT id FROM pimsmap.sensor where abbr = "%s";' % sensor
+    cursor.execute(query)
+    result = cursor.fetchall()
+    cursor.close()
+    con.close()    
+    return result[0][0]  
+
+
+def insert_pimsmap_roadmap(bname):
+    m = re.match(_ROADMAP_PDF_FILENAME_PATTERN, bname)
+    year, month, day = m.group('year'), m.group('month'), m.group('day')
+    datestr = '%s-%s-%s' % (year, month, day)
+    abbrev = m.group('plot') + m.group('axis') # use with QUERY #1 to get plot_id
+    sensor = m.group('sensor') # use this with QUERY #2 to get sensor_id
+    fs = float(m.group('fsnew'))
+    plotid = query_pimsmap_plottype(abbrev)
+    sensid = query_pimsmap_sensor_id(sensor)
+    query = "INSERT INTO pimsmap.roadmap (name, plot_id, sensor_id, year, month, day, samplerate, date) VALUES ('%s', %d, %d, %s, %s, %s, %.3f, '%s');" % (bname, plotid, sensid, year, month, day, fs, datestr)
+    return query
+
+
 def prune_samsmon():
     """iterate over samsmon tables to delete records older than 1 day from each"""    
     tables = [
@@ -530,6 +598,7 @@ def prune_samsmon():
     ]
     for table, time_columnstr in tables:
         prune_samsmon_table(table, time_columnstr)
+
 
 if __name__ == "__main__":
     eval( sys.argv[1] + '()' )
