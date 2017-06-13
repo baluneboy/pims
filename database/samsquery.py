@@ -542,9 +542,9 @@ def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsnew', host='yoda',
 
 
 def query_pimsmap_roadmap(d, sensor, host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
-    """get pimsmap.roadmap records from day for sensor"""
+    """get pimsmap.roadmap records from d [a datetime day] for sensor"""
     constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, 'pimsmap')
-    query = "select roadmap.name, roadmap.year, roadmap.month, roadmap.day, sensor.name as 'sensor' from roadmap join sensor where sensor.id = roadmap.sensor_id and sensor.name = '%s' and roadmap.year = %d and roadmap.month = %d and roadmap.day = %d;" % (sensor, d.year, d.month, d.day)
+    query = "select roadmap.name, roadmap.year, roadmap.month, roadmap.day, sensor.name as 'sensor' from roadmap join sensor where sensor.id = roadmap.sensor_id and sensor.abbr = '%s' and roadmap.year = %d and roadmap.month = %d and roadmap.day = %d;" % (sensor, d.year, d.month, d.day)
     #print query
     engine = create_engine(constr, echo=False)
     df = pd.read_sql_query(query, con=engine)
@@ -575,7 +575,7 @@ def query_pimsmap_sensor_id(sensor):
     return result[0][0]  
 
 
-def insert_pimsmap_roadmap(bname):
+def get_roadmap_data_record(bname):
     m = re.match(_ROADMAP_PDF_FILENAME_PATTERN, bname)
     year, month, day = m.group('year'), m.group('month'), m.group('day')
     datestr = '%s-%s-%s' % (year, month, day)
@@ -584,8 +584,28 @@ def insert_pimsmap_roadmap(bname):
     fs = float(m.group('fsnew'))
     plotid = query_pimsmap_plottype(abbrev)
     sensid = query_pimsmap_sensor_id(sensor)
-    query = "INSERT INTO pimsmap.roadmap (name, plot_id, sensor_id, year, month, day, samplerate, date) VALUES ('%s', %d, %d, %s, %s, %s, %.3f, '%s');" % (bname, plotid, sensid, year, month, day, fs, datestr)
-    return query
+    query_str = "INSERT INTO pimsmap.roadmap (name, plot_id, sensor_id, year, month, day, samplerate, date) VALUES ('%s', %d, %d, %s, %s, %s, %.3f, '%s');" % (bname, plotid, sensid, year, month, day, fs, datestr)
+    data_record = (bname, plotid, sensid, year, month, day, fs, datestr)
+    return query_str, data_record
+
+
+def do_insert_pimsmap_roadmap(data_record):
+    con = mysql_con_yoda(db='pimsmap')
+    cursor = con.cursor()
+
+    add_record = ("INSERT INTO roadmap "
+                    "(name, plot_id, sensor_id, year, month, day, samplerate, date) "
+                    "VALUES (%s, %s, %s, %s, %s, %s, %s, %s)")
+
+    #data_record = ('2017_04_02_16_00_00.000_121f03_spgs_roadmaps500.pdf', 3, 2, 2017, 4, 2, 500.000, '2017-04-02')
+
+    # Insert new record
+    cursor.execute(add_record, data_record)
+
+    # Make sure data is committed to the database, then close cursor and connection
+    con.commit()
+    cursor.close()
+    con.close()
 
 
 def prune_samsmon():

@@ -20,7 +20,7 @@ from pims.files.filter_pipeline import FileFilterPipeline, MatchSensorAxRoadmap,
 from pims.patterns.probepats import _ROADMAP_PDF_BLANKS_PATTERN, _OSSBTMF_ROADMAP_PDF_FILENAME_PATTERN
 from pims.probes.tree_example import ExampleTreeBrowser
 from pims.pad.daily_set import _TWODAYSAGO
-from pims.database.samsquery import query_pimsmap_roadmap, insert_pimsmap_roadmap
+from pims.database.samsquery import query_pimsmap_roadmap, get_roadmap_data_record, do_insert_pimsmap_roadmap
 
 
 # input parameters
@@ -28,11 +28,12 @@ defaults = {
 'dir_name':     '/misc/yoda/www/plots/batch',               # base path
 'first_day':    _TWODAYSAGO,                                # first day to process
 'last_day':     _TWODAYSAGO,                                # last day to process
-'basename_blanks_pattern': _ROADMAP_PDF_BLANKS_PATTERN,     # regular expression pattern to match
+'basename_blanks_pattern': _ROADMAP_PDF_BLANKS_PATTERN,     # NOT IMPLEMENTED YET regular expression pattern to match
 'sensors':      '121f02,121f03,121f04,121f05,121f08',       # comma-sep list of sensors
 'axes':         's,x,y,z',                                  # comma-sep list of axis chars
 'order_by_day': 'True',                                     # order_by_day; True for day/sensor; else, sensor/day
 'more_details': 'False',                                    # more_details; True to get more details
+'do_insertion': 'False',                                    # pimsmap.roadmap backfill (inserts); True for do
 }
 parameters = defaults.copy()
 
@@ -116,10 +117,13 @@ def get_pdf_file_status(f, roadmap_recs):
     fsstr = '%.2f' % get_fs(f)
     is_roadmap_rec = bname_in_roadmap_recs(f, roadmap_recs)
     if is_roadmap_rec:
-        insert_str = 'skip insert'
+        query_str = 'insert; not needed for pimsmap.roadmap (twss)'
+        data_record = None
     else:
-        insert_str = insert_pimsmap_roadmap(bname)
-    return bname, tstamp, fsstr, is_roadmap_rec, insert_str
+        # get eight-tuple data_record like following:
+        # ('2017_04_02_16_00_00.000_121f03_spgs_roadmaps500.pdf', 3, 2, 2017, 4, 2, 500.000, '2017-04-02')
+        query_str, data_record = get_roadmap_data_record(bname)
+    return bname, tstamp, query_str, data_record
 
 
 def get_roadmap_day_tree(parameters):
@@ -135,8 +139,13 @@ def get_roadmap_day_tree(parameters):
                     #day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = [os.path.basename(f) + ' ' + unix2dtm(os.path.getmtime(f)).strftime('%H:%M:%S') + ' ' + '%.2f' % get_fs(f) + ' ' + str(bname_in_roadmap_recs(f, roadmap_recs)) + ' ' + 'insertstr' for f in pdf_files]
                     day_sensor_axis = list()
                     for f in pdf_files:
-                        bname, tstamp, fsstr, is_roadmap_rec, insert_str = get_pdf_file_status(f, roadmap_recs)
-                        day_sensor_axis.append(' '.join([bname, tstamp, fsstr, str(is_roadmap_rec), insert_str]))
+                        bname, tstamp, query_str, data_record = get_pdf_file_status(f, roadmap_recs)
+                        if parameters['do_insertion'] and data_record:
+                            prefix = 'do'
+                            do_insert_pimsmap_roadmap(data_record)
+                        else:
+                            prefix = 'NO'
+                        day_sensor_axis.append(' '.join([bname, tstamp, prefix, query_str]))
                     day_tree[day.strftime('%Y-%m-%d')][sensor][axis] = day_sensor_axis
             else:
                 for axis in axes:
@@ -180,7 +189,9 @@ def parameters_ok():
         re.compile(parameters['basename_blanks_pattern'])
     except Exception, e:
         print 'basename_blanks_pattern "%s" would not compile as valid regular expression' % parameters['basename_blanks_pattern']
-    
+    # FIXME if this compiles okay, then this should override sensors and just look for matching patterns amongst PDFs
+    parameters['basename_blanks_pattern'] = None
+
     # get list of sensors
     try:
         parameters['sensors'] = list(parameters['sensors'].split(','))
@@ -210,6 +221,13 @@ def parameters_ok():
         parameters['more_details'] = eval(parameters['more_details'])
     except Exception, e:
         print 'could not cast "more_details" parameter as boolean: %s' % e.message,
+        return False
+
+    # do pimsmap.roadmap inserts (or not)
+    try:
+        parameters['do_insertion'] = eval(parameters['do_insertion'])
+    except Exception, e:
+        print 'could not cast "do_insertion" parameter as boolean: %s' % e.message,
         return False
 
     # be sure user did not mistype or include a parameter we are not expecting
