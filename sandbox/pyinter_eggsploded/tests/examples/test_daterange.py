@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from pyinter.examples import daterange
 from datetime import datetime as dt, timedelta
 from pyinter import Interval
