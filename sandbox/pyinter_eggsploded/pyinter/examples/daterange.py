@@ -1,3 +1,5 @@
+#!/usr/bin/env python
+
 from datetime import timedelta
 from pyinter import Interval
 
