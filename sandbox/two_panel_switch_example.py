@@ -1,4 +1,4 @@
-#!/usr/bin/env pythohn
+#!/usr/bin/env python
 
 import wx
 import wx.grid as gridlib

@@ -14,8 +14,6 @@ from pims.utils.iterabletools import pairwise
 import pandas as pd
 from hashlib import md5
 
-# FIXME add logging feature
-
 # FIXME need hostname for testing (db @home vs. @work)
 _HOSTNAME = socket.gethostname()
 if _HOSTNAME == 'jimmy':
@@ -25,6 +23,7 @@ else:
 
 # TODO class this up (c'mon man)
 _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
+
 
 # FIXME did this sqlalchemy quick test wrt obspy
 def quick_test(host, schema):

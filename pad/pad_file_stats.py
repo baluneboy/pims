@@ -307,8 +307,8 @@ def demo_intervals():
     #hig.show('intervals')
     #hig.show_dsm(['121f02','121f03', '121f04', '121f05', '121f08', 'es05', 'es06'])
 
-demo_intervals()
-raise SystemExit
+#demo_intervals()
+#raise SystemExit
 
 
 # prepare for trim: remove header_file from yoda_headers list & move PAD pair to new_path
