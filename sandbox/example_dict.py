@@ -14,7 +14,7 @@
 states = {
 #    KEY:            VALUE
     'Oregon':       ('OR', 3, 'bORing'),
-    'Florida':      ('FL', 4, 'humid'),
+    'Florida':      ('FL', 4, 'humid'),9
     'California':   ('CA', 2, 'fun'),
     'New York':     ('NY', 6, 'stinky'),
     'Michigan':     ('MI', 5, 'pseudo-Canadian'),
