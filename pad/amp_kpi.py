@@ -730,6 +730,7 @@ def read_config_template(xlsx_file='/misc/yoda/www/plots/batch/padtimes/amp_kpi_
     df_config = xl_file.parse('config')
     return df_config
 
+
 def convert_sto2csv(stofile, msid_map=JEN_MSID_MAP):
     """convert sto file to dataframe"""
     
@@ -738,7 +739,7 @@ def convert_sto2csv(stofile, msid_map=JEN_MSID_MAP):
     column_list = df.columns.tolist()
     df.to_csv(stofile.replace('.sto', '.sto.csv'))
 
-# convert sto file to dataframe, then process and write to xlsx
+
 def convert_sto2xlsx(stofile, xlsxfile):
     """convert sto file to dataframe, then process and write to xlsx"""
     

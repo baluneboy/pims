@@ -228,7 +228,7 @@ class PacketInspector(object):
         df = df.drop(['t','p','k','h'], 1)
         
         # sort order
-        df.sort(['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+        df.sort_values(by=['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
         
         return df
 
@@ -428,7 +428,7 @@ def main(argv):
             df_cat = pd.concat( [df_cat, query_and_display(sensor, host, parameters['details'], parameters['custom'])] )
             
         # sort by CCSDS sequence, then CCSDS time
-        df_cat.sort(['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+        df_cat.sort_values(by=['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
         df_cat.reset_index(inplace=True, drop=True)
         
         df_cat['ccsds_sequence_delta'] = (df_cat['ccsds_sequence']-df_cat['ccsds_sequence'].shift()).fillna(np.NaN)

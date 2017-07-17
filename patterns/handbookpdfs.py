@@ -261,6 +261,16 @@ _SENSOR_PATTERN = (
     "(?P<suffix>one|ten|006)?\Z"                # zero or one enum for suffix to finish string
     )
 
+# TODO .*(tig\s+\d{2}(:\d{2})+)+.*(dur\s+\d{2}(:\d{2})+)*.* GETS REPLACED WITH
+#-------------------------------------------------------------------
+_TIGDUR_PATTERN = (
+    ".*"                                        # any prefix string
+    "(?P<tig>TIG\s+\d{2}(:\d{2})+){1}"          # TIG hh:mm[:ss]
+    ".*"                                        # any interim string
+    "(?P<dur>DUR\s+\d{2}(:\d{2})+){1}"          # DUR hh:mm:ss   
+    ".*"                                        # any suffix string
+)
+
 _PLOTTYPES = {
     'gvt':   'Acceleration vs. Time',
     'psd':   'Power Spectral Density',

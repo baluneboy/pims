@@ -253,6 +253,18 @@ def delete_older_ee_packets(table, num_keep=3600):
     res = db_connect(query_str, 'jimmy')
     #print res
 
+
+def prune_by_time(host, table, dtm_min):
+    """delete records from pims.table on host where time < dtm_min"""
+    # delete from 121f03 where time < unix_timestamp('2017-06-16 04:45');
+    querystr = "delete from pims.%s where time < unix_timestamp('%s');" % (table, dtm_min.strftime('%Y-%m-%d %H:%M:%S'))
+    #print querystr
+    res = db_connect(querystr, host)
+    querystr2 = "select count(*) from pims.%s where time < unix_timestamp('%s');" % (table, dtm_min.strftime('%Y-%m-%d %H:%M:%S'))
+    res2 = db_connect(querystr2, host)[0][0]
+    return 'there are now %d records in %s on %s where time < %s' % (res2, table, host, dtm_min.strftime('%Y-%m-%d %H:%M:%S'))
+
+
 # get list of ee tables off jimmy
 def get_ee_table_list():
     # delete from pims.122f02 where time not in ( select time from ( select time from pims.122f02 order by time desc limit 3600 -- Keep this many records. ) foo );
