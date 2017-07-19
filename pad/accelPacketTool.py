@@ -49,14 +49,14 @@ parameters = defaults.copy()
 
 # default dict for host look-up
 DB_TABLES = {
-    '121f02': 'kenny',
+    '121f02': 'timmeh',
     '121f03': 'tweek',
-    '121f04': 'mr-hankey',
+    '121f04': 'tweek',
     '121f05': 'chef',
     '121f08': 'timmeh',    
-    'es03':   'ike',    
-    'es05':   'ike',    
-    'es06':   'butters',
+    'es03':   'manbearpig',
+    'es05':   'manbearpig',
+    'es06':   'chef',
     'hirap':  'towelie', 
 }
 
@@ -121,7 +121,6 @@ def get_ccsds_sequence(hdr):
     return int(my_hexdata, scale) & VALUE_MASK
 
 
-# general query
 class GeneralQuery(object):
     """general query"""
     
@@ -141,7 +140,6 @@ class GeneralQuery(object):
         return sqlConnect(self.querystr, self.host)
 
 
-# default query has limit of 1 and desc time order
 class DefaultQuery(GeneralQuery):
     """default query has limit of 1 and desc time order"""
     
@@ -149,7 +147,6 @@ class DefaultQuery(GeneralQuery):
         super(DefaultQuery, self).__init__(host, table, query_suffix='ORDER BY time DESC LIMIT 1')
 
 
-# SAMS SE half-sec foursome query
 class SamsSeHalfSecFoursomeQuery(GeneralQuery):
     """
     SAMS SE half-sec foursome query has limit of 12
@@ -162,7 +159,18 @@ class SamsSeHalfSecFoursomeQuery(GeneralQuery):
         super(SamsSeHalfSecFoursomeQuery, self).__init__(host, table, query_suffix = 'ORDER BY time DESC LIMIT 12')
 
 
-# SAMS TSH one-sec eightsome query
+class SamsSeFiveMinuteQuery(GeneralQuery):
+    """
+    SAMS SE five-minute query has limit of 8*
+    ---> if 8 pkts/sec holds, then with limit of 8*5*60, we should see 5-minute span
+    ---> ccsds_time clusters of 4 with same time and with clusters a half second apart
+    ---> ccsds_sequence_counter foursomes with monotonically decreasing (by exactly one) within each foursome
+    """
+
+    def __init__(self, host, table):
+        super(SamsSeFiveMinuteQuery, self).__init__(host, table, query_suffix='ORDER BY time DESC LIMIT 2400')
+
+
 class SamsTshOneSecEightsomeQuery(GeneralQuery):
     """
     SAMS TSH one-sec eightsome query has limit of 24
@@ -336,7 +344,6 @@ class PacketInspector(object):
             print 'ccsds_time:%s, ccsds_sequence_counter:%05d, pkt_time:%s, table:%s' % (ccsds_time_human, ccsds_sequence_counter, pkt_time_human, self.table)
 
 
-# use parameters to inspect packets in db table
 def query_and_display(table, host, details, custom=None):
     """use parameters to inspect packets in db table"""
     
@@ -400,19 +407,21 @@ def print_usage():
     print 'EXAMPLE4: %s details=True # SHOWS MAX INFO' % os.path.abspath(__file__)
 
 
-# iterate over db query results to show pertinent packet details (and header info when details=True)
 def main(argv):
     """iterate over db query results to show pertinent packet details (and header info when details=True)"""
+
     # parse command line
     args = dict([arg.split('=') for arg in sys.argv[1:]])
+
     # special handling of details argument
     if 'details' in args:    
         parameters['details'] = args['details']
-        del( args['details'] )
+        del(args['details'])
+
     # special handling of custom argument
     if 'custom' in args:
         parameters['custom'] = args['custom']
-        del( args['custom'] )
+        del(args['custom'])
     else:
         parameters['custom'] = None
     db_tables = args
@@ -425,21 +434,28 @@ def main(argv):
         # FIXME a class that contains multiple PacketInspector objects (to add, sort, etc. those)
         df_cat = pd.DataFrame()
         for sensor, host in sensor_tables.iteritems():
-            df_cat = pd.concat( [df_cat, query_and_display(sensor, host, parameters['details'], parameters['custom'])] )
-            
-        # sort by CCSDS sequence, then CCSDS time
-        df_cat.sort_values(by=['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+            df_cat = pd.concat([df_cat, query_and_display(sensor, host, parameters['details'], parameters['custom'])])
+
+        old_sort_order = False
+        if old_sort_order:
+            # sort by CCSDS sequence, then CCSDS time
+            df_cat.sort_values(by=['ccsds_sequence', 'ccsds_time'], ascending=[True, True], inplace=True)
+        else:
+            # sort by CCSDS time, then CCSDS sequence
+            df_cat.sort_values(by=['ccsds_time', 'ccsds_sequence'], ascending=[True, True], inplace=True)
+
         df_cat.reset_index(inplace=True, drop=True)
-        
-        df_cat['ccsds_sequence_delta'] = (df_cat['ccsds_sequence']-df_cat['ccsds_sequence'].shift()).fillna(np.NaN)
-        df_cat['ccsds_time_delta'] = (df_cat['ccsds_time']-df_cat['ccsds_time'].shift()).fillna(np.NaN)
+
+        df_cat['ccsds_sequence_delta'] = (df_cat['ccsds_sequence'] - df_cat['ccsds_sequence'].shift()).fillna(
+            np.NaN)
+        df_cat['ccsds_time_delta'] = (df_cat['ccsds_time'] - df_cat['ccsds_time'].shift()).fillna(np.NaN)
         
         # FIXME to get sec delta, SOMEHOW need to convert via pd.Timestamp( np.datetime64('2012-05-01T01:00:00.000000') )
         #print pd.Timestamp( np.datetime64('2012-05-01T01:00:00.000000') )
         #df_cat['ccsds_sec_delta'] = df_cat['ccsds_time_delta'].map(tdelta2sec)
         
         # FIXME the CSV output filename should reflect inputs and include a when-run timestamp too
-        #print df_cat
+        print df_cat
         #df_cat.to_csv('/tmp/es03.csv', index=False, header=True)
         df_cat.to_csv('/tmp/hirapts3.csv', index=False, header=True)
 
