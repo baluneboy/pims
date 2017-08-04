@@ -540,6 +540,42 @@ def parse_packetfeeder_input_time(s, sec_plot_span):
         dtm = parser.parse(s)
         return dtm2unix(dtm)
 
+
+def datetime_dtm2sdn(dtm):
+    """return matlab serial datenum converted from python datetime
+    Input
+        d   Date as an instance of type datetime.datetime
+    Output
+        The fractional day count since 0-Jan-0000 (proleptic ISO calendar)
+        This is the 'datenum' datatype in matlab
+    Notes on day counting
+        matlab: day one is 1 Jan 0000
+        python: day one is 1 Jan 0001
+        hence an increase of 366 days, for year 0 AD was a leap year
+    """
+    d = dtm.date()
+    t = dtm.time()
+    dd = d.toordinal() + 366
+    tt = datetime.timedelta(hours=t.hour, minutes=t.minute, seconds=t.second)
+    tt = datetime.timedelta.total_seconds(tt) / 86400
+    return dd + tt
+
+
+def datetime_sdn2dtm(datenum):
+    """return python datetime converted from matlab serial datenum
+    Input
+        The fractional day count according to datenum datatype in matlab
+    Output
+        The date and time as a instance of type datetime in python
+    Notes on day counting
+        matlab: day one is 1 Jan 0000 
+        python: day one is 1 Jan 0001
+        hence a reduction of 366 days, for year 0 AD was a leap year
+    """
+    ii = datetime.datetime.fromordinal(int(datenum) - 366)
+    ff = datetime.timedelta(days=datenum%1)
+    return ii + ff
+
 def testdoc(verbose=True):
     import doctest
     return doctest.testmod(verbose=verbose)
