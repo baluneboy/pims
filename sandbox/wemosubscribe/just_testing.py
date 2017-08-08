@@ -32,5 +32,5 @@ def switch_toggle(device, **kwargs):
     print device, kwargs['state']
 
 sec_loop = 10
-print 'Pass control to event loop for %d seconds.' % sec_loop
+print 'Passing control to event loop for %d seconds.' % sec_loop
 env.wait(timeout=sec_loop)  # Pass control to the event loop for 5 seconds (maybe this can be one hour for garage?)
