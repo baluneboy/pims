@@ -95,3 +95,6 @@ podgrab/GrabbedPodcasts.db
 probes.komodoproject
 
 *.py.old
+
+# Pycharm Projects
+PycharmProjects/
