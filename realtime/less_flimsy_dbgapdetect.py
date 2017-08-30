@@ -20,7 +20,7 @@ from pims.files.utils import tail
 # - iterate over list of sensors
 # - better way to get expected packets per second (SAMS/MAMS HiRAP, SampleRate, what else)
 # - some form of pivot table to show results
-# - allow more than 23 hours of history (the GROUP BY in MySQL call mucks this up othewise)
+# - allow more than 23 hours of history (the GROUP BY in MySQL call mucks this up otherwise)
 
 #### input parameters
 ###defaults = {
@@ -113,6 +113,7 @@ class DatabaseHourlyGapsHoursAgo(object):
         query += 'WHERE FROM_UNIXTIME(time) >= "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
         query += 'AND FROM_UNIXTIME(time) < "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')
         query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
+        #SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "GMT", ROUND(100*COUNT(*)/8.000000/600.0) as "121f03<br>%", COUNT(*) as "121f03<br>pkts" from 121f03 WHERE FROM_UNIXTIME(time) BETWEEN "2017-08-29 14:00:00" AND "2017-08-30 13:00:00" GROUP BY time DIV 600 ORDER BY time;
         #print query
         con = mysql_con(host=self.host, db='pims')
         #self.dataframe = psql.frame_query(query, con=con) # <<< before pandas update

@@ -565,12 +565,17 @@ def main(curdir):
 #print header_dict
 #raise SystemExit
 
-#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_Manufacturing_Device_2016-06-09')
+#main('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Progress_67P_Reboost_2017-08-09')
 #raise SystemExit
 
-#pdf_file = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_46S_Docking_19-Mar-2016/2016_03_05_03_15_00_121f05_iav3_1h59m59s_progress61p_reboost.pdf'
-#start, sensor, sensor_suffix, abbrev, notes = get_start_sensor_abbrev_notes_from_pdf_filename(pdf_file)
-#print start, sensor, sensor_suffix, abbrev, notes
+#pdf_files = ['/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Progress_67P_Reboost_2017-08-09/2017_08_09_11_00_00_es05_gvtx_inverted_progress_67p_reboost.pdf',
+#    '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Progress_67P_Reboost_2017-08-09/2017_08_09_11_00_00_es05_gvtx_inverted_progress_67p_reboost_zoom_with_iavx.pdf',
+#    '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Progress_67P_Reboost_2017-08-09/2017_08_09_11_00_00_es05_spgs_progress_67p_reboost.pdf'];
+#for pdf_file in pdf_files:
+#    start, sensor, sensor_suffix, abbrev, notes = get_start_sensor_abbrev_notes_from_pdf_filename(pdf_file)
+#    print start, sensor, sensor_suffix, abbrev, notes
+#    system, sample_rate, cutoff, location, header_dict =  get_header_info(sensor, sensor_suffix, start, {})
+#    print system, sample_rate, cutoff, location, header_dict
 #raise SystemExit
 
 #odt_renderer = get_odt_renderer('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_vehicle_Soyuz_42S_Thruster_Test_2015-09-08/build/01qualify_2015_09_08_00_00_00.000_121f03_pcss_roadmaps500_offsets_-4.25cm_1.00cm_scale_0.86_landscape.pdf')
