@@ -34,7 +34,7 @@ from pims.files.utils import tail
 # defaults
 defaults = {
 'sensorhosts': [
-    ('hirap',       'towelie',      'pims',     '5.21'),    
+    #('hirap',       'towelie',      'pims',     '5.21'),    
     ('121f02',      'timmeh',       'pims',     '8'),
     ('121f03',      'tweek',        'pims',     '8'),
     ('121f04',      'tweek',        'pims',     '8'),
@@ -101,19 +101,21 @@ class DatabaseHourlyGapsHoursAgo(object):
         start = now - rnd - datetime.timedelta(hours=self.hours_ago)
         return  start, stop
 
-    def _dataframe_query(self):
+    def _dataframe_query(self, every_sec=600):
         """count number of packets expected for hourly chunks""" 
         #query =  'SELECT FROM_UNIXTIME(time) as "hour", ' # <<< WORKED BEFORE mariadb
         query =  'SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "hour", '
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
         #query += 'COUNT(*) as "pkts" from %s ' % self.sensor
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s<br>%%", ' % self.sensor
-        query += 'ROUND(100*COUNT(*)/%f/3600.0) as "%s<br>%%", ' % (self.packets_per_sec, self.sensor)
+        query += 'ROUND(100*COUNT(*)/%f/%d) as "%s<br>%%", ' % (self.packets_per_sec, every_sec, self.sensor)
         query += 'COUNT(*) as "%s<br>pkts" from %s ' % (self.sensor, self.sensor)
-        query += 'WHERE FROM_UNIXTIME(time) >= "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
-        query += 'AND FROM_UNIXTIME(time) < "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')
-        query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
-        #SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "GMT", ROUND(100*COUNT(*)/8.000000/600.0) as "121f03<br>%", COUNT(*) as "121f03<br>pkts" from 121f03 WHERE FROM_UNIXTIME(time) BETWEEN "2017-08-29 14:00:00" AND "2017-08-30 13:00:00" GROUP BY time DIV 600 ORDER BY time;
+        query += 'WHERE FROM_UNIXTIME(time) BETWEEN "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
+        query += 'AND "%s" ' % self.stop.strftime('%Y-%m-%d %H:%M:%S')
+        #query += "GROUP BY DATE_FORMAT(FROM_UNIXTIME(time), '%H') ORDER BY time;"
+        query += "GROUP BY time DIV %d ORDER BY time;" % every_sec
+        # SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "GMT", ROUND(100*COUNT(*)/8.000000/600.0) as "121f03<br>%", COUNT(*) as "121f03<br>pkts" from 121f03
+        # WHERE FROM_UNIXTIME(time) BETWEEN "2017-08-29 14:00:00" AND "2017-08-30 13:00:00" GROUP BY time DIV 600 ORDER BY time;
         #print query
         con = mysql_con(host=self.host, db='pims')
         #self.dataframe = psql.frame_query(query, con=con) # <<< before pandas update
@@ -221,8 +223,8 @@ class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
 # function to format percentages
 def percentage_fmt(x):
     """function to format percentages"""
-    if x < 50:               s = '<span style="color: red">%.1f</span>' % x
-    elif x >= 50 and x < 95: s = '<span style="color: blue;">%.1f</span>' % x
+    if x < 80:               s = '<span style="color: red">%.1f</span>' % x
+    elif x >= 80 and x < 99: s = '<span style="color: orange;">%.1f</span>' % x
     else:                    s = '%.1f' % x
     return s
 

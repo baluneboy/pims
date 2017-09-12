@@ -3,6 +3,7 @@
 import socket
 import datetime
 
+#-----------------------------------------------------------------------------------------------------        
 HEADER = '''<!DOCTYPE html>
 <html>
 <head>
@@ -72,6 +73,8 @@ color: #ffffff;
 <body>
 <titletag>PIMS Database Tables <a href="./dbsams.html"> (click here for dbsams)</a></titletag><br>
         '''
+        
+#-----------------------------------------------------------------------------------------------------        
 FOOTER = '<updatetag>updated at GMT %s</updatetag><br>' % str(datetime.datetime.now())[0:-7]
 FOOTER += '<hosttag>host: %s</hosttag><br><br>' % socket.gethostname()
 FOOTER += '''
@@ -79,6 +82,7 @@ FOOTER += '''
 </html>
 '''
 
+#-----------------------------------------------------------------------------------------------------        
 OTHER = """NOTE THIS GREEN COMMENT PART IS SNIPPET OF POSSIBLY IMPROVED TABLE HEADER ROW
 <SNIP>
 }
