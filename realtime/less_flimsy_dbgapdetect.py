@@ -319,6 +319,7 @@ def pims_dbgaps():
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
+    s = s.replace('<table border="1" class="dataframe">', '<table class="dataframe" id="fixed_hdr3">')
     with open("/misc/yoda/www/plots/user/sams/dbpims.html", "w") as html_file:
         html_file.write( HEADER + s.replace('nan', '') + FOOTER )            
     #print df_merged
