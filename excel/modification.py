@@ -85,13 +85,13 @@ def reckon_month(ws):
         last_row = ws.max_row
         last_gmt = ws.cell('A' + str(last_row)).value.date()
         delta_days = (last_gmt - gmt_end).days
-        if delta_days == 1:
+        if delta_days == 0:
             #gmt_range_str = 'GMT range is %s through %s' % (gmt_start.strftime('%Y-%m-%d'), gmt_end.strftime('%Y-%m-%d'))
-            totals_row = last_row - 1
-            ws.cell(row=(totals_row), column=0).value = 'TOTAL'
-            for c in range(ws.get_highest_column())[1:]:
-                letter = get_column_letter(c + 1).upper()
-                formula_str = "=SUM(%s2:%s%d)" % (letter, letter, (totals_row))
+            totals_row = last_row + 1
+            ws.cell(row=(totals_row), column=1).value = 'TOTAL'
+            for c in range(2, ws.max_column+1):
+                letter = get_column_letter(c).upper()
+                formula_str = "=SUM(%s2:%s%d)" % (letter, letter, (totals_row-1))
                 ws.cell(row=(totals_row), column=c).value = formula_str
         else:
             print 'Abort: last_gmt = %s is not end of month = %s' % (last_gmt, gmt_end)        

@@ -82,6 +82,7 @@ JEN_MSID_MAP = {
 #  payload_dependent,     sams,       es03,       100 * D / P
 #  payload_dependent,     sams,       es05,       100 * D / P
 #  payload_dependent,     sams,       es06,       100 * D / P
+#  payload_dependent,     sams,       es09,       100 * D / P
 #
 # Each of below for a given resource for a given month (T is total hours for the given month)
 # DONE continuous group, resource NOT "cu" = 100 * D / T; where D is the number of hours in PAD files

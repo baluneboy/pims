@@ -100,7 +100,7 @@ def parametersOK():
         #parameters['sensorList']=['sams2_accel_121f02','sams2_accel_121f03','sams2_accel_121f04','sams2_accel_121f05','sams2_accel_121f06','sams2_accel_121f08','samses_accel_es05','samses_accel_es06','samses_accel_es08','mams_accel_ossbtmf','mams_accel_ossraw','mams_accel_hirap','iss_rad_radgse']
         parameters['sensorList']=[
             'sams2_accel_121f02','sams2_accel_121f03','sams2_accel_121f04','sams2_accel_121f05','sams2_accel_121f06','sams2_accel_121f08',
-            'samses_accel_es03','samses_accel_es05','samses_accel_es06','samses_accel_es08',
+            'samses_accel_es03','samses_accel_es05','samses_accel_es06','samses_accel_es08','samses_accel_es09',
             'mams_accel_ossbtmf','mams_accel_ossraw','mams_accel_hirap','iss_rad_radgse',
             'mma_accel_0bba','mma_accel_0bbb','mma_accel_0bbc','mma_accel_0bbd'
             ]
