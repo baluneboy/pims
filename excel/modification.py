@@ -81,7 +81,8 @@ def reckon_month(ws):
         last_day = calendar.monthrange(gmt_start.year, gmt_start.month)[1]
         gmt_end = datetime.datetime(gmt_start.year, gmt_start.month, last_day).date()
         # go to bottom of Date column to get last GMT
-        last_row = ws.get_highest_row()
+        #last_row = ws.get_highest_row()
+        last_row = ws.max_row
         last_gmt = ws.cell('A' + str(last_row)).value.date()
         delta_days = (last_gmt - gmt_end).days
         if delta_days == 1:
@@ -146,7 +147,8 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
         formula_str = "=G%d/H%d" % (r, r)
         dest_str = 'F%d' % r
         _cell_kpi_formula = ws2.cell(dest_str)
-        _cell_kpi_formula.style.number_format.format_code = '#0.0%' 
+        #_cell_kpi_formula.style.number_format.format_code = '#0.0%' 
+        _cell_kpi_formula.number_format = '#0.0%' 
         _cell_kpi_formula.value = formula_str
 
         ws2.cell('A' + str(r)).value = gmt_start
@@ -160,7 +162,8 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
             _cell_numerator.value = raw_sum[numstr]
         except:
             _cell_numerator.value = np.NaN
-        _cell_numerator.style.number_format.format_code = '#0.0'
+        #_cell_numerator.style.number_format.format_code = '#0.0'
+        _cell_numerator.number_format = '#0.0'
         
         # Denominator
         _cell_denominator = ws2.cell('H' + str(r))        
@@ -168,7 +171,8 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
             _cell_denominator.value = raw_sum[denstr]
         except:
             _cell_denominator.value = np.NaN
-        _cell_denominator.style.number_format.format_code = '#0'
+        #_cell_denominator.style.number_format.format_code = '#0'
+        _cell_denominator.number_format = '#0'
             
 
     ## Font properties
