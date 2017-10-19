@@ -14,7 +14,7 @@ import subprocess
 from recipes_configobj import GeneralConfig
 from collections import deque
 import threading
-from daemon import runner
+from pims.daemon_legacy import runner
 import numpy as np
 
 # input parameters

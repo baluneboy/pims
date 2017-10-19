@@ -45,7 +45,8 @@ def get_ee_stats_files(pickle_dir='/misc/yoda/www/plots/user/sheep'):
 
 def read_ee_stats_file(fname):
     with open(fname, 'rb') as handle:
-        ee_stats = pickle.load(handle)
+        #ee_stats = pickle.load(handle)
+        ee_stats = pd.read_pickle(handle)
     return ee_stats
 
 def process_date_range(start_date, end_date, group_measures=GROUP_MEASURES, pickle_dir='/misc/yoda/www/plots/user/sheep'):

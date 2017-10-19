@@ -6,9 +6,12 @@ import numpy as np
 import pandas as pd
 from openpyxl.workbook import Workbook
 from openpyxl.writer.excel import ExcelWriter
-from openpyxl.cell import Cell, get_column_letter, column_index_from_string, coordinate_from_string
+from openpyxl.cell import Cell
+from openpyxl.utils import get_column_letter, column_index_from_string, coordinate_from_string
 from openpyxl.reader.excel import load_workbook
-from openpyxl.style import Font, Color, NumberFormat, Style, Fill
+#from openpyxl.styles import Font, Color, Style, Fill
+from openpyxl.styles import Font, Color, NamedStyle, Fill
+from openpyxl.styles.numbers import NumberFormat
 
 # OBSOLETE insert wall clock column [because pandas does it now]
 def OBSOLETE_insert_wall_clock_column(ws, left_of_column=2):

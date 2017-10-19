@@ -14,6 +14,7 @@ from pims.database.pimsquery import db_connect, mysql_con
 from pims.database.samsquery import mysql_con_yoda
 from pims.realtime.dbgapdetect_headerfooter import HEADER, FOOTER
 from pims.files.utils import tail
+from pims.utils.pimsdateutil import floor_ten_minutes
 
 # TODO
 # - robustness for missing table (or go out and find hosts/tables automagically)
@@ -40,7 +41,8 @@ defaults = {
     ('121f04',      'tweek',        'pims',     '8'),
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
-    ('es03',        'manbearpig',   'pims',     '3.92'),
+    #('es03',        'manbearpig',   'pims',     '3.92'),
+    ('es09',        'manbearpig',   'pims',     '7.84'),
     ('es05',        'manbearpig',   'pims',     '7.84'),
     ('es06',        'chef',         'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),    
@@ -51,6 +53,11 @@ defaults = {
 'hours_ago':        '22',   # start checking this many hours ago
 }
 parameters = defaults.copy()
+
+def FAKE_floor_ten_minutes(x):
+    d = pd.to_datetime(x)
+    r = floor_ten_minutes(d)        
+    return '%s' % r
 
 class DatabaseHourlyGapsHoursAgo(object):
     """
@@ -104,7 +111,8 @@ class DatabaseHourlyGapsHoursAgo(object):
     def _dataframe_query(self, every_sec=600):
         """count number of packets expected for hourly chunks""" 
         #query =  'SELECT FROM_UNIXTIME(time) as "hour", ' # <<< WORKED BEFORE mariadb
-        query =  'SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "hour", '
+        #query =  'SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "hour", '
+        query =  'SELECT DATE_FORMAT(FROM_UNIXTIME(time), "%Y-%m-%d %T") as "GMT", '
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "pct", '
         #query += 'COUNT(*) as "pkts" from %s ' % self.sensor
         #query += 'ROUND(100*COUNT(*)/8.0/3600.0) as "%s<br>%%", ' % self.sensor
@@ -129,7 +137,7 @@ class DatabaseHourlyGapsHoursAgo(object):
         else:
             df_gaps = self.dataframe[self.dataframe['pct'] < self.min_pct]
         return df_gaps
-
+    
     def filter(self, predicate):
         """return filtered dataframe"""
         pass
@@ -210,7 +218,8 @@ class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
         
     def _dataframe_query(self):
         """count number of packets expected for hourly chunks"""
-        query =  'SELECT timestamp as "hour", '
+        #query =  'SELECT timestamp as "hour", '
+        query =  'SELECT timestamp as "GMT", '
         query += 'ROUND(100*COUNT(*)/1.0/3600.0) as "%s<br>%%", ' % self.table
         query += 'COUNT(*) as "%s<br>pkts" from %s ' % (self.table, self.table)       
         query += 'WHERE timestamp >= "%s" ' % self.start.strftime('%Y-%m-%d %H:%M:%S')
@@ -223,9 +232,9 @@ class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
 # function to format percentages
 def percentage_fmt(x):
     """function to format percentages"""
-    if x < 80:               s = '<span style="color: red">%.1f</span>' % x
-    elif x >= 80 and x < 99: s = '<span style="color: orange;">%.1f</span>' % x
-    else:                    s = '%.1f' % x
+    if x < 80:               s = '<span style="color: red">%g</span>' % x
+    elif x >= 80 and x < 99: s = '<span style="color: orange;">%g</span>' % x
+    else:                    s = '%g' % x
     return s
 
 # FIXME this time conversion does not work (see example in samsquery.py)
@@ -233,10 +242,12 @@ def percentage_fmt(x):
 def hourly_fmt(x):
     """function to format hourlies"""
     d = pd.to_datetime(x)
-    all_balls = d.minute == 0 and d.second == 0 and d.microsecond == 0
-    if all_balls: s = '%s' % x
-    else:         s = '<span style="color: red;">%s</span>' % x
-    return s
+    #all_balls = d.minute == 0 and d.second == 0 and d.microsecond == 0
+    #if all_balls: s = '%s' % x
+    #else:         s = '<span style="color: red;">%s</span>' % x
+    #return s
+    r = floor_ten_minutes(d)
+    return '%s' % r
 
 def params_okay():
     """Not really checking for reasonableness of parameters entered on command line."""
@@ -264,7 +275,8 @@ def print_usage():
         print '\t%s=%s' % (i, defaults[i])
 
 def weekly_get_cu_packet_gaps():
-    df_merged = pd.DataFrame({'hour':[]})
+    #df_merged = pd.DataFrame({'hour':[]})
+    df_merged = pd.DataFrame({'GMT':[]})
     with open('/misc/yoda/www/plots/user/sams/dbsams.csv', 'r') as f:
         last_line = tail(f, 1)
     last_gmt = last_line[0].split(',')[0]
@@ -286,11 +298,13 @@ def weekly_get_cu_packet_gaps():
 
 def pims_dbgaps():
     buf = StringIO()
-    df_merged = pd.DataFrame({'hour':[]})
+    #df_merged = pd.DataFrame({'hour':[]})
+    df_merged = pd.DataFrame({'GMT':[]})
     df_formatters = dict()
     the_list = [ tup for tup in parameters['sensorhosts'] if (tup[2] == 'pims') ]
     for sensor, host, db, pps in the_list:
         msg_preamble = '{:<20s}:'.format('%s, %s' % (sensor, host))
+        #df_formatters['GMT'] = hourly_fmt
         df_formatters['%s<br>%%' % sensor] = percentage_fmt
         try:
             # first, get all info on gaps
@@ -302,6 +316,11 @@ def pims_dbgaps():
                 hours_ago=parameters['hours_ago'],
                 )
             dbgaps._dataframe_query()
+            
+            # FIXME to round down GMT to nearest ten-minute mark (GMT column appears to be a string at this point!?)
+            # apply ten-minute round down to GMT column
+            #dbgaps.dataframe['GMT'] = dbgaps.dataframe['GMT'].apply(FAKE_floor_ten_minutes)
+            
             # filter using min_pct
             df_gaps = dbgaps.filt_min_pct()
             # get result into string
@@ -314,8 +333,9 @@ def pims_dbgaps():
         #print msg or 'done'
         print msg
     
-    #df_merged.sort(columns=['hour'], inplace=True)
-    df_merged.sort_values(by=['hour'], inplace=True)
+    #df_merged.sort_values(by=['hour'], inplace=True)
+    #df_merged.sort_values(by=['hour'], inplace=True, ascending=False)
+    df_merged.sort_values(by=['GMT'], inplace=True, ascending=False)
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
@@ -327,7 +347,8 @@ def pims_dbgaps():
 
 def samsnew_dbgaps(d, d2):
     buf = StringIO()
-    df_merged = pd.DataFrame({'hour':[]})
+    #df_merged = pd.DataFrame({'hour':[]})
+    df_merged = pd.DataFrame({'GMT':[]})
     df_formatters = dict()
     the_list = [ tup for tup in parameters['sensorhosts'] if (tup[2] == 'samsnew') ]
     for sensor, host, db, pps in the_list:
@@ -349,8 +370,8 @@ def samsnew_dbgaps(d, d2):
         #print msg or 'done'
         print msg
     
-    #df_merged.sort(columns=['hour'], inplace=True)
-    df_merged.sort_values(by=['hour'], inplace=True)    
+    #df_merged.sort(columns=['hour'], inplace=True, ascending=False)
+    df_merged.sort_values(by=['GMT'], inplace=True, ascending=False)    
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
@@ -362,7 +383,8 @@ def samsnew_dbgaps(d, d2):
 
 def manbearpig_dbgaps(start, stop):
     buf = StringIO()
-    df_merged = pd.DataFrame({'hour':[]})
+    #df_merged = pd.DataFrame({'hour':[]})
+    df_merged = pd.DataFrame({'GMT':[]})
     df_formatters = dict()
     the_list = [ tup for tup in parameters['sensorhosts'] if (tup[2] == 'pims') ]
     for sensor, host, db, pps in the_list:
@@ -391,7 +413,8 @@ def manbearpig_dbgaps(start, stop):
         #print msg or 'done'
         print msg
     
-    df_merged.sort(columns=['hour'], inplace=True)
+    #df_merged.sort(columns=['hour'], inplace=True)
+    df_merged.sort(columns=['GMT'], inplace=True)
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')

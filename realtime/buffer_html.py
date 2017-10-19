@@ -11,7 +11,8 @@ import glob
 import re
 import calendar
 from calendar import month_name
-from HTMLgen import *
+#from HTMLgen import *
+from HTMLgen.HTMLgen import *
 from collections import OrderedDict
 from pims.realtime.buffer_move import main as cleanBuffer
 from recipes_fileutils import fileAgeDays

@@ -185,6 +185,10 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
     #print "digester", datetime_to_doytimestr(host_now)[:-7], delta_host, delta_ku,
     row = "\n%s,%s,%.1f,%.1f" % ("digester", datetime_to_doytimestr(host_now)[:-7], delta_host, delta_ku)
     
+    # FIXME kludge for jimmy to mimsy transition
+    delta_dict.pop('hirap')
+    delta_dict.pop('oss')
+    
     # now iterate to get other delta_ku's
     any_bad_delta_ku = False
     for key in sorted(delta_dict):
@@ -200,13 +204,19 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
     
     # if any bad delta ku, then play very alarmed sound; otherwise, mild europa
     if any_bad_delta_ku:
-        p = subprocess.Popen(['play', '/home/pims/Music/very_alarmed.mp3'])
+        # FIXME kludge for jimmy to mimsy transition
+        #p = subprocess.Popen(['play', '/home/pims/Music/very_alarmed.mp3'])
+        pass
     else:
         now = datetime.datetime.now()
         if now.minute == 0:
-            p = subprocess.Popen(['play', '/home/pims/Music/mild_europa.mp3'])
+            # FIXME kludge for jimmy to mimsy transition
+            #p = subprocess.Popen(['play', '/home/pims/Music/mild_europa.mp3'])
+            pass
         elif now.minute == 30:
-            p = subprocess.Popen(['play', '/home/pims/Music/halfhourchime.mp3'])
+            # FIXME kludge for jimmy to mimsy transition
+            #p = subprocess.Popen(['play', '/home/pims/Music/halfhourchime.mp3'])
+            pass
 
 def append2csv(row, csv_files=['/misc/yoda/www/plots/user/sams/status/devicedigest.csv', '/misc/yoda/www/plots/user/sams/status/digest.csv']):
     for csv_file in csv_files:
