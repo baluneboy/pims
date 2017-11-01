@@ -1,5 +1,9 @@
 #!/usr/bin/env python
 
+"""
+Manually draw some crazy cluster of fractals.
+"""
+
 # Random percolation cluster fractals
 # FB - 201003243
 from PIL import Image

@@ -20,11 +20,13 @@
 import sys
 from PIL import Image, ImageDraw
 
-im = Image.open("/home/pims/Downloads/unnamed.png")
-
+v = int(sys.argv[1])
+thresh = int(sys.argv[2])
 xy = (100, 100)
-value = (11, 11, 11)
-ImageDraw.floodfill(im, xy, value, border=None, thresh=300)
+value = (v, v, v)
+
+im = Image.open("/home/pims/Downloads/unnamed.png")
+ImageDraw.floodfill(im, xy, value, border=None, thresh=thresh)
 
 # write to stdout
 im.save(sys.stdout, "PNG")
