@@ -34,7 +34,7 @@ def test_the_orb():
 #test_imgs = ['night_open.jpg', 'night_closed.jpg', 'day_open.jpg', 'day_closed.jpg']
 test_imgs = [
     'open_dark.jpg', 'close_dark.jpg',
-    'open_dark.jpg', '2017-11-02_15_59_foscam.jpg'
+    '2017-11-04_14_38_open.jpg', '2017-11-04_14_38_close.jpg'
     ]
 
 for bname in test_imgs:
@@ -44,10 +44,10 @@ for bname in test_imgs:
     mask = np.zeros((height+2, width+2), np.uint8)
 
     # the starting pixel for the floodFill
-    start_pixel = (606, 246)
+    start_pixel = (608, 240)
     
     # maximum distance to start pixel:
-    diff = (2, 2, 2)
+    diff = (3,3,3)
 
     retval, im, ma, rect = cv2.floodFill(img, mask, start_pixel, (0,255,0), diff, diff)
 
