@@ -14,15 +14,17 @@ from matplotlib import pyplot as plt
 # ULP = (603, 225) => offset: (203, 198) +++ xywh: (203, 198, 10, 34)
 # BRP = (613, 259) => offset: (213, 232)
     
-OFFSETXY_WH = [ (167, 154, 52, 112), (203, 198, 10, 34) ]
-#OFFSETXY_WH = [ (203, 198, 10, 34) ]
+#OFFSETXY_WH = [ (167, 154, 52, 112), (203, 198, 10, 34) ]
+OFFSETXY_WH = [ (203, 198, 10, 34) ]
 
 
 def demo_general(show_result=False):
 
     img = cv2.imread('/Users/ken/Pictures/foscam/2017-11-04_08_47_open.jpg', 0)
+    #img = cv2.imread('/home/ken/pictures/foscam/2017-11-04_08_47_open.jpg', 0)
     img2 = img.copy()
     template = cv2.imread('/Users/ken/Pictures/foscam/template.jpg', 0)
+    #template = cv2.imread('/home/ken/pictures/foscam/template.jpg', 0)    
     w, h = template.shape[::-1]
     
     # All the 6 methods for comparison in a list
@@ -42,15 +44,17 @@ def demo_general(show_result=False):
             top_left = min_loc
         else:
             top_left = max_loc
-        top_left = (422, 44)
         bottom_right = (top_left[0] + w, top_left[1] + h)
     
+        # draw rectangle around where template was found in target image
         cv2.rectangle(img, top_left, bottom_right, 255, 2)
         
+        # FIXME the white-paint region gets clobbered by door opening's rectangle
+        # draw 2 more filled rectangles around door opening and white-paint region
         for offsetxy_wh in OFFSETXY_WH:
             t = (top_left[0] + offsetxy_wh[0], top_left[1] + offsetxy_wh[1])
             b = (t[0] + offsetxy_wh[2], t[1] + offsetxy_wh[3])
-            cv2.rectangle(img, t, b, 255, -2)
+            cv2.rectangle(img, t, b, 255, 2)
 
         print meth, top_left
         
@@ -63,35 +67,8 @@ def demo_general(show_result=False):
             plt.show()
 
 
-def demo_setup():
-    img = cv2.imread('/Users/ken/Pictures/foscam/2017-11-04_08_47_open.jpg', 0)
-    template = cv2.imread('/Users/ken/Pictures/foscam/template.jpg', 0)    
-    return img, template
-
-
-def demo_timer(num=10):
-    import timeit
-    
-    img = cv2.imread('/Users/ken/Pictures/foscam/2017-11-04_08_47_open.jpg', 0)
-    img2 = img.copy()
-    template = cv2.imread('/Users/ken/Pictures/foscam/template.jpg', 0)
-    w, h = template.shape[::-1]
-    
-    # All the 6 methods for comparison in a list
-    methods = ['cv2.TM_CCOEFF', 'cv2.TM_CCOEFF_NORMED',
-                'cv2.TM_CCORR_NORMED', 'cv2.TM_SQDIFF', 'cv2.TM_SQDIFF_NORMED']
-    
-    for meth in methods:
-        img = img2.copy()
-        method = eval(meth)
-    
-        # Apply template Matching
-        t = timeit.timeit('res = cv2.matchTemplate(img, template, %s)' % meth, 'import cv2; from __main__ import demo_setup; img, template = demo_setup()', number=num)
-        print meth, t/num
-
-
 if __name__ == '__main__':
-    #demo_timer(num=200)
-    demo_general(show_result=True)
-
     
+    import sys 
+    bln_plot = eval(sys.argv[1])
+    demo_general(show_result=bln_plot)
