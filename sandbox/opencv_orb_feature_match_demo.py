@@ -20,11 +20,11 @@ OFFSETXY_WH = [ (203, 198, 10, 34) ]
 
 def demo_general(show_result=False):
 
-    #img = cv2.imread('/Users/ken/Pictures/foscam/2017-11-04_08_47_open.jpg', 0)
-    img = cv2.imread('/home/ken/pictures/foscam/2017-11-04_08_47_open.jpg', 0)
+    img = cv2.imread('/Users/ken/Pictures/foscam/2017-11-04_08_47_open.jpg', 0)
+    #img = cv2.imread('/home/ken/pictures/foscam/2017-11-04_08_47_open.jpg', 0)
     img2 = img.copy()
-    #template = cv2.imread('/Users/ken/Pictures/foscam/template.jpg', 0)
-    template = cv2.imread('/home/ken/pictures/foscam/template.jpg', 0)    
+    template = cv2.imread('/Users/ken/Pictures/foscam/template.jpg', 0)
+    #template = cv2.imread('/home/ken/pictures/foscam/template.jpg', 0)    
     w, h = template.shape[::-1]
     
     # All the 6 methods for comparison in a list
@@ -54,7 +54,7 @@ def demo_general(show_result=False):
         for offsetxy_wh in OFFSETXY_WH:
             t = (top_left[0] + offsetxy_wh[0], top_left[1] + offsetxy_wh[1])
             b = (t[0] + offsetxy_wh[2], t[1] + offsetxy_wh[3])
-            cv2.rectangle(img, t, b, 255, -2)
+            cv2.rectangle(img, t, b, 255, 2)
 
         print meth, top_left
         
@@ -70,5 +70,5 @@ def demo_general(show_result=False):
 if __name__ == '__main__':
     
     import sys 
-    show_result = eval(sys.argv[1])
-    demo_general(show_result=show_result)
+    bln_plot = eval(sys.argv[1])
+    demo_general(show_result=bln_plot)
