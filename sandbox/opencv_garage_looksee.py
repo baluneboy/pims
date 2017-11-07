@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
+import os
 import cv2
-#from numpy import *
 import numpy as np
 from opencv_survey import disp_save_img
 
@@ -35,15 +35,18 @@ def test_the_orb():
 test_imgs = [
     '2017-11-04_14_38_open.jpg', '2017-11-04_14_38_close.jpg',
     '2017-11-06_15_56_open.jpg', '2017-11-06_15_56_close.jpg',
-    '2017-11-06_17_19_foscam.jpg',
     ]
 
 for bname in test_imgs:
-    image_fname = '/Users/ken/Pictures/foscam/' + bname
+    #image_fname = '/Users/ken/Pictures/foscam/' + bname
+    image_fname = '/home/ken/pictures/foscam/' + bname
     img = cv2.imread(image_fname)
+    print image_fname
+    print os.path.exists(image_fname)
     height, width, channels = img.shape
     mask = np.zeros((height+2, width+2), np.uint8)
 
+    # FIXME derive starting pixel from template matching in case camera moves
     # the starting pixel for the floodFill
     start_pixel = (608, 240)
     
