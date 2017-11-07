@@ -33,8 +33,9 @@ def test_the_orb():
 
 #test_imgs = ['night_open.jpg', 'night_closed.jpg', 'day_open.jpg', 'day_closed.jpg']
 test_imgs = [
-    'open_dark.jpg', 'close_dark.jpg',
-    '2017-11-04_14_38_open.jpg', '2017-11-04_14_38_close.jpg'
+    '2017-11-04_14_38_open.jpg', '2017-11-04_14_38_close.jpg',
+    '2017-11-06_15_56_open.jpg', '2017-11-06_15_56_close.jpg',
+    '2017-11-06_17_19_foscam.jpg',
     ]
 
 for bname in test_imgs:
@@ -46,20 +47,25 @@ for bname in test_imgs:
     # the starting pixel for the floodFill
     start_pixel = (608, 240)
     
-    # maximum distance to start pixel:
-    diff = (3,3,3)
+    # maximum distance to start pixel
+    diff = (2, 2, 2)
 
-    retval, im, ma, rect = cv2.floodFill(img, mask, start_pixel, (0,255,0), diff, diff)
+    # use blurring to smooth the image a bit
+    blur = cv2.GaussianBlur(img, (7, 7), 0)
+
+    #retval, im, ma, rect = cv2.floodFill(img, mask, start_pixel, (0,255,0), diff, diff)
+    retval, im, ma, rect = cv2.floodFill(blur, mask, start_pixel, (0,255,0), diff, diff)
 
     print retval
 
     # check the size of the floodfilled area, if its large the door is closed:
-    if retval > 10000:
+    if retval > 555:
         print image_fname + ": garage door closed"
     else:
         print image_fname + ": garage door open"
 
-    cv2.imwrite(image_fname.replace(".jpg", "") + "_result.jpg", img)
+    #cv2.imwrite(image_fname.replace(".jpg", "") + "_result.jpg", img)
+    cv2.imwrite(image_fname.replace(".jpg", "") + "_result.jpg", blur)
     
 #image_fname = '/Users/ken/Pictures/foscam/2017-10-31_15_50_foscam.jpg'
 #img = cv2.imread(image_fname)
