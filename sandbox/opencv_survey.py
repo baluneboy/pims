@@ -9,8 +9,8 @@ def load_img_gray(fname):
     return cv2.imread(fname, 0)
 
 
-def disp_save_img(img):
-    cv2.imshow('Hit ESC to close, mouse wheel zoom, right-click for options', img)
+def disp_save_img(img, tag=''):
+    cv2.imshow(tag + ' Hit ESC to close, mouse wheel zoom, right-click for options', img)
     k = cv2.waitKey(0)
     #print k
     if k == 27:  # (linux ESC = 1048603?) wait for ESC key

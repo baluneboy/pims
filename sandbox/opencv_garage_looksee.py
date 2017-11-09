@@ -33,16 +33,18 @@ def test_the_orb():
 
 #test_imgs = ['night_open.jpg', 'night_closed.jpg', 'day_open.jpg', 'day_closed.jpg']
 test_imgs = [
-    '2017-11-04_14_38_open.jpg', '2017-11-04_14_38_close.jpg',
-    '2017-11-06_15_56_open.jpg', '2017-11-06_15_56_close.jpg',
+    #'2017-11-04_14_38_open.jpg', '2017-11-04_14_38_close.jpg',
+    #'2017-11-06_15_56_open.jpg', '2017-11-06_15_56_close.jpg',
+    #'2017-11-07_15_53_open.jpg', '2017-11-07_15_53_close.jpg',
+    '2017-11-08_18_44_open.jpg', '2017-11-08_18_44_close.jpg',
     ]
 
 for bname in test_imgs:
-    #image_fname = '/Users/ken/Pictures/foscam/' + bname
-    image_fname = '/home/ken/pictures/foscam/' + bname
+    image_fname = '/Users/ken/Pictures/foscam/' + bname
+    #image_fname = '/home/ken/pictures/foscam/' + bname
     img = cv2.imread(image_fname)
-    print image_fname
-    print os.path.exists(image_fname)
+    #print image_fname
+    #print os.path.exists(image_fname)
     height, width, channels = img.shape
     mask = np.zeros((height+2, width+2), np.uint8)
 
@@ -59,13 +61,11 @@ for bname in test_imgs:
     #retval, im, ma, rect = cv2.floodFill(img, mask, start_pixel, (0,255,0), diff, diff)
     retval, im, ma, rect = cv2.floodFill(blur, mask, start_pixel, (0,255,0), diff, diff)
 
-    print retval
-
     # check the size of the floodfilled area, if its large the door is closed:
     if retval > 555:
-        print image_fname + ": garage door closed"
+        print '%s: garage is closed ( %9d )' % (image_fname, retval)
     else:
-        print image_fname + ": garage door open"
+        print '%s:  garage is opened ( %9d )' % (image_fname, retval)       
 
     #cv2.imwrite(image_fname.replace(".jpg", "") + "_result.jpg", img)
     cv2.imwrite(image_fname.replace(".jpg", "") + "_result.jpg", blur)
