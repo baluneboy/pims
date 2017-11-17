@@ -135,6 +135,55 @@ class DateRange(BaseRange):
         self._days_ago_func = days_ago_to_date
         self._objType = datetime.date
 
+
+def dayrange(start, end):
+    """yields date in range from start to end (non-inclusive just like range())
+    
+    Args:
+        start (datetime.date): lower limit of range
+        end   (datetime.date): upper limit of range (non-inclusive)
+        
+    Yields:
+        datetime.date: the next datetime.date in the range from start to end (non-inclusive)
+        
+    Examples:
+    
+        >>> d0 = datetime.datetime(2017, 1, 1)
+        >>> d1 = datetime.datetime(2017, 2, 1)
+        >>> for d in dayrange(d0, d1): print d
+        
+    """
+    
+    for n in range(int((end-start).days)):
+        yield (start + datetime.timedelta(n)).date()
+    
+    
+def hourrange(hstart, hend, hstep=8):
+    """yields datetime in range from hstart to hend, non-inclusive just like range(), with hstep
+    
+    Args:
+        hstart (datetime): lower limit of range
+        hend   (datetime): upper limit of range (non-inclusive)
+        hstep  (int):      hstep size in hours
+        
+    Yields:
+        datetime: the next datetime in the range from hstart to hend (non-inclusive), with hstep
+        
+    Examples:
+    
+        >>> h0 = datetime.datetime(2017, 1, 1, 0)
+        >>> h1 = datetime.datetime(2017, 3, 1, 8)
+        >>> for h in hourrange(h0, h1, 8): print h
+        
+    """
+    
+    dtm = hstart - datetime.timedelta(hours=hstep)
+    dtm_end = hend - datetime.timedelta(hours=hstep)
+    while dtm < dtm_end:
+        dtm += datetime.timedelta(hours=hstep)
+        yield dtm
+
+
 def testdoc(verbose=True):
     import doctest
     return doctest.testmod(verbose=verbose)

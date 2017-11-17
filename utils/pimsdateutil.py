@@ -114,6 +114,25 @@ def datetime_to_roadmap_ymd_path(d):
     return datetime_to_ymd_path(d, base_dir='/misc/yoda/www/plots/batch')
 
 
+def datetime_to_roadmap_fullstub(dtm):
+    """
+    Return roadmap PDF path for datetime, dtm, like /misc/yoda/www/plots/batch/year2016/month04/day29/2016_04_29_00_00_00.000
+    
+    Examples
+    --------
+    
+    >>> datetime_to_roadmap_fullstub(datetime.date(2002, 12, 28,  0, 0, 0))
+    '/misc/yoda/www/plots/batch/year2002/month12/day28'
+    
+    >>> datetime_to_roadmap_fullstub(datetime.date(2002, 12, 28, 16, 0, 0))
+    '/misc/yoda/www/plots/batch/year2009/month12/day31'
+    
+    """
+    pth = datetime_to_roadmap_ymd_path(dtm)
+    prefix = format_datetime_as_pad_underscores(dtm)
+    return os.path.join(pth, prefix)
+    
+
 # return string for "yesterday's" year/month/day PAD path
 def yesterday_pad_ymd_path(base_dir='/misc/yoda/pub/pad'):
     """return string for "yesterday's" year/month/day PAD path"""
