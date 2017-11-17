@@ -9,6 +9,10 @@ from opencv_survey import disp_save_img
 #      EACH of above then does flood_fill (start_px = mid-center of target board)
 #      actually look at histograms to get a feel for what those look like
 
+# TODO compare blob detection within "skinny garage door" roi versus flood fill
+
+# FIXME verify that flood fill and/or blob detect is operating only within "skinny garage door"
+
 def flood_fill(img):
     height, width = img.shape[0:2]
     mask = np.zeros((height+2, width+2), np.uint8)

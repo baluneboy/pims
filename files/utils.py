@@ -29,7 +29,6 @@ def mkdir_p(path):
             raise
 
 
-# return list of lines extracted from text file between 2 delimiting lines
 def extract_between_lines_as_list(text_file, line1, line2):
     with open(text_file, 'rb') as f:
         textfile_temp = f.read()
@@ -44,14 +43,21 @@ def extract_between_lines_as_list(text_file, line1, line2):
         return s.split('\n')
 
     
-# get most recent file along pth that ends with suffix
 def most_recent_file_with_suffix(pth, suffix):
     """get most recent file along pth that ends with suffix"""
     files = [ os.path.join(pth, f) for f in os.listdir(pth) if f.endswith(suffix) ]
     files.sort(key=lambda x: os.path.getmtime(x))
     return os.path.join(pth, files[-1])
 
-# get file lines between two delimiter strings
+
+def get_pathpattern_files(pth, pat):
+    """get list of files in directory, pth, matching regular expression, pat"""
+    # pth = '/Users/ken/Pictures/foscam'
+    # pat = r'\d{4}-\d{2}-\d{2}_\d{2}_\d{2}_(open|close)\.jpg' # LIKE 2017-11-09_06_07_close.jpg
+    files = [f for f in os.listdir(pth) if re.match(pat, f)]
+    return files
+
+
 def get_lines_between(beginstr, endstr, filename, include_newlines=True):
     """get file lines between two delimiter strings"""
     if include_newlines:
@@ -62,7 +68,6 @@ def get_lines_between(beginstr, endstr, filename, include_newlines=True):
         s = temp.split(beginstr)[1].split(endstr)[0]
     return s
 
-# prepend to text file
 def prepend_tofile(s, txtfile):
     """prepend to text file"""
     bool_success = False
@@ -74,7 +79,6 @@ def prepend_tofile(s, txtfile):
         print 'FAILED to prepend to %s' % txtfile
     return bool_success
 
-# similar to unix tail
 def tail(f, n, offset=0):
     """Reads a n lines from f with an offset of offset lines."""
     avg_line_length = 74
