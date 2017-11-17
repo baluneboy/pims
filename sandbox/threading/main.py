@@ -9,7 +9,7 @@ def main(args):
     result_q = Queue.Queue()
 
     # Create the "thread pool"
-    pool = [WorkerThread(dir_q=dir_q, result_q=result_q) for _ in range(4)]
+    pool = [WorkerThread(dir_q=dir_q, result_q=result_q) for _ in range(9)]
 
     # Start all threads
     for thread in pool:

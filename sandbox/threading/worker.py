@@ -2,6 +2,7 @@ import os
 import threading
 import Queue
 
+
 class WorkerThread(threading.Thread):
     """ A worker thread that takes directory names from a queue, finds all
         files in them recursively and reports the result.
@@ -10,7 +11,7 @@ class WorkerThread(threading.Thread):
         Queue passed in dir_q.
 
         Output is done by placing tuples into the Queue passed in result_q.
-        Each tuple is (thread name, dirname, [list of files]).
+        Each tuple is (thread_name, dir_name, [list of files]).
 
         Ask the thread to stop by calling its join() method.
     """
@@ -18,24 +19,24 @@ class WorkerThread(threading.Thread):
         super(WorkerThread, self).__init__()
         self.dir_q = dir_q
         self.result_q = result_q
-        self.stoprequest = threading.Event()
+        self.stop_request = threading.Event()
 
     def run(self):
         # As long as we weren't asked to stop, try to take new tasks from the
         # queue. The tasks are taken with a blocking 'get', so no CPU
         # cycles are wasted while waiting.
-        # Also, 'get' is given a timeout, so stoprequest is always checked,
+        # Also, 'get' is given a timeout, so stop_request is always checked,
         # even if there's nothing in the queue.
-        while not self.stoprequest.isSet():
+        while not self.stop_request.isSet():
             try:
-                dirname = self.dir_q.get(True, 0.05)
-                filenames = list(self._files_in_dir(dirname))
-                self.result_q.put((self.name, dirname, filenames))
+                dir_name = self.dir_q.get(True, 0.05)
+                file_names = list(self._files_in_dir(dir_name))
+                self.result_q.put((self.name, dir_name, file_names))
             except Queue.Empty:
                 continue
 
     def join(self, timeout=None):
-        self.stoprequest.set()
+        self.stop_request.set()
         super(WorkerThread, self).join(timeout)
 
     def _files_in_dir(self, dirname):
@@ -43,5 +44,5 @@ class WorkerThread(threading.Thread):
             contained in this directory and its sub-directories.
         """
         for path, dirs, files in os.walk(dirname):
-            for file in files:
-                yield os.path.join(path, file)
+            for f in files:
+                yield os.path.join(path, f)
