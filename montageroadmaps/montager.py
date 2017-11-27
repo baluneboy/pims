@@ -4,6 +4,7 @@
 
 import os
 import sys
+import glob
 import datetime
 import subprocess
 import shutil
@@ -27,6 +28,13 @@ MISSINGDAY = '/home/pims/dev/programs/python/pims/montageroadmaps/missingday.pdf
 
 def full_name(f, suffix, replace=MISSING8HR):
     fname = datetime_to_roadmap_fullstub(f) + suffix
+    if '*' in fname:
+        fnames = glob.glob(fname)
+        if len(fnames) == 1:
+            fname = fnames[0]
+        else:
+            #print 'expected exactly one file, but did not get that count'
+            fname = replace
     if os.path.exists(fname):
         out = fname
     else:
