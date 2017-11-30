@@ -1,27 +1,24 @@
 #!/usr/bin/env python
 
-import os.path
-import numpy as np
-import matplotlib.pyplot as plt
-
-from ugaudio.load import padread
-from ugaudio.pad import PadFile
-
-from pims.files.filter_pipeline import FileFilterPipeline
+import datetime
+from main import plotnsave_daterange_histpad, plotnsave_monthrange_histpad, save_range_of_months
 
 
-    
-if __name__ == "__main__":
-    
-    ## get sample rate from header file
-    #header_file = '/misc/yoda/pub/pad/year2017/month04/day01/sams2_accel_121f04/2017_04_01_20_55_05.415+2017_04_01_21_05_05.426.121f04.header'
-    #data_file = header_file.replace('.header', '')
-    #show_samplerate(data_file)
-    
-    ## generate artficial chirp, then create sound file (AIFF format) and plot it (PNG format)
-    #demo_chirp()
-    
-    # plot SAMS TSH (es06) data file (just one axis)
-    data_file = '/tmp/2017_05_22_23_39_02.803+2017_05_22_23_49_02.861.es06'
-    #show_samplerate(data_file)
-    demo_accel_file(data_file, axis='x') # just x-axis here
+def demo_plotnsave_monthrange_histpad():
+    start = datetime.date(2017, 1, 1)
+    stop = datetime.date(2017, 3, 1)
+    plotnsave_monthrange_histpad(start, stop, sensor='121f03')
+
+
+def demo_save_range_of_months():
+    # FIXME this has to be able to step year boundaries!
+    year = 2017
+    month1 = 1
+    month2 = 9
+    save_range_of_months(year, month1, month2, sensor='121f03')
+
+
+def demo_plotnsave_daterange_histpad():
+    start = datetime.date(2017, 1, 1)
+    stop = datetime.date(2017, 9, 30)
+    plotnsave_daterange_histpad(start, stop, sensor='121f03')
