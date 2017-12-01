@@ -8,30 +8,29 @@ errors when users give the program invalid arguments. """
 import os
 import argparse
 import datetime
-from dateutil import parser, relativedelta
+import dateutil
+from dateutil.relativedelta import relativedelta
 from pims.utils.pimsdateutil import relative_start_stop
 
 
-_start_offset = relativedelta.relativedelta(months=1, days=6)
-_stop_offset = relativedelta.relativedelta(months=1)
-DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), _start_offset, _stop_offset)
+START_OFFSET = relativedelta(months=1, days=6)
+STOP_OFFSET = relativedelta(months=1)
+DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
 DEFAULT_SENSOR = '121f03'
 DEFAULT_PADDIR = '/misc/yoda/pub/pad'
 DEFAULT_HISTDIR = '/misc/yoda/www/plots/batch/results/dailyhistpad'
 
-# TODO an axis parameter is not employed; we always do daily save for all 4 axes (x,y,z,v); maybe use axis for plot filter?
 
-
-def folder_str(f):
+def folder_str(fname):
     """return string provided only if this folder exists"""
-    if not os.path.exists(f):
-        raise argparse.ArgumentTypeError('"%s" does not exist as a folder' % f)
-    return f
+    if not os.path.exists(fname):
+        raise argparse.ArgumentTypeError('"%s" does not exist as a folder' % fname)
+    return fname
 
 
-def day_str(d):
+def day_str(d_str):
     """return datetime.date object converted from input string, d"""
-    day = parser.parse(d).date()
+    day = dateutil.parser.parse(d_str).date()
     return day
 
 
@@ -50,12 +49,11 @@ def show_args(args):
 
 
 def parse_inputs():
-
     """parse input arguments using argparse from standard library"""
     parser = argparse.ArgumentParser(description='Running tally for PAD histograms.')
 
     # sensor of interest
-    help_sensor = "a 200 Hz sensor of interest (like 121f03, 121f02); default is %s" % DEFAULT_SENSOR
+    help_sensor = "a 200 Hz sensor (e.g. 121f03, 121f02); default is %s" % DEFAULT_SENSOR
     parser.add_argument('-s', '--sensor', default=DEFAULT_SENSOR,
                         type=str,
                         help=help_sensor)
@@ -94,11 +92,11 @@ def parse_inputs():
     # finalize start and stop dates
     if args.start is None and args.stop is None:
         args.start = DEFAULT_START
-        args.stop = args.start + relativedelta.relativedelta(days=6)
+        args.stop = args.start + relativedelta(days=6)
     elif args.stop is None:
-        args.stop = args.start + relativedelta.relativedelta(days=6)
+        args.stop = args.start + relativedelta(days=6)
     elif args.start is None:
-        args.start = args.stop - relativedelta.relativedelta(days=6)
+        args.start = args.stop - relativedelta(days=6)
 
     # check start/stop
     if args.stop < args.start:
@@ -109,8 +107,8 @@ def parse_inputs():
 
 if __name__ == '__main__':
 
-    args = parse_inputs()
+    ARGS = parse_inputs()
 
-    d = vars(args)
-    for k, v in d.iteritems():
+    DARGS = vars(ARGS)
+    for k, v in DARGS.iteritems():
         print k, 'is', v
