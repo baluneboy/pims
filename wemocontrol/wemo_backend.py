@@ -10,9 +10,10 @@ from contextlib import contextmanager
 db = SqliteDatabase('/home/pi/scripts/WEMO/database.db')
 
 wemos = [
-("192.168.0.108","magic","The Magic"),
-("192.168.0.107","sweat","The Sweat"),
-("192.168.0.104","lamp","The Lamp"),
+("192.168.1.115","magic",  "The Magic"),
+("192.168.1.135","sweat",  "The Sweat"),
+("192.168.1.105","powder", "The Powder"),
+("192.168.1.101","torch",  "The Torch"),
 ]
 
 
