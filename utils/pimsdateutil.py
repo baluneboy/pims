@@ -7,7 +7,7 @@ import os
 import re
 import datetime
 import time
-from dateutil import parser
+from dateutil import parser, relativedelta
 from warnings import warn
 
 
@@ -114,6 +114,20 @@ def datetime_to_roadmap_ymd_path(d):
     return datetime_to_ymd_path(d, base_dir='/misc/yoda/www/plots/batch')
 
 
+def datetime_to_dailyhist_path(d, sensor_subdir='sams2_accel_121f03'):
+    """
+    Return dailyhistpad.mat path for datetime, d, like /misc/yoda/www/plots/batch/results/dailyhistpad/year2017/month01/day03/sams2_accel_121f03
+    
+    Examples
+    --------
+    
+    >>> datetime_to_dailyhist_path(datetime.date(2017, 1, 1), sensor_subdir='sams2_accel_121f03')
+    '/misc/yoda/www/plots/batch/results/dailyhistpad/year2017/month01/day01/sams2_accel_121f03'
+        
+    """
+    return os.path.join( datetime_to_ymd_path(d, base_dir='/misc/yoda/www/plots/batch/results/dailyhistpad'), sensor_subdir )
+    
+
 def datetime_to_roadmap_fullstub(dtm):
     """
     Return roadmap PDF path for datetime, dtm, like /misc/yoda/www/plots/batch/year2016/month04/day29/2016_04_29_00_00_00.000
@@ -121,11 +135,14 @@ def datetime_to_roadmap_fullstub(dtm):
     Examples
     --------
     
-    >>> datetime_to_roadmap_fullstub(datetime.date(2002, 12, 28,  0, 0, 0))
-    '/misc/yoda/www/plots/batch/year2002/month12/day28'
+    >>> datetime_to_roadmap_fullstub(datetime.datetime(2002, 12, 28, 0))
+    '/misc/yoda/www/plots/batch/year2002/month12/day28/2002_12_28_00_00_00.000'
     
-    >>> datetime_to_roadmap_fullstub(datetime.date(2002, 12, 28, 16, 0, 0))
-    '/misc/yoda/www/plots/batch/year2009/month12/day31'
+    >>> datetime_to_roadmap_fullstub(datetime.datetime(2005, 12, 31, 8))
+    '/misc/yoda/www/plots/batch/year2005/month12/day31/2005_12_31_08_00_00.000'
+    
+    >>> datetime_to_roadmap_fullstub(datetime.datetime(2015,  2, 28, 16))
+    '/misc/yoda/www/plots/batch/year2015/month02/day28/2015_02_28_16_00_00.000'
     
     """
     pth = datetime_to_roadmap_ymd_path(dtm)
@@ -440,6 +457,19 @@ def first_day_of_previous_month(d):
     d -= datetime.timedelta(days=1)
     return datetime.date(d.year, d.month, 1)
 
+
+def year_month_to_dtm_start_stop(year, month):
+    """Return datetime.date tuple (start, stop) days for given year/month.
+
+    >>> start, stop = year_month_to_dtm_start_stop(2012, 1)
+    >>> print (start, stop)
+    (datetime.date(2012, 1, 1), datetime.date(2012, 1, 31))
+    """
+    start = datetime.date(year, month, 1)
+    stop =  (start + datetime.timedelta(32)).replace(day=1) - datetime.timedelta(days=1)
+    return start, stop
+
+
 def first_weekday_on_or_after(weekday, dt):
     """First day of kind MONDAY .. SUNDAY on or after date.
 
@@ -521,6 +551,28 @@ def weekday_of_month(weekday, dt, index):
         base = first_weekday_on_or_before(weekday,
                                           dt.replace(day=days_in_month(dt)))
         return base + datetime.timedelta(weeks=1+index)
+
+
+def relative_start_stop(fromday, start_offset, stop_offset):
+    """Return tuple (start, stop) datetime.dates relative to fromday.
+
+    >>> fromday = datetime.date(2017, 11, 24)  # a Friday
+    >>> start_offset = relativedelta.relativedelta(months=1, days=6)
+    >>> stop_offset = relativedelta.relativedelta(months=1)
+    >>> fromday - start_offset
+    datetime.date(2017, 10, 18)
+    >>> start, stop = relative_start_stop(fromday, start_offset, stop_offset)
+    >>> start
+    datetime.date(2017, 10, 18)
+    >>> stop
+    datetime.date(2017, 10, 24)
+    """
+    start = fromday - start_offset
+    stop = fromday - stop_offset
+    if stop < start:
+        raise Exception('stop less than start')
+    return start, stop
+
 
 def days_ago_to_date(n): 
     """Convert days_ago integer, n, to date object."""
@@ -611,6 +663,7 @@ def datetime_sdn2dtm(datenum):
     ii = datetime.datetime.fromordinal(int(datenum) - 366)
     ff = datetime.timedelta(days=datenum%1)
     return ii + ff
+
 
 def testdoc(verbose=True):
     import doctest
