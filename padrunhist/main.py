@@ -13,16 +13,18 @@ import pandas as pd
 import scipy.io as sio
 from pathlib import Path
 from dateutil import parser
-from matplotlib import pyplot as plt
+from matplotlib import rc, pyplot as plt
+from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 
-import phargparser
+import argparser
+from plumb_line import plumblines
 from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_path, year_month_to_dtm_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
 from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir
 from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
 
-DEFAULT_PADDIR = phargparser.DEFAULT_PADDIR
-DEFAULT_HISTDIR = phargparser.DEFAULT_HISTDIR
+DEFAULT_PADDIR = argparser.DEFAULT_PADDIR
+DEFAULT_HISTDIR = argparser.DEFAULT_HISTDIR
 
 
 class DateRangeException(Exception):
@@ -168,7 +170,7 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     
     files = []
     for d in pd.date_range(start, stop):
-        f = os.path.join(datetime_to_dailyhist_path(d), 'dailyhistpad.mat')
+        f = os.path.join(datetime_to_dailyhist_path(d, sensor_subdir=sensor2subdir(sensor)), 'dailyhistpad.mat')
         if os.path.exists(f):
             files.append(f)
             data = sio.loadmat(f)
@@ -176,7 +178,8 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
             hx += data['Nx'][0]
             hy += data['Ny'][0]
             hz += data['Nz'][0]
-            print '%s %d' % (d.date(), np.sum(hv))
+            #print '%s %d %s' % (d.date(), np.sum(hv), f)
+            print "{} {:20,.0f} {}".format(str(d.date()), np.sum(hv), f)
     print ''
     
     # output filename relative to common path
@@ -189,10 +192,55 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     sio.savemat(outstub + '.mat', {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
     print outmat
 
-    outpng = outmat.replace('.mat', '.png')
-    plt.plot(vecmag_bins, hv)
-    plt.savefig(outpng)
-    print outpng
+    font = {'family' : 'DejaVu Sans',
+            'weight' : 'normal',
+            'size'   : 18}
+    
+    rc('font', **font)
+
+    hFig = plt.figure();
+    hFig.set_size_inches(11, 8.5)  # landscape
+
+    majorFormatter = FormatStrFormatter('%d')
+    xMajorLoc = MultipleLocator(2)
+    xMinorLoc = MultipleLocator(1)
+    yMajorLoc = MultipleLocator(10)
+    yMinorLoc = MultipleLocator(5)
+
+    plt.minorticks_on
+
+    # title
+    ht = plt.title('SAMS 200 Hz Vibratory Data (De-Meaned) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
+    #ht.set_fontsize(16)
+              
+    # note tuple unpacking on LHS to get hLine out of list that gets returned
+    hLine, = plt.plot(vecmag_bins/1e-3, 100*np.cumsum(hv)/np.sum(hv), linewidth=3, color='k')
+    plt.axis([-1, 25, -5, 105])
+    plt.xlabel('Acceleration Vector Magnitude (milli-g)')
+    plt.ylabel('Cumulative Percentage of Occurrence (%)')
+    plt.yticks( np.arange(0, 104, 5) )
+    plt.xticks( np.arange(25) )
+    
+    # set xaxis major tick
+    plt.gca().xaxis.set_major_locator(xMajorLoc)
+    plt.gca().xaxis.set_major_formatter(majorFormatter)
+    
+    # set yaxis major tick
+    plt.gca().yaxis.set_major_locator(yMajorLoc)
+    plt.gca().yaxis.set_major_formatter(majorFormatter)    
+    
+    # for the minor ticks, use no labels; default NullFormatter
+    plt.gca().xaxis.set_minor_locator(xMinorLoc)    
+    plt.gca().yaxis.set_minor_locator(yMinorLoc)    
+    plt.gca().grid(True, which='both', linestyle='dashed')
+
+    # draw typical plumb lines with annotation
+    yvals = [50, 95, ]  # one set of annotations for each of these values
+    reddots, horlines, verlines, anns = plumblines(hLine, yvals)
+
+    outpdf = outmat.replace('.mat', '.pdf')    
+    plt.savefig(outpdf)
+    print "evince", outpdf, "&"
 
 
 def plotnsave_monthrange_histpad(start, stop, sensor='121f03'):
@@ -215,13 +263,19 @@ def save_range_of_months(year, moStart, moStop, sensor='121f03'):
         
         
 if __name__ == '__main__':
-    
-    args = phargparser.parse_inputs()
-    print args
-    
-    save_dailyhistpad(args.start, args.stop, sensor=args.sensor, indir=args.paddir, outdir=args.histdir)
 
     # Example of playing catch-up for one sensor
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE
     # ./main.py -s 121f05 -d 2017-01-01 -e 2017-09-30
     
+    # Example of daterange plot
+    # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE --plot
+    # ./main.py -s 121f03 -d 2017-01-01 -e 2017-03-30 --plot
+
+    args = argparser.parse_inputs()
+    print args
+    
+    if args.plot:
+        plotnsave_daterange_histpad(args.start, args.stop, sensor=args.sensor)
+    else:
+        save_dailyhistpad(args.start, args.stop, sensor=args.sensor, indir=args.paddir, outdir=args.histdir)

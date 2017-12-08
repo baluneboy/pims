@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
 import datetime
+
+import argparser
 from main import plotnsave_daterange_histpad, plotnsave_monthrange_histpad, save_range_of_months
 
 
@@ -21,4 +23,10 @@ def demo_save_range_of_months():
 def demo_plotnsave_daterange_histpad():
     start = datetime.date(2017, 1, 1)
     stop = datetime.date(2017, 9, 30)
+    stop = datetime.date(2017, 3, 31)
     plotnsave_daterange_histpad(start, stop, sensor='121f03')
+
+
+if __name__ == '__main__':
+    
+    demo_plotnsave_daterange_histpad()
