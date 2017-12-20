@@ -1,10 +1,17 @@
 #!/usr/bin/env python
 
 import datetime
-
+import decimal
 import argparser
 from main import plotnsave_daterange_histpad, plotnsave_monthrange_histpad, save_range_of_months
 
+
+def demo_eng_units():
+    for n in (10 ** e for e in range(-1, -8, -1)):
+        d = decimal.Decimal(str(n))
+        print d.to_eng_string()
+    x = decimal.Decimal(str(11334264123))
+    print x.to_eng_string()
 
 def demo_plotnsave_monthrange_histpad():
     start = datetime.date(2017, 1, 1)
@@ -28,5 +35,5 @@ def demo_plotnsave_daterange_histpad():
 
 
 if __name__ == '__main__':
-    
-    demo_plotnsave_daterange_histpad()
+    demo_eng_units()
+    #demo_plotnsave_daterange_histpad()

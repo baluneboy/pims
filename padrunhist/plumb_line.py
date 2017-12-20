@@ -55,17 +55,18 @@ def plumblines(hLine, yvals, **kwargs):
     xmin, xmax = ax.get_xbound()
 
     # iterate over yvals, use interpolation to draw plumb lines, dots and annotations
-    reddots = horlines = verlines = anns = []
+    reddots, horlines, verlines, anns, xvals = [], [], [], [], []
     for y in yvals:
         x = np.interp(y, yd, xd)  # we swap x and y here for interpolating the way we want it
         verlines.append(plt.vlines(x, ymin, y, colors='r', linestyles='--', label='', hold=None, **kwargs))
         horlines.append(plt.hlines(y, xmin, x, colors='r', linestyles='--', label='', hold=None, **kwargs))
         reddots.append(plt.plot(x, y, 'ro'))
-        anns.append(ax.annotate('(%0.1fmg, %d%%)' % (x, y), xy=(x + 0.3, y - 5), textcoords='data',
+        anns.append(ax.annotate('(%0.2fmg, %d%%)' % (x, y), xy=(x + 0.3, y - 5), textcoords='data',
                     horizontalalignment='left', verticalalignment='middle',
                     weight='bold', color='r'))
+        xvals.append(x)
 
-    return reddots, horlines, verlines, anns
+    return reddots, horlines, verlines, anns, xvals
 
 
 def demo1():

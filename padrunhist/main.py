@@ -7,6 +7,7 @@ This module provides classes for computing/plotting running histograms of SAMS (
 """
 
 import os
+import glob
 import datetime
 import numpy as np
 import pandas as pd
@@ -15,9 +16,11 @@ from pathlib import Path
 from dateutil import parser
 from matplotlib import rc, pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
+from matplotlib.font_manager import FontProperties
 
 import argparser
 from plumb_line import plumblines
+from pims.mathbase.basics import round_up
 from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_path, year_month_to_dtm_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
 from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir
@@ -27,14 +30,25 @@ DEFAULT_PADDIR = argparser.DEFAULT_PADDIR
 DEFAULT_HISTDIR = argparser.DEFAULT_HISTDIR
 
 
+def list_mat_files(glob_pat):
+    """print length of filenames list that matches input glob pattern"""
+    fnames = glob.glob(glob_pat)
+    print len(fnames)
+
+#list_mat_files('/misc/yoda/www/plots/batch/results/dailyhistpad/year2017/month*/day*/*_accel_121f03/dailyhistpad.mat')
+#list_mat_files('/misc/yoda/pub/pad/year2017/month*/day*/*_accel_121f03006/*header')
+#raise SystemExit
+
+
 class DateRangeException(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
 
 
 def get_date_range(value):
+    """return pandas date range object"""
     if value is None:
-        # is None, so set to most recent week's range
+        # value is None, so set to most recent weeks' range
         dr = pd.date_range(DAYONE, periods=7, normalize=True)
     elif isinstance(value, list) and len(value) == 2:
         # a list of 2 objects, we will try to shoehorn into a pandas date_range
@@ -43,7 +57,7 @@ def get_date_range(value):
         except Exception as exc:
             raise DateRangeException(str(exc))
     elif isinstance(value, pd.DatetimeIndex):
-        # ftw, we have pandas date_range
+        # ftw, we have pandas date_range as input arg
         dr = value
     else:
         # not None, not pd.DatetimeIndex and not len=2 list that nicely converted
@@ -53,16 +67,60 @@ def get_date_range(value):
 
 def get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=2*1024*1024):
 
-    # Initialize callable classes that act as filters for our pipeline
-    file_filter1 = PadDataDaySensorWhere(day, sensor)  # fc = 200 Hz
-    file_filter2 = BigFile(min_bytes=min_bytes)  # at least 2 MB
+    # initialize callable classes that act as filters for our pipeline
+    if sensor.endswith('006'):
+        dwhere = {'CutoffFreq': 6.0}
+    elif sensor.startswith('es0'):
+        dwhere = {'CutoffFreq': 204.2}
+    else:
+        dwhere = {'CutoffFreq': 200}
+    file_filter1 = PadDataDaySensorWhere(day, sensor, where=dwhere)  # fc = 200 Hz (or 204.2 Hz)
+    file_filter2 = BigFile(min_bytes=min_bytes)                      # at least 2 MB
     
-    # Initialize processing pipeline with callable classes, but not using file list as input yet
+    # initialize processing pipeline with callable classes, but not using file list as input yet
     ffp = FileFilterPipeline(file_filter1, file_filter2)
     #print ffp
 
-    # Now apply processing pipeline to file list; at this point, ffp is callable
+    # now apply processing pipeline to file list; at this point, ffp is callable
     return list( ffp(files) )
+
+
+def demo_pad_pct99(sensor, y, m, d):
+    from ugaudio.load import padread
+    ymd_dir = datetime_to_ymd_path(datetime.date(y, m, d))
+    glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
+    fnames = glob.glob(glob_pat)
+    fnames_filt = get_pad_day_sensor_files_minbytes(fnames, '%4d-%02d-%02d' % (y, m, d), sensor, min_bytes=2*1024*1024)
+    arr = np.empty((0, 4))
+    for fname in fnames_filt:
+        # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
+        b = padread(fname)
+        a = b - b.mean(axis=0)       # demean each column
+        #a = np.delete(a, 0, 1)       # delete first (time) column
+        a[:,0] = np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2)  # replace 1st column with vecmag
+        p = np.percentile(np.abs(a), 99, axis=0)
+        #print '{:e}  {:e}  {:e}  {:e}'.format(*p)
+        arr = np.append(arr, [p], axis=0)
+
+    return arr
+
+
+def demo_99pct_vecmag_array(drange, sensor):
+    pcts = np.empty((0, 4), np.float)
+    for d in drange:
+        pct = demo_pad_pct99(sensor, d.year, d.month, d.day)
+        pcts = np.append(pcts, pct, axis=0)
+        print '{:9}  {:4}  {:02}  {:02}'.format(pcts.shape[0], d.year, d.month, d.day)
+
+    plt.plot(pcts[:,0] * 1e3)
+    plt.ylabel('99th Pctile of Accel. Mag. (mg)')
+    plt.title(sensor)
+    plt.show()
+    
+dr = pd.date_range('2017-09-01', '2017-12-01')
+sensor = '121f03006'
+demo_99pct_vecmag_array(dr, sensor)
+raise SystemExit
 
 
 def save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, bins=np.arange(-0.2, 0.2, 5e-5), vecmag_bins=np.arange(0, 0.5, 5e-5), min_bytes=2*1024*1024, indir=DEFAULT_PADDIR, outdir=DEFAULT_HISTDIR):
@@ -72,7 +130,7 @@ def save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, b
     
         day = d.strftime('%Y-%m-%d')
 
-        # Get list of PAD data files for particular day and sensor
+        # get list of PAD data files for particular day and sensor
         pth = os.path.join( datetime_to_ymd_path(d), sensor2subdir(sensor) )
         print pth
         if os.path.exists(pth):
@@ -156,6 +214,22 @@ def save_monthlyhistpad(year, month, sensor='121f03'):
     print outfile
 
 
+def get_axis_settings(xvals):
+    xvals_max = max(xvals)
+    mult = 5  
+    xMajorLoc = MultipleLocator(1)
+    xMinorLoc = MultipleLocator(0.5)
+    if xvals_max > 15:
+        mult = 25
+        xMajorLoc = MultipleLocator(2)
+        xMinorLoc = MultipleLocator(1)
+    xmax = round_up(max(xvals), mult)
+    axlims = [-1, xmax, -5, 105]
+    yticks = np.arange(0, 104, 5)
+    xticks = np.arange(xmax)
+    return xMajorLoc, xMinorLoc, axlims, yticks, xticks
+
+
 def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
 
     # load bins and vecmag_bins
@@ -178,8 +252,9 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
             hx += data['Nx'][0]
             hy += data['Ny'][0]
             hz += data['Nz'][0]
+            num_pts = np.sum(hv)
             #print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d.date()), np.sum(hv), f)
+            print "{} {:20,.0f} {}".format(str(d.date()), num_pts, f)
     print ''
     
     # output filename relative to common path
@@ -202,24 +277,40 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     hFig.set_size_inches(11, 8.5)  # landscape
 
     majorFormatter = FormatStrFormatter('%d')
-    xMajorLoc = MultipleLocator(2)
-    xMinorLoc = MultipleLocator(1)
     yMajorLoc = MultipleLocator(10)
     yMinorLoc = MultipleLocator(5)
-
     plt.minorticks_on
 
     # title
-    ht = plt.title('SAMS 200 Hz Vibratory Data (De-Meaned) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
+    ht = plt.title('SAMS 200 Hz Vibratory Data (Mean Subtracted) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
     #ht.set_fontsize(16)
-              
-    # note tuple unpacking on LHS to get hLine out of list that gets returned
-    hLine, = plt.plot(vecmag_bins/1e-3, 100*np.cumsum(hv)/np.sum(hv), linewidth=3, color='k')
-    plt.axis([-1, 25, -5, 105])
+
+    # note the comma for tuple unpacking on LHS to get hLine out of list that gets returned
+    bins_mg = vecmag_bins/1e-3
+    pctiles = 100*np.cumsum(hv)/np.sum(hv)
+    hLine, = plt.plot(bins_mg, pctiles, linewidth=3, color='k')
     plt.xlabel('Acceleration Vector Magnitude (milli-g)')
-    plt.ylabel('Cumulative Percentage of Occurrence (%)')
-    plt.yticks( np.arange(0, 104, 5) )
-    plt.xticks( np.arange(25) )
+    num_pts_str = "{:,.0f} data pts".format(num_pts)
+    bbox = {'fc': '0.8', 'pad': 4}
+    font0 = FontProperties()
+    font = font0.copy()
+    font.set_size(9)
+    plt.text(-2.2, 108.5, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=45, fontproperties=font)
+    
+    # FIXME can we get text annotation with num_pts_str to find its own location somehow
+    #an2 = ax.annotate("Test 2", xy=(1, 0.5), xycoords=an1.get_window_extent, xytext=(30,0), textcoords="offset points")    
+    
+    plt.ylabel('Cumulative Distribution (%)')
+
+    # draw typical plumb lines with annotation
+    yvals = [50, 95, ]  # one set of annotations for each of these values
+    reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals)
+
+    # get axis settings based on data
+    xMajorLoc, xMinorLoc, axlims, yt, xt = get_axis_settings(xvals)
+    plt.axis(axlims)
+    plt.yticks(yt)
+    plt.xticks(xt)
     
     # set xaxis major tick
     plt.gca().xaxis.set_major_locator(xMajorLoc)
@@ -233,10 +324,6 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     plt.gca().xaxis.set_minor_locator(xMinorLoc)    
     plt.gca().yaxis.set_minor_locator(yMinorLoc)    
     plt.gca().grid(True, which='both', linestyle='dashed')
-
-    # draw typical plumb lines with annotation
-    yvals = [50, 95, ]  # one set of annotations for each of these values
-    reddots, horlines, verlines, anns = plumblines(hLine, yvals)
 
     outpdf = outmat.replace('.mat', '.pdf')    
     plt.savefig(outpdf)
@@ -264,11 +351,11 @@ def save_range_of_months(year, moStart, moStop, sensor='121f03'):
         
 if __name__ == '__main__':
 
-    # Example of playing catch-up for one sensor
+    # PROCESS/SAVE example (e.g. playing catch-up for a sensor)
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE
     # ./main.py -s 121f05 -d 2017-01-01 -e 2017-09-30
     
-    # Example of daterange plot
+    # PLOT example for daterange
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE --plot
     # ./main.py -s 121f03 -d 2017-01-01 -e 2017-03-30 --plot
 

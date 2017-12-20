@@ -175,6 +175,7 @@ def backup_tables(host, start, stop):
     for st, ta in TABLE_INFO.iteritems():
         schema, table  = st[0], st[1]
         tfield, action = ta[0], ta[1]
+        print schema, table
         mdc = MysqlDumpCommand(host, schema, table, action, start=start, stop=stop)
         #print mdc
         result = getattr(mdc, action)() # call method referenced by action
