@@ -9,6 +9,7 @@ __all__ = [
 
 _YODAPATH  = "/misc/yoda"
 _PLOTSPATH = "/misc/yoda/www/plots"
+_HISTMATPATH = "/misc/yoda/www/plots/batch/results/dailyhistpad"
 
 ###############################################################################################################################
 #sams2_accel_121f05006
@@ -73,6 +74,14 @@ _JAXACSV_FILEPATTERN = (
     "\.csv\Z"                            # csv extension to finish
     )
 #print _JAXACSV_FILEPATTERN; raise SystemExit
+
+###############################################################################################################################
+#/misc/yoda/www/plots/batch/results/dailyhistpad/year2017/month09/day01/sams2_accel_121f03/dailyhistpad.mat
+_HISTMAT_PATTERN = "(?P<ymdpath>%s/year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2}))" % _HISTMATPATH
+_HISTMATFILES_PATTERN = _HISTMAT_PATTERN + (
+    "/(?P<subdir>.*_accel_(?P<sensor>.*))/"                             # subdir
+    "dailyhistpad.mat\Z"                                                # basename for all sensors are same, like this
+    )
 
 #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~
 
