@@ -270,23 +270,6 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         d2 = None
     return d1, d2
 
-def foscam_fullfilestr_to_datetime(fullfilestr):
-    """convert foscam timestamped jpg fullfile string to datetime object"""
-    bname_pattern = r'^(?P<day>\d{4}-\d{2}-\d{2})_(?P<hour>\d{2})_(?P<minute>\d{2})_(open|close)\.jpg$'
-    bname = os.path.basename(fullfilestr)
-    if not re.match(bname_pattern, bname):
-        return None
-    p = re.compile(bname_pattern)
-    m = p.search(bname)
-    daystr = m.group('day')
-    hh = m.group('hour')
-    mm = m.group('minute')
-    try:
-        d1 = parser.parse(daystr + ' ' + hh + ':' + mm)
-    except ValueError, e:
-        d1 = None
-    return d1
-
 # convert start string like 2015_01_02_03_04_05.678_blah to datetime object for start GMT
 def handbook_pdf_startstr_to_datetime(startstr):
     """convert start string to datetime object for start GMT"""

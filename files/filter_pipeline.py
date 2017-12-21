@@ -7,7 +7,7 @@ import datetime
 from dateutil.parser import parse
 from mutagen.mp3 import MP3
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
-from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, foscam_fullfilestr_to_datetime
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
 
 class FileFilterPipeline(object):
 
@@ -223,22 +223,36 @@ class DateRangePadFile(object):
     def __str__(self):
         return 'is a PAD file with fname stop > %s and fname start < %s' % (self.start, self.stop)
 
-class DateRangeFoscamFile(object):
-    
-    def __init__(self, start, stop, morning=True):
-        self.start = start
-        self.stop = stop
-        self.morning = morning
-        
-    def __call__(self, file_list):
-        for f in file_list:
-            dtm = foscam_fullfilestr_to_datetime(f)
-            if dtm and dtm.date() >= self.start and dtm.date() <= self.stop:
-                if dtm.hour < 12: 
-                    yield f
-                
-    def __str__(self):
-        return 'is a Foscam image file with %s < fname date < %s' % (self.start, self.stop)
+#class DateRangeStateFoscamFile(object):
+#    
+#    def __init__(self, start, stop, morning=True, state=None):
+#        self.start = start
+#        self.stop = stop
+#        self.morning = morning
+#        self.state = state
+#        
+#    def __call__(self, file_list):
+#        for f in file_list:
+#            fdtm, fstate = parse_foscam_fullfilestr(f)
+#            keep = False
+#            state_matches = False
+#            if self.state:
+#                state_matches = self.state == fstate
+#            else:
+#                state_matches = True
+#            if fdtm:  # not None
+#                if state_matches:
+#                    if fdtm.date() >= self.start and fdtm.date() <= self.stop:
+#                        if self.morning:
+#                            if fdtm.hour < 12:
+#                                keep = True
+#                        else:
+#                            keep = True
+#            if keep:
+#                yield f
+#                
+#    def __str__(self):
+#        return 'is a Foscam image file with %s < fname date < %s' % (self.start, self.stop)
     
 #---------------------------------------------------
 # a file-missing function
