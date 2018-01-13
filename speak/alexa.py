@@ -19,8 +19,14 @@ def is_today_in_range(today, dlower, dupper):
     """return True if today between the dlower and dupper days of month"""
     return dlower <= today.day <= dupper
 
+
 def espeak(message):
     status = subprocess.call(["espeak","-a 122 -s 110 -p 22 ", message], stdout=subprocess.PIPE, stderr=subprocess.PIPE)   
+    return status
+
+
+def macsay(message):
+    status = subprocess.call(["say","-r 180 -v Samantha ", message], stdout=subprocess.PIPE, stderr=subprocess.PIPE)   
     return status
 
 
