@@ -1,6 +1,34 @@
+
+import os
 import datetime
 import logging
-#import logging.handlers
+from logging.handlers import RotatingFileHandler
+from os.path import expanduser
+
+HOME = expanduser("~")
+LOGDIR = os.path.join(HOME, 'log')
+
+loggers = {}
+
+
+def my_logger(name):
+    global loggers
+
+    if loggers.get(name):
+        return loggers.get(name)
+    else:
+        logger = logging.getLogger(name)
+        logger.setLevel(logging.DEBUG)
+        now = datetime.datetime.now()
+        log_file = '%s/%s' % (LOGDIR, name) + now.strftime("%Y") + '.log'
+        handler = RotatingFileHandler(log_file, mode='a', maxBytes=5*1024*1024, 
+                                 backupCount=12, encoding=None, delay=0)
+        formatter = logging.Formatter('%(asctime)s %(levelname)s %(message)s')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+        loggers.update(dict(name=logger))
+
+        return logger
 
 class SimpleLog(object):
     """a simple log object"""

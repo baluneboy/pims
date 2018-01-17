@@ -319,6 +319,7 @@ def foscam_fullfilestr_to_datetime(fullfilestr):
         d1 = None
     return d1
 
+
 # convert start string like 2015_01_02_03_04_05.678_blah to datetime object for start GMT
 def handbook_pdf_startstr_to_datetime(startstr):
     """convert start string to datetime object for start GMT"""
