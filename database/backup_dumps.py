@@ -135,8 +135,10 @@ def parametersOK():
     """check for reasonableness of parameters entered on command line"""    
     
     # convert start & stop parameters to date objects
-    parameters['stop'] = parser.parse( parameters['stop'] ).date()
-    if parameters['start'].lower() == 'auto':
+    if parameters['stop'].lower() != 'now':
+        parameters['stop'] = parser.parse( parameters['stop'] ).date()
+    if parameters['start'].lower() == 'auto' and parameters['stop'].lower() == 'now':
+        parameters['stop'] = datetime.date.today()
         parameters['start'] = first_day_of_previous_month( parameters['stop'] )
         parameters['stop'] = datetime.date( parameters['stop'].year, parameters['stop'].month, 1)
     else:

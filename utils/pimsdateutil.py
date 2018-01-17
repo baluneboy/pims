@@ -287,6 +287,21 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         d2 = None
     return d1, d2
 
+
+# convert like /misc/yoda/www/plots/batch/results/dailyhistpad/year2017/month02/day10/samses_accel_es05/dailyhistpad.mat to datetime object
+def ymd_pathstr_to_date(pstr):
+    """convert year/month/day path string to date object"""
+    pat = 'year(?P<year>\d{4})/month(?P<month>\d{2})/day(?P<day>\d{2})'
+    m = re.search(pat, pstr)
+    if not m:
+        raise ValueError('path str %s does not match expected pattern' % pstr)
+    else:
+        yr = int(m.group('year'))
+        mo = int(m.group('month'))
+        da = int(m.group('day'))
+    return datetime.datetime(yr, mo, da).date()
+
+
 def foscam_fullfilestr_to_datetime(fullfilestr):
     """convert foscam timestamped jpg fullfile string to datetime object"""
     bname_pattern = r'^(?P<day>\d{4}-\d{2}-\d{2})_(?P<hour>\d{2})_(?P<minute>\d{2})_(open|close)\.jpg$'

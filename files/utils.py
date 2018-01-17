@@ -9,7 +9,7 @@ import pandas as pd
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
-from pims.utils.pimsdateutil import timestr_to_datetime
+from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date
 from pims.strings.utils import remove_non_ascii
 
 
@@ -339,7 +339,7 @@ def ike_jaxa_file_transfer(fromdir, todir):
     """transfer file uploaded (by JAXA) FROM fromdir TO todir"""
     pass
 
-def demo():
+def demofiltfiles():
     dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
     sensor_subdir = 'sams2_accel_121f03'
     fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
@@ -347,7 +347,7 @@ def demo():
     for f in big_list: #filter_filenames(dirpath, re.compile(fullfile_pattern).match):
         print f
 
-#demo()
+#demofiltfiles()
 #raise SystemExit
 
 # remove files in folder that are older than numdays
@@ -378,6 +378,31 @@ def get_md5(my_file, blocksize=65536):
             buf = afile.read(blocksize)
     md5str = hasher.hexdigest()
     return md5str
+
+
+def find_needles_in_haystack(dailyhistmats, roadmaps):
+    """return subset list of files from roadmaps that match dates in list of files in dailyhistmats"""
+    
+    # a set of "needles" are read from dailyhistmats file
+    with open(dailyhistmats, 'r') as dh_file: dh_list = dh_file.read().splitlines()
+    needles = set([ymd_pathstr_to_date(f) for f in dh_list])
+    
+    # a list for "haystack" is read from roadmaps file
+    with open(roadmaps, 'r') as rp_file: rp_list = rp_file.read().splitlines()
+    haystack = [ymd_pathstr_to_date(f) for f in rp_list]
+    
+    # find indices of needles in haystack
+    idx = [i for i, e in enumerate(haystack) if e in needles]
+    
+    # return subset list of files from roadmaps
+    return [rp_list[i] for i in idx]
+
+
+def demo_needles_haystack():
+    dailyhistpad_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_QUIETER.txt'
+    roadmap_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20hz_map_large_outPDF.txt'
+    matched_list = find_needles_in_haystack(dailyhistpad_fname, roadmap_fname)
+    print 'pdfunite ' + ' '.join(matched_list)
 
 
 if __name__ == "__main__":

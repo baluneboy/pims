@@ -45,6 +45,8 @@ def plumblines(hLine, yvals, **kwargs):
 
     """
 
+    x_units = kwargs.pop('x_units', 'mg')
+    
     # get some properties of line object
     ax = hLine.axes
     yd = hLine.get_ydata()
@@ -61,7 +63,11 @@ def plumblines(hLine, yvals, **kwargs):
         verlines.append(plt.vlines(x, ymin, y, colors='r', linestyles='--', label='', hold=None, **kwargs))
         horlines.append(plt.hlines(y, xmin, x, colors='r', linestyles='--', label='', hold=None, **kwargs))
         reddots.append(plt.plot(x, y, 'ro'))
-        anns.append(ax.annotate('(%0.2fmg, %d%%)' % (x, y), xy=(x + 0.3, y - 5), textcoords='data',
+        if x_units == 'mg':
+            fmtstr = '(%0.2f%s, %d%%)'
+        else:
+            fmtstr = '(%0.1f%s, %d%%)'
+        anns.append(ax.annotate(fmtstr % (x, x_units, y), xy=(x + 0.3, y - 5), textcoords='data',
                     horizontalalignment='left', verticalalignment='middle',
                     weight='bold', color='r'))
         xvals.append(x)

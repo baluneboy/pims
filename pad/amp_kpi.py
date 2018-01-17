@@ -1029,7 +1029,7 @@ def sto2mat(stofile, msid_map):
 if __name__ == '__main__':
     
     if len(sys.argv) == 2:
-        # special run, manually like: amp_kpi.py convert_latest_sto2xlsx
+        # run manually, like this: ./amp_kpi.py convert_latest_sto2xlsx
         eval( sys.argv[1] + '()' )
         raise SystemExit
         

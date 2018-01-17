@@ -19,12 +19,20 @@ DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_O
 DEFAULT_SENSOR = '121f03'
 DEFAULT_PADDIR = '/misc/yoda/pub/pad'
 DEFAULT_HISTDIR = '/misc/yoda/www/plots/batch/results/dailyhistpad'
+DEFAULT_FROMFILE = '/tmp/padrunhistlist.txt'
 
 
 def folder_str(fname):
     """return string provided only if this folder exists"""
     if not os.path.exists(fname):
         raise argparse.ArgumentTypeError('"%s" does not exist as a folder' % fname)
+    return fname
+
+
+def file_str(fname):
+    """return string provided only if this file exists"""
+    if not os.path.exists(fname):
+        raise argparse.ArgumentTypeError('"%s" does not exist' % fname)
     return fname
 
 
@@ -91,12 +99,18 @@ def parse_inputs():
                         type=folder_str,
                         help=help_histdir)
 
+    # get list of days from file
+    help_fromfile = "from file; default is None"
+    parser.add_argument('-f', '--fromfile', default=None,
+                        type=file_str,
+                        help=help_fromfile)
+
     # plot (or not)
     plot_parser = parser.add_mutually_exclusive_group(required=False)    
     plot_parser.add_argument('--plot', dest='plot', action='store_true')
     plot_parser.add_argument('--no-plot', dest='plot', action='store_false')
     parser.set_defaults(plot=False)
-
+    
     # verbosity
     parser.add_argument("-v", action="count", dest='verbosity',
                         help="increase output verbosity (max of 3)")
@@ -104,18 +118,23 @@ def parse_inputs():
     # get parsed args
     args = parser.parse_args()
 
-    # finalize start and stop dates
-    if args.start is None and args.stop is None:
-        args.start = DEFAULT_START
-        args.stop = args.start + relativedelta(days=6)
-    elif args.stop is None:
-        args.stop = args.start + relativedelta(days=6)
-    elif args.start is None:
-        args.start = args.stop - relativedelta(days=6)
-
-    # check start/stop
-    if args.stop < args.start:
-        raise Exception('stop less than start')
+    # handle the case when fromfile option is used (and we ignore start/stop)
+    if args.fromfile is not None:
+        print 'using fromfile option, so ignore start/stop info'
+        args.start, args.stop = None, None
+    else:
+        # finalize start and stop dates
+        if args.start is None and args.stop is None:
+            args.start = DEFAULT_START
+            args.stop = args.start + relativedelta(days=6)
+        elif args.stop is None:
+            args.stop = args.start + relativedelta(days=6)
+        elif args.start is None:
+            args.start = args.stop - relativedelta(days=6)
+    
+        # check start/stop
+        if args.stop < args.start:
+            raise Exception('stop less than start')
 
     return args
 

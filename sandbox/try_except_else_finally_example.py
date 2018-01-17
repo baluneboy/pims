@@ -1,5 +1,8 @@
 #!/usr/bin/env python
 
+import sys
+
+
 def demo_zero_div():
     try:
         x = 1.0 / 0.0
@@ -9,6 +12,7 @@ def demo_zero_div():
         print 'the try worked, so this is the else clause'
     finally:
         print 'no matter what, we do clean-up with finally clause'
+
 
 # from http://nedbatchelder.com/blog/200711/rethrowing_exceptions_in_python.html
 class DelayedResult(object):
@@ -45,7 +49,6 @@ class DelayedResult(object):
         try:
             self.result = self.do_something_dangerous()
         except Exception, e:
-             import sys
              self.exc_info = sys.exc_info()
      
     def do_something_dangerous(self):
@@ -55,6 +58,7 @@ class DelayedResult(object):
         # odd, heritage tuple dance here
         if self.exc_info: raise self.exc_info[1], None, self.exc_info[2]
         return self.result
+
 
 # stupid demo example of try catch
 demo_zero_div()
