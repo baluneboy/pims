@@ -26,6 +26,8 @@ from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
 from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir
 from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
+from ugaudio.explore import padread, pad_file_percentiles
+
 
 DEFAULT_PADDIR = argparser.DEFAULT_PADDIR
 DEFAULT_HISTDIR = argparser.DEFAULT_HISTDIR
@@ -587,6 +589,62 @@ def process_date_list_from_file(fname, sensor):
                 mat_file = cmf.get_matfile()
             files.append(mat_file)
     return files
+
+
+
+def pad_percentiles_from_date_list_file(fname, sensor):
+
+    files = []
+    where = get_where_clause(sensor)
+    with open(fname, 'r') as infile:
+        for line in infile:
+            ymd_path = line.rstrip('\n')
+            d = ymd_pathstr_to_date(ymd_path)
+
+            # get list of PAD data files for particular day and sensor
+            pth = os.path.join( datetime_to_ymd_path(d), sensor2subdir(sensor) )
+            if os.path.exists(pth):
+                tmp = os.listdir(pth)
+                files = [ os.path.join(pth, f) for f in tmp ]
+    
+                # now filter files
+                my_files = get_pad_day_sensor_files_minbytes(files, d.strftime('%Y-%m-%d'), sensor, min_bytes=2*1024*1024)            
+                summary = '%s %s gives %d files' % (pth, d.strftime('%Y-%m-%d'), len(my_files))
+
+                #for pad_file in my_files:
+                #    p = pad_file_percentiles(pad_file)
+                #    print ' > {:9.4f} ug    {:9.4f} ug'.format(p[0]/1e-6, p[1]/1e-6)            
+
+                n = np.empty((0, 1))
+                sum50 = np.empty((0, 1))
+                sum95 = np.empty((0, 1))
+                arr = np.empty((0, 4))
+                for fname in my_files:
+                    # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
+                    b = padread(fname)
+                    a = b - b.mean(axis=0)       # demean each column
+                    #a = np.delete(a, 0, 1)       # delete first (time) column
+                    a[:,0] = np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2)  # replace 1st column with vecmag
+                    #print '{:e}  {:e}  {:e}  {:e}'.format(*p)
+                    arr = np.append(arr, a, axis=0)
+                p = np.percentile(np.abs(arr[:, 0]), [50, 95], axis=0)
+                s = ' > {:6.2f} ug  {:6.2f} ug'.format(p[0]/1e-6, p[1]/1e-6)
+                
+                n = np.append(n, arr.shape[0], axis=0)
+                sum50 = np.append(sum50, p[0]/1e-6, axis=0)
+                sum95 = np.append(sum95, p[1]/1e-6, axis=0)
+                
+                print s, arr.shape, summary
+                print n
+                print sum50
+                print sum95
+
+
+#import sys
+#sensor = 'es05006' # sys.argv[1]
+#fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_QUIETER.txt' # sys.argv[2] # 
+#pad_percentiles_from_date_list_file(fname, sensor)
+#sys.exit('bye')
 
 
 if __name__ == '__main__':

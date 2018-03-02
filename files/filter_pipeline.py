@@ -6,8 +6,11 @@ import time
 import datetime
 from dateutil.parser import parse
 from mutagen.mp3 import MP3
-from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
+
+from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_ESTIMATE_PDF_PATTERN
+from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
+from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
 
 class FileFilterPipeline(object):
 
@@ -196,13 +199,58 @@ class MatchSensorAxRoadmap(object):
                 yield f
                 
     def __str__(self):
-        return 'is a file that matches sensor=%s, axis=%s and plot=%s' % (self.sensor, self.axis, self.plot)
+        return 'is a roadmap file that matches sensor=%s, axis=%s and plot=%s' % (self.sensor, self.axis, self.plot)
     
     def match_pattern(self, bname):
         match = self.regex.match(bname)
         if match:
             m = match.group
             if (m('sensor') == self.sensor) and (m('axis') == self.axis) and (m('plot') == self.plot):
+                return True
+        else:
+            return False
+
+# for quasi-steady estimate gvt3 roadmap for ZBOT modeling
+class MatchZbotQuasiSteadyEstimate(object):
+    
+    def __init__(self):
+        self.regex = re.compile(_QUASISTEADY_ESTIMATE_PDF_PATTERN)
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if self.match_pattern(os.path.basename(f)):
+                yield f
+                
+    def __str__(self):
+        return 'is a quasi-steady estimate file for ZBOT modeling'
+    
+    def match_pattern(self, bname):
+        match = self.regex.match(bname)
+        if match:
+            return True
+        else:
+            return False
+
+# for PAD probe (matches sensor)
+class MatchSensorPad(object):
+    
+    def __init__(self, sensor):
+        self.sensor = sensor
+        self.regex = re.compile(_PADHEADERFILES_PATTERN)
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if self.match_pattern(f):
+                yield f
+                
+    def __str__(self):
+        return 'is a PAD file that matches sensor=%s' % (self.sensor)
+    
+    def match_pattern(self, bname):
+        match = self.regex.match(bname)
+        if match:
+            m = match.group
+            if (m('sensor') == self.sensor):
                 return True
         else:
             return False
@@ -306,6 +354,34 @@ def demo2():
     inp2 = [ os.path.join('/tmp/x/', f) for f in fnames ]
     for f in ffp(inp2):
         print f  
+
+def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path='/misc/yoda/www/plots/batch'):
+    import glob
+    import pandas as pd
     
+    if start is None:
+        start = parse(end) - datetime.timedelta(days=7)
+    for d in pd.date_range(start, end):
+        print d.date(), sensor, 'spg' + axis, " > ",
+        day_dir = os.path.dirname(datetime_to_roadmap_fullstub(d))
+    
+        # initialize processing pipeline (no file list as input yet)
+        ffp = FileFilterPipeline(MatchSensorAxRoadmap(sensor, axis))
+        
+        # apply processing pipeline (now ffp is callable)
+        # /misc/yoda/www/plots/batch/year2018/month01/day25/2018_01_25_00_00_00.000_121f04ten_pcss_roadmaps500.pdf
+        day_files = glob.glob(os.path.join(day_dir, '*_%s_*roadmaps*.pdf' % sensor))
+        if len(day_files) == 0:
+            print 'MISSING---',
+        else:
+            for f in ffp(day_files):
+                hh = f.split('_')[3]
+                print hh,
+        print ''
+        
+    
+
 if __name__ == "__main__":
-    demo3()
+    sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
+    for sensor in sensors:
+        show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)

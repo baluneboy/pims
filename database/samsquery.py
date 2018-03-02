@@ -541,6 +541,26 @@ def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsnew', host='yoda',
     return df
 
 
+def query_ee_packet_count(d1, d2, table='ee_packet', schema='samsnew', host='localhost', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """grouped count of records from d1 to d2"""
+    #select year(timestamp) as Y, month(timestamp) as M, day(timestamp) as D, hour(timestamp) as H, minute(timestamp) as mm, count(*) as Count
+    #from samsnew.ee_packet
+    #where timestamp between '2017-01-23 00:00' and '2017-01-24 00:00'
+    #group by year(timestamp), month(timestamp), day(timestamp), hour(timestamp), minute(timestamp);    
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    #query = "select year(timestamp) as Y, month(timestamp) as M, day(timestamp) as D, hour(timestamp) as H, minute(timestamp) as mm, count(*) as Count "
+    query = "select timestamp, count(*) as Count "
+    query += "from samsnew.ee_packet "
+    query += "where timestamp between '%s' and '%s' " % (t1, t2)
+    query += "group by year(timestamp), month(timestamp), day(timestamp), hour(timestamp), minute(timestamp);"
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
 def query_ee_packet_hs_head_temps(d1, d2, head1='121-f03', table='ee_packet', schema='samsmon', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
     """get temperature records from d1 to d2 for designated head"""
     constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)

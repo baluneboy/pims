@@ -29,11 +29,14 @@ JEN_MSID_MAP = {
         'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
         'UEZE03RT1384C': 'ER3_Embedded_EE_Current',
         'UEZE03RT1548J': 'ER3_EE_F04_Power_Status',
-        'UEZE04RT1394C': 'ER4_Drawer2_Current',
-        'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
-        'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        #'UEZE04RT1394C': 'ER4_Drawer2_Current',
+        #'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
+        #'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE05RT1394C': 'ER5_Drawer2_Current',
+        'UEZE05RT1608J': 'ER5_Drawer2_Power_Status',
+        'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
-        'UEZE06RT1389C': 'ER6_Locker3_Current',        
+        'UEZE06RT1389C': 'ER6_Locker3_Current', 
         }
 
 # FIXME mkdir as needed and write output xlsx to like /misc/yoda/www/plots/batch/padtimes/sams_monthly/2014 << YYYY subdir
@@ -219,9 +222,9 @@ def generic_sto2dataframe(stofile, query_chain=None, predicate=None):
         'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
         'UEZE03RT1384C': 'ER3_Embedded_EE_Current',
         'UEZE03RT1548J': 'ER3_EE_F04_Power_Status',
-        'UEZE04RT1394C': 'ER4_Drawer2_Current',
-        'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
-        'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE05RT1394C': 'ER5_Drawer2_Current',
+        'UEZE05RT1608J': 'ER5_Drawer2_Power_Status',
+        'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current',        
         }
@@ -296,9 +299,9 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UFZF12RT7452J': 'IOP_MP_PWR_CTRL_SAMS',
         'UEZE03RT1384C': 'SSPCM O/P 14',
         'UEZE03RT1548J': 'SSPCM CONF (T4-63) 68',
-        'UEZE04RT1394C': 'SSPCM O/P 24',
-        'UEZE04RT1608J': 'SSPCM CONF (T4-63) 118',
-        'UEZE04RT1841J': 'HRLC BIT 21',
+        'UEZE05RT1394C': 'SSPCM O/P 24'.
+        'UEZE05RT1608J': 'SSPCM CONF (T4-63) 118',
+        'UEZE05RT1841J': 'HRLC BIT 21',
         'UEZE06RT1578J': 'SSPCM CONF (T4-63) 93',
         'UEZE06RT1389C': 'SSPCM O/P 19',        
     """
@@ -317,9 +320,9 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UFZF12RT7452J': 'TSH_ES06_FIR_Power_Status',
         'UEZE03RT1384C': 'ER3_Embedded_EE_Current',
         'UEZE03RT1548J': 'ER3_EE_F04_Power_Status',
-        'UEZE04RT1394C': 'ER4_Drawer2_Current',
-        'UEZE04RT1608J': 'ER4_Drawer2_Power_Status',
-        'UEZE04RT1841J': 'ER4_Drawer2_Ethernet',
+        'UEZE05RT1394C': 'ER5_Drawer2_Current',
+        'UEZE05RT1608J': 'ER5_Drawer2_Power_Status',
+        'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current',        
         }
@@ -656,18 +659,18 @@ def convert_sto2csv(stofile):
     df_er3.to_csv( stofile.replace('.sto', '_er3.csv') )
     grouped_er3.to_csv( stofile.replace('.sto', '_ER3_grouped.csv') )
     
-    # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
-    df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
+    # new dataframe (subset) for ER5 (ER5_Drawer2_Power_Status == 'CLOSED')
+    df_er5 = dataframe_subset(df, 'er5', 'ER5_Drawer2_Power_Status', column_list)
     
     # normalize to change CLOSED to one, and OPENED to zero
-    df_er4.ER4_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er4.ER4_Drawer2_Power_Status.values ]    
+    df_er5.ER5_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er5.ER5_Drawer2_Power_Status.values ]    
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
+    grouped_er5 = df_er5.groupby('Date').aggregate(np.sum)    
     
-    # write CSV for ER4
-    df_er4.to_csv( stofile.replace('.sto', '_er4.csv') )
-    grouped_er4.to_csv( stofile.replace('.sto', '_ER4_grouped.csv') )
+    # write CSV for ER5
+    df_er5.to_csv( stofile.replace('.sto', '_er5.csv') )
+    grouped_er5.to_csv( stofile.replace('.sto', '_ER5_grouped.csv') )
 
     # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
     df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
@@ -787,15 +790,15 @@ def convert_sto2xlsx(stofile, xlsxfile):
     grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
     
     ################################    
-    ### ER4 ###    
-    # new dataframe (subset) for ER4 (ER4_Drawer2_Power_Status == 'CLOSED')
-    df_er4 = dataframe_subset(df, 'er4', 'ER4_Drawer2_Power_Status', column_list)
+    ### ER5 ###    
+    # new dataframe (subset) for ER5 (ER5_Drawer2_Power_Status == 'CLOSED')
+    df_er5 = dataframe_subset(df, 'er5', 'ER5_Drawer2_Power_Status', column_list)
     
     # normalize to change CLOSED to one, and OPENED to zero
-    df_er4.ER4_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er4.ER4_Drawer2_Power_Status.values ]    
+    df_er5.ER5_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er5.ER5_Drawer2_Power_Status.values ]    
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_er4 = df_er4.groupby('Date').aggregate(np.sum)    
+    grouped_er5 = df_er5.groupby('Date').aggregate(np.sum)    
 
     ################################
     ### MSG OUTLET #1 ###
@@ -851,7 +854,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # merge (union via how='outer') all dataframes except for df_pad...
     #bamf_df = df_wall_clock.join([grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu, df_pad])
     bamf_df = df_wall_clock   
-    for gr in [grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
+    for gr in [grouped_er3, grouped_er5, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
         bamf_df = bamf_df.merge(gr, left_index=True, right_index=True, how='outer')
         
     #...now merge df_pad too, but now get intersection (based on Date index) using how='inner' this time
@@ -1025,6 +1028,20 @@ def sto2mat(stofile, msid_map):
 #raise SystemExit
 
 # SEE /usr/local/lib/python2.7/dist-packages/pandas/core/generic.py
+
+msg4feb = """FIXME
+---------
+1. MSID list needs to include ER5 MSIDs for RTS/D2 and get rid of ER4s too.
+2. Dataframe headings and such need to key on ER5 instead of ER4 somehow.
+3. New sensor arrangement:
+-- 121f04 and 121f08 are power_rack_dependent for ER3 in COL
+-- 121f02 and 121f05 are power_rack_dependent for ER5 in JEM
+4. Need to account for fetch date range (1st to 1st), so tallying should exclude 1st day of next month.
+5. Better handling of 2 MSG outlets (so es09 does not get 2 separate rows).
+6. CU total hours should be max(all_sensors, cu_packet_count).
+"""
+print '%s\n' % msg4feb
+#raise SystemExit
 
 if __name__ == '__main__':
     

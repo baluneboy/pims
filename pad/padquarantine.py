@@ -61,13 +61,19 @@ def max_abs(a):
     return np.max( np.abs(a[:,1:]) )
 
 # quarantine data and header file
-def quarantine(datafile):
-    """quarantine data and header file"""
-    dname = os.path.dirname(datafile)
-    bname = os.path.basename(datafile)
-    hdrfile = datafile + '.header'
-    
-    print 'quarantined %s' % os.path.basename( datafile )
+def quarantine(datafiles):
+    """quarantine data and header files"""
+    for datafile in datafiles:
+        dname = os.path.dirname(datafile)
+        #bname = os.path.basename(datafile)
+        hdrfile = datafile + '.header'
+        qdir = os.path.join(dname, 'quarantined')
+        if not os.path.isdir(qdir):
+            os.mkdir(qdir)
+        shutil.move(datafile, qdir)
+        shutil.move(hdrfile, qdir)
+        print 'quarantined %s' % datafile
+        print 'quarantined %s' % hdrfile
 
 # check data file > 0.5 g
 def is_over_half_g(datafile):
@@ -83,7 +89,7 @@ def process_header_files(subdir):
     my_list = file_rate_tuples(r)
     #print my_list
 
-    # determine mode (most common) for sample rate    
+    # determine mode (i.e. "most common") for sample rate    
     rates = [ t[1] for t in my_list ]
     mode = stats.mode(rates)[0][0]
     #print mode
@@ -127,17 +133,19 @@ def process_amplitudes(subdir):
 
     return len(quarantined_amplitude_list)
 
-# iterate over day directory (only sams2 subdirs for now)
+
 def main(daydir):
-    """iterate over day directory (only sams2 subdirs for now)"""
-    # get sams2 directories
+    """iterate over day directory (only sams2 and samses subdirs for now)"""
+    # get sams2 and samses directories
     subdirs = [ i for i in os.listdir(daydir) if os.path.isdir(os.path.join(daydir, i)) ]
-    sams2_subdirs = [ i for i in subdirs if i.startswith('sams2_accel_') ]
-    check_dirs = [ os.path.join(daydir, sd) for sd in sams2_subdirs ]
-    for sams2dir in check_dirs:
-        count1 = process_header_files(sams2dir)
-        count2 = process_amplitudes(sams2dir)
-        print 'length of quarantined list is %d + %d = %d for %s' % (count1, count2, count1 + count2, sams2dir)
+    sams_subdirs = [ i for i in subdirs if (i.startswith('sams2_accel_') or i.startswith('samses_accel_')) ]
+    check_dirs = [ os.path.join(daydir, sd) for sd in sams_subdirs ]
+    for samsdir in check_dirs:
+        #print samsdir; continue
+        count1 = process_header_files(samsdir)
+        count2 = process_amplitudes(samsdir)
+        print 'length of quarantined list is %d + %d = %d for %s' % (count1, count2, count1 + count2, samsdir)
+
 
 if __name__ == '__main__':
     if len(sys.argv) < 2:

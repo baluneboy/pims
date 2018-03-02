@@ -52,3 +52,4 @@ def demo(app_name):
 if __name__ == "__main__":
     demo('pimsquery')
     #demo('packetgrouper')
+    #demo('drawers')

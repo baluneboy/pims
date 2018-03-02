@@ -74,6 +74,7 @@ def main(h0, h1, s1, s2, suffix1, suffix2, suffix3, ptype='spgs', outdir='/tmp')
 if __name__ == '__main__':
     
     args = parse_inputs()
+    print args
     
     s1 = args.sensors[0]
     s2 = args.sensors[1]
@@ -91,7 +92,9 @@ if __name__ == '__main__':
     
     for abc in g:
         
-        pdf = os.path.join(args.outdir, '%s%s' % (str(abc[0].date()), suffix3))
+        #print abc
+        day = abc[0].date()
+        pdf = os.path.join(args.outdir, '%s%s' % (str(day), suffix3))
     
         files_sensor1 = [ full_name(x, suffix1) for x in abc ]
         files_sensor2 = [ full_name(x, suffix2) for x in abc ]

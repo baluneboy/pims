@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 from pims.files.base import StupidRecognizedFile
 from pims.files.handbook import OssBtmfRoadmapPdf, SpgxRoadmapPdf, HandbookPdf
