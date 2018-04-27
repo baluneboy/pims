@@ -39,6 +39,11 @@ JEN_MSID_MAP = {
         'UEZE06RT1389C': 'ER6_Locker3_Current', 
         }
 
+ER6_LOCKER3_MSID_MAP = {
+        'UEZE06RT1578J': 'ER6_Locker3_Status',
+        'UEZE06RT1389C': 'ER6_Locker3_Current', 
+        }
+
 # FIXME mkdir as needed and write output xlsx to like /misc/yoda/www/plots/batch/padtimes/sams_monthly/2014 << YYYY subdir
 
 ############################################################################################
@@ -621,6 +626,82 @@ def process_cir_fir(df, label, value_column, column_list, stofile):
 
 # convert sto file to dataframe, then process and write to csv
 def convert_sto2csv(stofile):
+    """convert sto file to dataframe, then process and write to csv"""
+    
+    # get dataframe from sto file
+    df = msg_cir_fir_sto2dataframe(stofile)
+    column_list = df.columns.tolist()
+    df.to_csv(stofile.replace('.sto', '_from_dataframe.csv'))
+    
+    # convert like 2014:077:00:02:04 to datetimes
+    df['Date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
+
+    # convert datetimes to str and overwrite GMT with those strings
+    df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.date ]
+
+    # new dataframe (subset) for CIR
+    df_cir, grouped_cir = process_cir_fir(df, 'cir', 'TSH_ES05_CIR_Power_Status', column_list, stofile)
+
+    # new dataframe (subset) for FIR
+    df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
+    
+    # FIXME
+    # - move zero_list and one_list up to here
+    # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
+    
+    # new dataframe (subset) for ER3 (ER3_EE_F04_Power_Status == 'CLOSED')
+    df_er3 = dataframe_subset(df, 'er3', 'ER3_EE_F04_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    zero_list = ['off', 'power off', 'opened']
+    one_list =  ['on' , 'power on' , 'closed']
+    df_er3.ER3_EE_F04_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er3.ER3_EE_F04_Power_Status.values ]        
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
+    
+    # write CSV for ER3
+    df_er3.to_csv( stofile.replace('.sto', '_er3.csv') )
+    grouped_er3.to_csv( stofile.replace('.sto', '_ER3_grouped.csv') )
+    
+    # new dataframe (subset) for ER5 (ER5_Drawer2_Power_Status == 'CLOSED')
+    df_er5 = dataframe_subset(df, 'er5', 'ER5_Drawer2_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_er5.ER5_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er5.ER5_Drawer2_Power_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_er5 = df_er5.groupby('Date').aggregate(np.sum)    
+    
+    # write CSV for ER5
+    df_er5.to_csv( stofile.replace('.sto', '_er5.csv') )
+    grouped_er5.to_csv( stofile.replace('.sto', '_ER5_grouped.csv') )
+
+    # new dataframe (subset) for MSG1 (MSG_Outlet1_Status == 'ON')
+    df_msg1 = dataframe_subset(df, 'msg1', 'MSG_Outlet1_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_msg1.MSG_Outlet1_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg1.MSG_Outlet1_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_msg1 = df_msg1.groupby('Date').aggregate(np.sum)    
+    
+    # write CSV for MSG1
+    df_msg1.to_csv( stofile.replace('.sto', '_msg1.csv') )
+    grouped_msg1.to_csv( stofile.replace('.sto', '_MSG1_grouped.csv') )
+
+    # new dataframe (subset) for MSG2 (MSG_Outlet2_Status == 'ON')
+    df_msg2 = dataframe_subset(df, 'msg2', 'MSG_Outlet2_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_msg2.MSG_Outlet2_Status = [ normalize_generic(v, one_list, zero_list) for v in df_msg2.MSG_Outlet2_Status.values ]    
+    
+    # pivot to aggregate daily sum for "rack hours" column
+    grouped_msg2 = df_msg2.groupby('Date').aggregate(np.sum)    
+    
+    # write CSV for MSG2
+    df_msg2.to_csv( stofile.replace('.sto', '_msg2.csv') )
+    grouped_msg2.to_csv( stofile.replace('.sto', '_MSG2_grouped.csv') )
     """convert sto file to dataframe, then process and write to csv"""
     
     # get dataframe from sto file

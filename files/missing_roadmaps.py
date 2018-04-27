@@ -93,6 +93,7 @@ def show_missing_quasisteady_estimates(end, start=None):
             if num_pdf == 0 or num_csv == 0:
                 print '%s %d %d %d' % (d.date(), len(pdf_day_files), len(csv_day_files), len(zbot_pad_files))
 
+
 def show_pad_tally(end, start=None, sensor='121f03', base_path='/misc/yoda/pub/pad'):
     """show how many PAD header files are on server"""
     
@@ -119,7 +120,7 @@ def show_pad_tally(end, start=None, sensor='121f03', base_path='/misc/yoda/pub/p
         if len(day_files) == 0:
             print 'MISSING---',
         else:
-            print len(day_files), 'files',
+            print len(day_files), 'header files',
         print ''    
 
 
