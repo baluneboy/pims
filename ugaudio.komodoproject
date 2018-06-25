@@ -1,6 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- Komodo Project File - DO NOT EDIT -->
 <project id="c9a6822a-4530-4543-ab45-4cbde88dbde3" kpf_version="5" name="ugaudio.komodoproject">
+<file id="127bfe3c-4376-4d57-abff-1e6fe56ee31c" idref="c9a6822a-4530-4543-ab45-4cbde88dbde3" name="filter_pipeline.py" url="files/filter_pipeline.py">
+</file>
 <file id="3758fa46-9e43-4056-a756-389abf456f77" idref="c9a6822a-4530-4543-ab45-4cbde88dbde3" name="convert.py" url="file:///home/pims/dev/programs/python/ugaudio/convert.py">
 </file>
 <file id="5e578756-7ae3-4329-b91c-3760891f9403" idref="c9a6822a-4530-4543-ab45-4cbde88dbde3" name="demo.py" url="file:///home/pims/dev/programs/python/ugaudio/demo.py">
@@ -11,4 +13,9 @@
 </file>
 <file id="cc08afc0-08d8-40ff-8d0a-e68658d5e30e" idref="c9a6822a-4530-4543-ab45-4cbde88dbde3" name="load.py" url="file:///home/pims/dev/programs/python/ugaudio/load.py">
 </file>
+<preference-set idref="c9a6822a-4530-4543-ab45-4cbde88dbde3" id="project" preftype="project">
+  <long id="codeintel.scanner.max_depth">10</long>
+  <string id="import_exclude_matches">*.*~;*.bak;*.tmp;CVS;.#*;*.pyo;*.pyc;.svn;.git;.hg;.bzr;*%25*;tmp*.html;.DS_Store;*.swp;*.kpf;*.komodoproject;.komodotools;__pycache__</string>
+  <long id="prefs_version">1</long>
+</preference-set>
 </project>

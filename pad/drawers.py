@@ -193,8 +193,8 @@ def concat_drawers_sto_files(bname, glob_pat=None):
     plot_data(bname, df, 'RTS_Drawer1_BaseTemp', 'Temp. (C)',    20,  28, interval_sec=INT_SEC, rot_deg=ROT_DEG, out_dir=tdir1)
     plot_data(bname, df, 'RTS_Drawer2_BaseTemp', 'Temp. (C)',    20,  28, interval_sec=INT_SEC, rot_deg=ROT_DEG, out_dir=tdir2)
 
-concat_drawers_sto_files('concat201678', glob_pat='/misc/yoda/www/plots/batch/padtimes/NRT_sto_files/drawers/drwrs201????-201????.sto')
-sys.exit('bye')
+#concat_drawers_sto_files('concat201678', glob_pat='/misc/yoda/www/plots/batch/padtimes/NRT_sto_files/drawers/drwrs201????-201????.sto')
+#sys.exit('bye')
 
 def old_main():
     """this is 5-minute rolling mean for spans on the order of days/months"""
@@ -238,7 +238,7 @@ def helen(sto_file):
     bname = os.path.basename(sto_file).replace('.sto', '')    
     df = drawers_sto2dataframe(sto_file, msid_map=this_map)    
     ROT_DEG = 20
-    INT_SEC = None
+    INT_SEC = 300  # None
     matplotlib.rc('xtick', labelsize=8)
     pdir = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_RTSD2_in_ER5'
     cdir = os.path.join(pdir, 'current')
@@ -257,6 +257,8 @@ if __name__ == '__main__':
     """ASSUMED MSID MAP AND no rolling mean here, plot just for short/few hours span"""
 
     sto_file = '/misc/yoda/www/plots/batch/padtimes/NRT_sto_files/drawers/drwrs2018019-2018039.sto'
+    sto_file = '/misc/yoda/www/plots/batch/padtimes/NRT_sto_files/drawers/drwrs201813310-13410.sto'  # no thinning
+    sto_file = '/misc/yoda/www/plots/batch/padtimes/NRT_sto_files/drawers/drwrs201813310t13410.sto'  # every 10-second thinning
     helen(sto_file)
     sys.exit('bye')
 

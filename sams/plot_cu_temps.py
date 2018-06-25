@@ -225,10 +225,13 @@ def plot_current_custom(d1, d2=None):
     plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps_cache/2018-04-11_laptop_batt_replaced_er6_locker3_current.pdf')   
 
 
-def plot_cutemps_and_current(d1=None, d2=None):
+def plot_cutemps_and_current(d1=None, d2=None, pdf_file=None):
     
     SEC_AVG = 30  # just for current (for now)
     
+    if pdf_file is None:
+        pdf_file = '/misc/yoda/www/plots/user/sams/status/cutemps_er6locker3aggcurrent.pdf'
+        
     if d2 is None:
         d2 = round_time(datetime.datetime.now(), round_to=1)
     if d1 is None:
@@ -294,7 +297,7 @@ def plot_cutemps_and_current(d1=None, d2=None):
     
     #plt.show()
 
-    plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps_er6locker3aggcurrent.pdf')     
+    plt.savefig(pdf_file)     
     
 
 def poiwg_plot1():
@@ -329,7 +332,14 @@ def long_temp_plot():
     d2 = datetime.datetime(2018,4,12,0,0)
     d1 = d2 - datetime.timedelta(hours=36, seconds=9)
     plot_cu_temps_custom(d1, d2=d2)
-    
+
+
+def quick_job():
+    d1 = datetime.datetime(2018, 4, 30, 20)
+    d2 = datetime.datetime(2018, 4, 30, 22)
+    pdf_file = '/tmp/out.pdf'
+    plot_cutemps_and_current(d1=d1, d2=d2, pdf_file=pdf_file)
+
 
 def main():
     #plot_cu_temps()
@@ -339,4 +349,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    #temp_catchup()

@@ -799,6 +799,8 @@ def convert_latest_sto2xlsx():
     # get most recent sto file along default dir
     stofile = most_recent_file_with_suffix('/misc/yoda/www/plots/batch/padtimes/NRT_sto_files', '.sto')
 
+    print 'STO file is: ', stofile
+    
     # check if xlsx exists already
     xlsxfile = stofile.replace('.sto', '.xlsx').replace('padtimes/NRT_sto_files','padtimes')
     if os.path.exists( xlsxfile ):

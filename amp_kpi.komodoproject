@@ -13,4 +13,7 @@
 </file>
 <file id="ed95dadc-92be-42fd-b3e5-0adc524b3a42" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="samsquery.py" url="database/samsquery.py">
 </file>
+<preference-set idref="9f7c0f6e-e422-46eb-a479-128aa220308c" id="project" preftype="project">
+  <long id="prefs_version">1</long>
+</preference-set>
 </project>

@@ -255,6 +255,66 @@ class MatchSensorPad(object):
         else:
             return False
 
+# for PAD to match sample rate, cutoff freq and SSA coordinates
+class MatchRateCutoffSsaPad(object):
+# <?xml version="1.0" encoding="US-ASCII"?>
+# <sams2_accel>
+# 	<SensorID>121f04</SensorID>
+# 	<TimeZero>2018_06_13_23_56_43.640</TimeZero>
+# 	<Gain>10.0</Gain>
+# 	<SampleRate>500.0</SampleRate>
+# 	<CutoffFreq>200.0</CutoffFreq>
+# 	<GData format="binary 32 bit IEEE float little endian" file="2018_06_13_23_56_43.640+2018_06_14_00_01_37.643.121f04"/>
+# 	<BiasCoeff x="1.23" y="4.46" z="7.89"/>
+# 	<SensorCoordinateSystem name="121f04" r="180.0" p="0.0" w="-90.0" x="156.6" y="-46.08" z="207.32" comment="LAB1P2, ER7, Cold Atom Lab Front Panel" time="2018_05_31_00_00_00.000"/>
+# 	<DataCoordinateSystem name="SSAnalysis" r="0.0" p="0.0" w="0.0" x="0.0" y="0.0" z="0.0" comment="S0, Geom. Ctr. ITA" time="2001_05_01_00_00_00.000"/>
+# 	<DataQualityMeasure>temperature+gain+axial-mis-alignment, No temperature compensation</DataQualityMeasure>
+# 	<ISSConfiguration>Increment:  28, Flight: ULF7</ISSConfiguration>
+# 	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
+# </sams2_accel>
+    
+    def __init__(self, fs, fc):
+        self.fs = fs
+        self.fc = fc
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if self.match_field('SampleRate', self.fs) and self.match_field('CutoffFreq', self.fc):
+                if self.match_ssa():
+                    yield f
+                
+    def __str__(self):
+        return 'is a PAD file that matches sensor=%s' % (self.sensor)
+    
+    def match_field(self, field, value):
+        if match:
+            m = match.group
+            if (m('sensor') == self.sensor):
+                return True
+        else:
+            return False
+
+
+# FIXME this is sloppy way to get true file duration in minutes (crude but what we go with for now)
+class MinDurMinutesPad(object):
+    
+    def __init__(self, min_minutes=5.0):
+        self.min_minutes = min_minutes
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            fstart, fstop = pad_fullfilestr_to_start_stop(f)
+            num_minutes = (fstop - fstart).total_seconds() / 60.0
+            if num_minutes >= self.min_minutes:
+                # print 'ok', f, num_minutes
+                yield f
+            # else:
+            #     print 'no', f, num_minutes
+                
+    def __str__(self):
+        return 'is a PAD file longer in duration than %.f minutes' % (self.min_minutes)
+
+
 # for example, used to quarantine PAD files with filename's GMT stop time greater than start & GMT start time less than stop
 class DateRangePadFile(object):
     
