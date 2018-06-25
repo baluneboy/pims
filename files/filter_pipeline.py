@@ -11,6 +11,8 @@ from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
+from pims.files.padgrep import get_header_dict_fs_fc_ssa
+
 
 class FileFilterPipeline(object):
 
@@ -256,7 +258,7 @@ class MatchSensorPad(object):
             return False
 
 # for PAD to match sample rate, cutoff freq and SSA coordinates
-class MatchRateCutoffSsaPad(object):
+class HeaderMatchesRateCutoffSsaPad(object):
 # <?xml version="1.0" encoding="US-ASCII"?>
 # <sams2_accel>
 # 	<SensorID>121f04</SensorID>
@@ -273,26 +275,21 @@ class MatchRateCutoffSsaPad(object):
 # 	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
 # </sams2_accel>
     
-    def __init__(self, fs, fc):
-        self.fs = fs
-        self.fc = fc
+    def __init__(self, fs, fc, coord_name='SSAnalysis'):
+        self.template = {'DataCoordinateSystem_name': coord_name, 'SampleRate': fs, 'CutoffFreq': fc}
         
     def __call__(self, file_list):
         for f in file_list:
-            if self.match_field('SampleRate', self.fs) and self.match_field('CutoffFreq', self.fc):
-                if self.match_ssa():
+            if not f.endswith('.header'):
+                hdr_file = f + '.header'
+            else:
+                hdr_file = f
+            header_values = get_header_dict_fs_fc_ssa(hdr_file)
+            if header_values == self.template:
                     yield f
                 
     def __str__(self):
-        return 'is a PAD file that matches sensor=%s' % (self.sensor)
-    
-    def match_field(self, field, value):
-        if match:
-            m = match.group
-            if (m('sensor') == self.sensor):
-                return True
-        else:
-            return False
+        return 'is a PAD file such that header file matches: ', self.template
 
 
 # FIXME this is sloppy way to get true file duration in minutes (crude but what we go with for now)
