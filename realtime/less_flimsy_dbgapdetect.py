@@ -17,20 +17,13 @@ from pims.files.utils import tail
 from pims.utils.pimsdateutil import floor_ten_minutes
 
 # TODO
-# - robustness for missing table (or go out and find hosts/tables automagically)
-# - iterate over list of sensors
-# - better way to get expected packets per second (SAMS/MAMS HiRAP, SampleRate, what else)
-# - some form of pivot table to show results
-# - allow more than 23 hours of history (the GROUP BY in MySQL call mucks this up otherwise)
+# - verify each and every "on the tens" shows up (even if there are no records at all for that span -> red time)
+# - robustness/timeout for unresponsive host or missing table
+# - better way to get expected packets per second for given sensor (map from SampleRate?)
+# - allow more than 23 hours of history (the GROUP BY in MySQL call mucks up greater than 23 hours)
+
 
 #### input parameters
-###defaults = {
-###'sensor':           '121f03',       # sensor = table name
-###'packets_per_sec':  '8',            # expected value for this sensor for this gap check period
-###'host':             'tweek',        # like tweek for 121f03
-###'min_pct':          '0',            # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
-###'hours_ago':        '23',           # start checking this many hours ago
-###}
 
 # defaults
 defaults = {
@@ -46,7 +39,7 @@ defaults = {
     ('es05',        'manbearpig',   'pims',     '7.84'),
     ('es06',        'chef',         'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),    
-    ('cu_packet',   'yoda',         'samsnew',  '1')
+    #('cu_packet',   'yoda',         'samsnew',  '1')
     ],          
 'packets_per_sec':  '8',    # expected value for this sensor for this gap check period
 'min_pct':          '0',    # show hourly periods with pkt count < min_pct (USE ZERO TO SHOW ALL)
@@ -54,10 +47,12 @@ defaults = {
 }
 parameters = defaults.copy()
 
+
 def FAKE_floor_ten_minutes(x):
     d = pd.to_datetime(x)
     r = floor_ten_minutes(d)        
     return '%s' % r
+
 
 class DatabaseHourlyGapsHoursAgo(object):
     """
@@ -142,6 +137,7 @@ class DatabaseHourlyGapsHoursAgo(object):
         """return filtered dataframe"""
         pass
 
+
 class DatabaseHourlyGapsStartStop(DatabaseHourlyGapsHoursAgo):
     """
     Info on database gaps given sensor (i.e. table), host, expected packets per second, min%, and start/stop.
@@ -177,6 +173,7 @@ class DatabaseHourlyGapsStartStop(DatabaseHourlyGapsHoursAgo):
         else:
             s += 'no dataframe (yet)'
         return s
+
 
 class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
     """
@@ -229,6 +226,7 @@ class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
         #self.dataframe = psql.frame_query(query, con=con)
         self.dataframe = psql.read_sql(query, con=con)        
 
+
 # function to format percentages
 def percentage_fmt(x):
     """function to format percentages"""
@@ -236,6 +234,7 @@ def percentage_fmt(x):
     elif x >= 80 and x < 99: s = '<span style="color: orange;">%g</span>' % x
     else:                    s = '%g' % x
     return s
+
 
 # FIXME this time conversion does not work (see example in samsquery.py)
 # function to format hourlies
@@ -248,6 +247,7 @@ def hourly_fmt(x):
     #return s
     r = floor_ten_minutes(d)
     return '%s' % r
+
 
 def params_okay():
     """Not really checking for reasonableness of parameters entered on command line."""
@@ -266,6 +266,7 @@ def params_okay():
         print 'CHANGED hours_ago PARAMETER TO MAX VALUE OF 23'
     return True
 
+
 def print_usage():
     """Print short description of how to run the program."""
     print version
@@ -273,6 +274,7 @@ def print_usage():
     print '       options (and default values) are:'
     for i in defaults.keys():
         print '\t%s=%s' % (i, defaults[i])
+
 
 def weekly_get_cu_packet_gaps():
     #df_merged = pd.DataFrame({'hour':[]})
@@ -295,6 +297,7 @@ def weekly_get_cu_packet_gaps():
         print d
     with open('/misc/yoda/www/plots/user/sams/dbsams.csv', 'a') as f:
         df_merged.to_csv(f, index=False, header=False)
+
 
 def pims_dbgaps():
     buf = StringIO()
@@ -341,9 +344,10 @@ def pims_dbgaps():
     s = s.replace('<tr>', '<tr style="text-align: right;">')
     s = s.replace('<table border="1" class="dataframe">', '<table class="dataframe" id="fixed_hdr3">')
     with open("/misc/yoda/www/plots/user/sams/dbpims.html", "w") as html_file:
-        html_file.write( HEADER + s.replace('nan', '') + FOOTER )            
+        html_file.write(HEADER + s.replace('nan', '') + FOOTER)
     #print df_merged
     return dbgaps.start, dbgaps.stop
+
 
 def samsnew_dbgaps(d, d2):
     buf = StringIO()
@@ -376,10 +380,11 @@ def samsnew_dbgaps(d, d2):
     s = buf.getvalue()
     s = s.replace('<tr>', '<tr style="text-align: right;">')
     with open("/misc/yoda/www/plots/user/sams/dbsams.html", "w") as html_file:
-        hdr = HEADER.replace('PIMS Database Tables','SAMS Database Table')
+        hdr = HEADER.replace('PIMS Database Tables', 'SAMS Database Table')
         hdr = hdr.replace('dbsams', 'dbpims')
         html_file.write( hdr + s.replace('nan', '') + FOOTER )            
     #print df_merged    
+
 
 def manbearpig_dbgaps(start, stop):
     buf = StringIO()
@@ -423,6 +428,7 @@ def manbearpig_dbgaps(start, stop):
     #print df_merged
     return dbgaps.start, dbgaps.stop
 
+
 def main(argv):
     """script to simply check/show gaps in db"""
     if (len(argv) == 2) and (argv[1] == 'weekly'):
@@ -441,10 +447,11 @@ def main(argv):
         if params_okay():
             start, stop = pims_dbgaps()
             samsnew_dbgaps(start, stop)
+            print 'done'
             return 0
 
     print_usage()  
 
+
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-    
