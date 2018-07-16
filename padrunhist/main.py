@@ -196,10 +196,12 @@ def Jan_thru_Sep_2017():
     save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, min_bytes=2*1024*1024)
 
 
-def save_monthlyhistpad(year, month, sensor='121f03'):
+def save_monthlyhistpad(year, month, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
-    a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))
+    name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
+    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
 
@@ -240,10 +242,15 @@ def get_axis_settings(xvals):
     mult = 5  
     xMajorLoc = MultipleLocator(1)
     xMinorLoc = MultipleLocator(0.5)
+    print 'xvals_max', xvals_max
     if xvals_max > 40:
         mult = 220
         xMajorLoc = MultipleLocator(20)
-        xMinorLoc = MultipleLocator(10)        
+        xMinorLoc = MultipleLocator(10)
+    elif xvals_max > 30:
+        mult = 60
+        xMajorLoc = MultipleLocator(5)
+        xMinorLoc = MultipleLocator(1)
     elif xvals_max > 12:
         mult = 24
         xMajorLoc = MultipleLocator(2)
@@ -255,10 +262,28 @@ def get_axis_settings(xvals):
     return xMajorLoc, xMinorLoc, axlims, yticks, xticks
 
 
-def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
+def get_axis_settings_xyz(x, y, z, axlims):
+    if axlims[1] > 30:
+        xMajorLoc = MultipleLocator(10)
+        xMinorLoc = MultipleLocator(5)
+        axlims = [-60, 60, -0.01, 0.51]
+        yticks = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
+        xticks = np.arange(-60, 60, 10)
+    else:
+        xMajorLoc = MultipleLocator(1)
+        xMinorLoc = MultipleLocator(0.5)
+        axlims = [-5, 5, -0.1, 5.1]
+        yticks = np.arange(0, 6)
+        xticks = np.arange(-5, 5, 1)
+    return xMajorLoc, xMinorLoc, axlims, yticks, xticks
+
+
+def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
-    a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))
+    name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
+    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
 
@@ -319,8 +344,8 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     font0 = FontProperties()
     font = font0.copy()
     font.set_size(9)
-    plt.text(-2.2, 108.5, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=45, fontproperties=font)
-    
+    # plt.text(-0.01, 103.0, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
+
     # FIXME can we get text annotation with num_pts_str to find its own location somehow
     #an2 = ax.annotate("Test 2", xy=(1, 0.5), xycoords=an1.get_window_extent, xytext=(30,0), textcoords="offset points")    
     
@@ -335,7 +360,14 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     plt.axis(axlims)
     plt.yticks(yt)
     plt.xticks(xt)
-    
+
+    # now add num_pts text box top/center
+    xspan = axlims[1] - axlims[0]
+    xtxt = axlims[0] + ( 0.5 * xspan )
+    yspan = axlims[3] - axlims[2]
+    ytxt = axlims[2] + 0.98* yspan
+    plt.text(xtxt, ytxt, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
+
     # set xaxis major tick
     plt.gca().xaxis.set_major_locator(xMajorLoc)
     plt.gca().xaxis.set_major_formatter(majorFormatter)
@@ -354,6 +386,197 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03'):
     print "evince", outpdf, "&"
 
 
+def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
+
+    # load bins and vecmag_bins
+    name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
+    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
+    vecmag_bins = a['vecmag_bins'][0]
+    bins = a['bins'][0]
+
+    hv = np.zeros_like(vecmag_bins)
+    hx = np.zeros_like(bins)
+    hy = np.zeros_like(bins)
+    hz = np.zeros_like(bins)
+
+    files = []
+    for d in pd.date_range(start, stop):
+        f = os.path.join(datetime_to_dailyhist_path(d, sensor_subdir=sensor2subdir(sensor)), 'dailyhistpad.mat')
+        if os.path.exists(f):
+            files.append(f)
+            data = sio.loadmat(f)
+            hv += data['Nv'][0]
+            hx += data['Nx'][0]
+            hy += data['Ny'][0]
+            hz += data['Nz'][0]
+            num_pts = np.sum(hv)
+            # print '%s %d %s' % (d.date(), np.sum(hv), f)
+            print "{} {:20,.0f} {}".format(str(d.date()), num_pts, f)
+    print ''
+
+    # output filename relative to common path
+    outdir = os.path.join(DEFAULT_HISTDIR, 'plots')
+    outname = '%s_to_%s_%s' % (start, stop, sensor)
+    outstub = os.path.join(outdir, outname)
+
+    # save to output mat file
+    outmat = outstub + '.mat'
+    sio.savemat(outstub + '.mat',
+                {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
+    print outmat
+
+    # ################################################
+    # plot vector magnitude cumulative distribution
+    # ################################################
+
+    ylabstr = 'Cumulative Distribution (%)'
+    xlab_prefix = 'Acceleration Vector Magnitude'
+    bins_mg = vecmag_bins / 1e-3
+    pctiles = 100 * np.cumsum(hv) / np.sum(hv)
+
+    font = {'family': 'DejaVu Sans',
+            'weight': 'normal',
+            'size': 18}
+
+    rc('font', **font)
+
+    hFig = plt.figure()
+    hFig.set_size_inches(11, 8.5)  # landscape
+
+    majorFormatter = FormatStrFormatter('%d')
+    yMajorLoc = MultipleLocator(10)
+    yMinorLoc = MultipleLocator(5)
+    plt.minorticks_on
+
+    # title
+    ht = plt.title(
+        'SAMS 200 Hz Vibratory Data (Mean Subtracted) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
+    # ht.set_fontsize(16)
+
+    hLine, = plt.plot(bins_mg, pctiles, linewidth=3,
+                      color='k')  # note comma for tuple unpacking on LHS gets hLine out of list returned
+    plt.xlabel('%s (milli-g)' % xlab_prefix)
+    num_pts_str = "{:,.0f} data pts".format(num_pts)
+    bbox = {'fc': '0.8', 'pad': 4}
+    font0 = FontProperties()
+    font = font0.copy()
+    font.set_size(9)
+    # plt.text(-0.01, 103.0, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
+
+    # FIXME can we get text annotation with num_pts_str to find its own location somehow
+    # an2 = ax.annotate("Test 2", xy=(1, 0.5), xycoords=an1.get_window_extent, xytext=(30,0), textcoords="offset points")
+
+    plt.ylabel(ylabstr)
+
+    # draw typical plumb lines with annotation
+    yvals = [50, 95, ]  # one set of annotations for each of these values
+    reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals)
+
+    # get axis settings based on data
+    xMajorLoc, xMinorLoc, axlims, yt, xt = get_axis_settings(xvals)
+    plt.axis(axlims)
+    plt.yticks(yt)
+    plt.xticks(xt)
+
+    # now add num_pts text box top/center
+    xspan = axlims[1] - axlims[0]
+    xtxt = axlims[0] + (0.5 * xspan)
+    yspan = axlims[3] - axlims[2]
+    ytxt = axlims[2] + 0.98 * yspan
+    plt.text(xtxt, ytxt, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
+
+    # set xaxis major tick
+    plt.gca().xaxis.set_major_locator(xMajorLoc)
+    plt.gca().xaxis.set_major_formatter(majorFormatter)
+
+    # set yaxis major tick
+    plt.gca().yaxis.set_major_locator(yMajorLoc)
+    plt.gca().yaxis.set_major_formatter(majorFormatter)
+
+    # for the minor ticks, use no labels; default NullFormatter
+    plt.gca().xaxis.set_minor_locator(xMinorLoc)
+    plt.gca().yaxis.set_minor_locator(yMinorLoc)
+    plt.gca().grid(True, which='both', linestyle='dashed')
+
+    outpdf = outmat.replace('.mat', '_vcdf.pdf')  # xyzh
+    plt.savefig(outpdf)
+    print "evince", outpdf, "&"
+
+    # ################################################
+    #  plot xyz probability densities
+    # ################################################
+
+    ylabstr = 'Probability Density (%)'
+    xlab_prefix = 'Acceleration'
+    bins_mg = bins / 1e-3
+    xvalues = 100 * hx / np.sum(hx)
+    yvalues = 100 * hy / np.sum(hy)
+    zvalues = 100 * hz / np.sum(hz)
+    num_pts = np.sum(hx)
+    num_pts_str = "{:,.0f} records".format(num_pts)
+
+    hFig = plt.figure()
+    hFig.set_size_inches(11, 8.5)  # landscape
+
+    # title
+    ht = plt.title(
+        'SAMS 200 Hz Vibratory Data (Mean Subtracted) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
+    # ht.set_fontsize(16)
+
+    hLineX, = plt.plot(bins_mg, xvalues, linewidth=2,
+                      color='r')  # note comma for tuple unpacking on LHS gets hLine out of list returned
+    hLineY, = plt.plot(bins_mg, yvalues, linewidth=2,
+                      color='g')  # note comma for tuple unpacking on LHS gets hLine out of list returned
+    hLineZ, = plt.plot(bins_mg, zvalues, linewidth=2,
+                      color='b')  # note comma for tuple unpacking on LHS gets hLine out of list returned
+    plt.xlabel('%s (milli-g)' % xlab_prefix)
+    plt.ylabel('Probability Density (%)')
+
+    # get axis settings based on data
+    xMajorLoc, xMinorLoc, axlims2, yt, xt = get_axis_settings_xyz(xvalues, yvalues, zvalues, axlims)
+    plt.axis(axlims2)
+    plt.yticks(yt)
+    plt.xticks(xt)
+
+    # branch based on returned ax limits
+    if axlims2[3] < 2:
+        yMajorFormatter = FormatStrFormatter('%0.1f')
+        yMajorLoc = MultipleLocator(0.1)
+        yMinorLoc = MultipleLocator(0.05)
+    else:
+        yMajorFormatter = FormatStrFormatter('%d')
+        yMajorLoc = MultipleLocator(1)
+        yMinorLoc = MultipleLocator(0.5)
+    plt.minorticks_on
+
+    # now add num_pts text box top/center
+    xspan = axlims2[1] - axlims2[0]
+    xtxt = axlims2[0] + (0.5 * xspan)
+    yspan = axlims2[3] - axlims2[2]
+    ytxt = axlims2[2] + 0.98 * yspan
+    plt.text(xtxt, ytxt, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
+
+    # set xaxis major tick
+    plt.gca().xaxis.set_major_locator(xMajorLoc)
+    plt.gca().xaxis.set_major_formatter(majorFormatter)
+
+    # set yaxis major tick
+    plt.gca().yaxis.set_major_locator(yMajorLoc)
+    plt.gca().yaxis.set_major_formatter(yMajorFormatter)
+
+    # for the minor ticks, use no labels; default NullFormatter
+    plt.gca().xaxis.set_minor_locator(xMinorLoc)
+    plt.gca().yaxis.set_minor_locator(yMinorLoc)
+    plt.gca().grid(True, which='both', linestyle='dashed')
+
+    plt.legend((hLineX, hLineY, hLineZ), ('X-Axis', 'Y-Axis', 'Z-Axis'))
+
+    outpdf = outmat.replace('.mat', '_xyzp.pdf')  # xyzp
+    plt.savefig(outpdf)
+    print "evince", outpdf, "&"
+
+
 def plotnsave_histmatfiles(files, sensor, tag):
 
     # load bins and vecmag_bins    
@@ -362,7 +585,7 @@ def plotnsave_histmatfiles(files, sensor, tag):
     elif sensor.endswith('020'):
         bname_bins_matfile = 'dailyhistpad_bins_020.mat'
     else:
-        bname_bins_matfile = 'dailyhistpad_bins.mat'
+        bname_bins_matfile = 'dailyhistpad_bins_200.mat'
 
     # load bins and vecmag_bins
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, bname_bins_matfile))
@@ -550,7 +773,7 @@ class CreateMatFile(object):
         elif 199 < self.where['CutoffFreq'] < 205:
             #bins = np.arange(-0.2, 0.2-5e-5, 5e-5)
             #vecmag_bins = np.arange(0, 0.5, 5e-5)
-            bname_bins_matfile = 'dailyhistpad_bins.mat'
+            bname_bins_matfile = 'dailyhistpad_bins_200.mat'
         else:
             raise Exception('unhandled use case for CutoffFreq or sample rate implied by 006 sensor suffix')
 

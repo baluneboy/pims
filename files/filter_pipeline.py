@@ -11,7 +11,7 @@ from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
-from pims.files.padgrep import get_header_dict_fs_fc_ssa
+from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa
 
 
 class FileFilterPipeline(object):
@@ -258,7 +258,7 @@ class MatchSensorPad(object):
             return False
 
 # for PAD to match sample rate, cutoff freq and SSA coordinates
-class HeaderMatchesRateCutoffSsaPad(object):
+class HeaderMatchesRateCutoffLocSsaPad(object):
 # <?xml version="1.0" encoding="US-ASCII"?>
 # <sams2_accel>
 # 	<SensorID>121f04</SensorID>
@@ -275,8 +275,13 @@ class HeaderMatchesRateCutoffSsaPad(object):
 # 	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
 # </sams2_accel>
     
-    def __init__(self, fs, fc, coord_name='SSAnalysis'):
-        self.template = {'DataCoordinateSystem_name': coord_name, 'SampleRate': fs, 'CutoffFreq': fc}
+    def __init__(self, fs, fc, loc, coord_name='SSAnalysis'):
+        self.template = {
+            'DataCoordinateSystem_name': coord_name,
+            'SensorCoordinateSystem_comment': loc,  # note that the 'comment' field contains location info
+            'SampleRate': fs,
+            'CutoffFreq': fc
+            }
         
     def __call__(self, file_list):
         for f in file_list:
@@ -284,12 +289,16 @@ class HeaderMatchesRateCutoffSsaPad(object):
                 hdr_file = f + '.header'
             else:
                 hdr_file = f
-            header_values = get_header_dict_fs_fc_ssa(hdr_file)
+            header_values = get_hdr_dict_fs_fc_loc_ssa(hdr_file)
             if header_values == self.template:
                     yield f
                 
     def __str__(self):
-        return 'is a PAD file such that header file matches: ', self.template
+        return 'is a PAD file with fs = %.3f, fc = %.3f, coord_sys = %s, loc = %s' % (self.template['SampleRate'],
+                                                                                  self.template['CutoffFreq'],
+                                                                                  self.template['DataCoordinateSystem_name'],
+                                                                                  self.template['SensorCoordinateSystem_comment'],
+                                                                                  )
 
 
 # FIXME this is sloppy way to get true file duration in minutes (crude but what we go with for now)

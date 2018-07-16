@@ -23,17 +23,20 @@ def find_pad_subfields(pad_hdr, field, subfield):
     return subdict2
 
 
-def get_header_dict_fs_fc_ssa(hdr_file):
+def get_hdr_dict_fs_fc_loc_ssa(hdr_file):
     """return dict with header file SampleRate, CutoffFreq and DataCoordinateSystem's name"""
     ph = parse_header(hdr_file)
     fs_fc = find_pad_keys(ph, ['SampleRate', 'CutoffFreq'])
     ssa = find_pad_subfields(ph, 'DataCoordinateSystem', 'name')
-    return merge_two_dicts(fs_fc, ssa)
+    loc = find_pad_subfields(ph, 'SensorCoordinateSystem', 'comment')
+    merge1 = merge_two_dicts(fs_fc, ssa)
+    return merge_two_dicts(merge1, loc)
 
 
 def demo_grep():
     hdr_file = '/Users/ken/Downloads/pad/2018_06_13_15_06_10.361-2018_06_13_15_06_24.359.121f04.header'
-    print get_header_dict_fs_fc_ssa(hdr_file)
+    hdr_file = '/misc/yoda/pub/pad/year2018/month06/day13/sams2_accel_121f04/2018_06_13_15_06_10.361-2018_06_13_15_06_24.359.121f04.header'
+    print get_hdr_dict_fs_fc_loc_ssa(hdr_file)
 
 
 if __name__ == '__main__':
