@@ -5,6 +5,7 @@
 __all__ = [
     '_PADHEADERFILES_PATTERN',
     '_BATCHROADMAPS_PATTERN',
+    '_RTS_DRAWER_PATTERN',
     ]
 
 _YODAPATH  = "/misc/yoda"
@@ -84,6 +85,10 @@ _HISTMATFILES_PATTERN = _HISTMAT_PATTERN + (
     )
 
 #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~   #~~~~~~~~~~~~~~~~~~~~
+
+
+_RTS_DRAWER_PATTERN = "(?P<prefix>.*)_(?P<drawer>d1|d2)_(?P<variable>current|temperature).csv"
+
 
 def match_pattern_demo(fname, pat):
     """Check for match."""

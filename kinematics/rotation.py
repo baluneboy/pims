@@ -3,7 +3,8 @@
 import math
 import numpy as np
 
-def rotation_matrix(roll, pitch, yaw, invert=0):
+
+def rotation_matrix(roll, pitch, yaw, invert=True):
     """convert roll, pitch, yaw into a 3x3 float32 rotation matrix, inverting if requested
     examples:
     ---------
@@ -19,9 +20,9 @@ def rotation_matrix(roll, pitch, yaw, invert=0):
        .   .   .         .  .  .
       xn' yn' zn' ] =   xn yn zn ]
     """
-    r = roll * math.pi/180 # convert to radians
-    p = pitch * math.pi/180
-    w = yaw * math.pi/180
+    r = roll * math.pi/180.0 # convert to radians
+    p = pitch * math.pi/180.0
+    w = yaw * math.pi/180.0
     cr = math.cos(r)
     sr = math.sin(r)
     cp = math.cos(p)
@@ -38,3 +39,16 @@ def rotation_matrix(roll, pitch, yaw, invert=0):
     if invert:
         rot = np.transpose(rot)
     return rot
+
+
+def demo2():
+    yaw, pitch, roll = -90.0, 0.0, 0.0
+    m = rotation_matrix(roll, pitch, yaw)
+    print 'Rotation Matrix:'
+    print m
+
+
+if __name__ == '__main__':
+    np.set_printoptions(formatter={'float': lambda x: " {0:+0.2f} ".format(x)})
+    demo2()
+    # print np.__version__
