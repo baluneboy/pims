@@ -5,6 +5,7 @@ import glob
 import datetime
 import pandas as pd
 from dateutil.parser import parse
+import warnings
 
 from pims.files.filter_pipeline import FileFilterPipeline, MatchSensorAxRoadmap, MatchSensorPad
 from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub, datetime_to_ymd_path
@@ -15,6 +16,8 @@ _TWODAYSAGO = str(datetime.datetime.now().date() - datetime.timedelta(days=2))
 
 def show_missing_roadmaps(end, start=None, sensor='121f03ten', axis='s', base_path='/misc/yoda/www/plots/batch'):
     """show what spgs roadmap PDFs are missing (just the hour part for a given day)"""
+    warnings.filterwarnings('ignore', message='numpy.dtype size changed')
+    warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
     if start is None:
         start = parse(end) - datetime.timedelta(days=7)
     for d in pd.date_range(start, end):
@@ -97,6 +100,8 @@ def show_missing_quasisteady_estimates(end, start=None):
 def show_pad_tally(end, start=None, sensor='121f03', base_path='/misc/yoda/pub/pad'):
     """show how many PAD header files are on server"""
     
+    warnings.filterwarnings('ignore', message='numpy.dtype size changed')
+    warnings.filterwarnings('ignore', message='numpy.ufunc size changed')
     if sensor.startswith('121f0'):
         subdir_prefix = 'sams2_accel_'
     elif sensor.startswith('es0'):
