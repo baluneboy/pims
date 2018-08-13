@@ -132,11 +132,12 @@ def demo():
     """
 
     # m is change of basis (rotation) matrix to go from sensor to SSA coords
-    m = np.array([[ 0, -1,  0], [ 1,  0, 0],  [0, 0, 1]])  # yaw = 90
-    m = np.array([[-1,  0,  0], [ 0, -1, 0],  [0, 0, 1]])  # yaw = 180
-    m = np.array([[ 0,  1,  0], [-1,  0, 0],  [0, 0, 1]])  # yaw = -90
+    m = np.array([[ 0, -1,  0], [ 1,  0, 0],  [ 0, 0,  1]])  # yaw = 90
+    m = np.array([[-1,  0,  0], [ 0, -1, 0],  [ 0, 0,  1]])  # yaw = 180
+    m = np.array([[ 0,  1,  0], [-1,  0, 0],  [ 0, 0,  1]])  # yaw = -90
 
-    m = np.array([[ 0,  0, -1], [ 0,  1, 0],  [1, 0, 0]])  # yaw, pitch = 0, 90 ????????????
+    m = np.array([[ 0,  0,  1], [ 0,  1, 0],  [-1, 0,  0]])  # yaw, pitch = 0, 90
+    m = np.array([[-1,  0,  0], [ 0,  1, 0],  [ 0, 0, -1]])  # yaw, pitch = 0, 180
 
     yaw, pitch, roll = rotation_matrix_to_ypr(m)
     print "rotation_matrix_to_ypr(m)", yaw, pitch, roll
