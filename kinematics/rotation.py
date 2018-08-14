@@ -4,7 +4,7 @@ import math
 import numpy as np
 
 
-def rotation_matrix(roll, pitch, yaw, invert=True):
+def OBSOLETE_rotation_matrix(roll, pitch, yaw, invert=True):
     """convert roll, pitch, yaw into a 3x3 float32 rotation matrix, inverting if requested
     examples:
     ---------
@@ -88,8 +88,27 @@ def is_rotation_matrix(m):
     return n < 1e-6
 
 
+def change_of_basis_to_ypr(a, b, c, d, e, f, g, h, i, show_matrix=False):
+    """return tuple (yaw, pitch, roll) corresponding to change of basis matrix from sensor to SSA coordinate system
+    [ xA        [ xS      [  a   b   c      [ xS     [ a*xS + b*yS + c*zS
+      yA   = M *  yS    =    d   e   f    *   yS   =   d*xS + e*yS + f*zS
+      zA ]        zS ]       g   h   i  ]     zS ]     g*xS + h*yS + i*zS ]
+    """
+    m = np.array([[a, b, c], [d, e, f], [g, h, i]])
+    if show_matrix:
+        print 'change of basis matrix is:'
+        print m
+    y, p, r = rotation_matrix_to_ypr(m)
+    return y, p, r
+
+
 def rotation_matrix_to_ypr(m):
-    """Calculates rotation matrix to Euler angles."""
+    """return array with yaw, pitch, roll angles derived from change of basis (rotation) matrix
+    change of basis matrix is from sensor to SSA coordinates like so:
+    [ xA        [ xS      [  a   b   c      [ xS     [ a*xS + b*yS + c*zS
+      yA   = m *  yS    =    d   e   f    *   yS   =   d*xS + e*yS + f*zS
+      zA ]        zS ]       g   h   i  ]     zS ]     g*xS + h*yS + i*zS ]
+    """
     assert (is_rotation_matrix(m))
 
     sy = math.sqrt(m[0, 0] * m[0, 0] + m[1, 0] * m[1, 0])
@@ -106,26 +125,6 @@ def rotation_matrix_to_ypr(m):
         z = 0
 
     return np.array([z, y, x]) * 180.0 / np.pi
-
-
-def alt_rotation_matrix_to_ypr(m):
-    """Calculates rotation matrix to Euler angles."""
-    assert (is_rotation_matrix(m))
-
-    sy = math.sqrt(m[0, 0] * m[0, 0] + m[1, 0] * m[1, 0])
-
-    singular = sy < 1e-6
-
-    if not singular:
-        x = math.atan2(m[2, 1], m[2, 2])
-        y = math.atan2(-m[2, 0], sy)
-        z = math.atan2(m[1, 0], m[0, 0])
-    else:
-        x = math.atan2(-m[1, 2], m[1, 1])
-        y = math.atan2(-m[2, 0], sy)
-        z = 0
-
-    return np.array([-x, -y, -z]) * 180.0 / np.pi
 
 
 def demo():
@@ -154,8 +153,8 @@ def demo():
 
     yaw, pitch, roll = rotation_matrix_to_ypr(m)
     print "rotation_matrix_to_ypr(m)", yaw, pitch, roll
-    print "rotation_matrix(roll, pitch, yaw)"
-    print rotation_matrix(roll, pitch, yaw)
+    # print "rotation_matrix(roll, pitch, yaw)"
+    # print rotation_matrix(roll, pitch, yaw)
     print "ypr_to_rotation_matrix(yaw, pitch, roll)"
     print ypr_to_rotation_matrix(yaw, pitch, roll)
 
