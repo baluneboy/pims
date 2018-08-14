@@ -41,15 +41,8 @@ def rotation_matrix(roll, pitch, yaw, invert=True):
     return rot
 
 
-def ypr_to_rotation_matrix(yaw, pitch, roll):
-    """combine 3 rotations about Z (yaw), Y (pitch), X (roll) to yield the rotation matrix
-    example:
-    ---------
-    [ xA                            [ xS
-      yA   = rotation_matrix(...) *   yS
-      zA ]                            zS ]
-
-    """
+def ypr_to_3_rotation_matrices(yaw, pitch, roll):
+    """return 3 independent rotation matrices about Z (yaw), Y (pitch), X (roll)"""
     r = math.pi/180.0 * roll  # convert to radians
     p = math.pi/180.0 * pitch
     w = math.pi/180.0 * yaw
@@ -67,7 +60,22 @@ def ypr_to_rotation_matrix(yaw, pitch, roll):
     yp2 = np.array(([cp,   0,  sp], [ 0,   1,   0], [-sp,   0, cp]), np.float32)
     xr3 = np.array(([ 1,   0,   0], [ 0,  cr, -sr], [  0,  sr, cr]), np.float32)
 
-    # numpy matrix multiplication
+    # the 3 rotation matrices in this order: yaw, pitch, roll
+    return zw1, yp2, xr3
+
+
+def ypr_to_rotation_matrix(yaw, pitch, roll):
+    """matrix multiply 3 rotations about Z (yaw), Y (pitch), X (roll) to yield single, net rotation matrix
+    example:
+    ---------
+    [ xA                            [ xS
+      yA   = rotation_matrix(...) *   yS
+      zA ]                            zS ]
+
+    """
+    zw1, yp2, xr3 = ypr_to_3_rotation_matrices(yaw, pitch, roll)
+
+    # proper sequence for numpy matrix multiplication Yaw, Pitch, Roll
     return np.matmul(np.matmul(zw1, yp2), xr3)
 
 
@@ -153,6 +161,5 @@ def demo():
 
 
 if __name__ == '__main__':
-    print np.__version__
     np.set_printoptions(formatter={'float': lambda x: '{0:+0.2f}'.format(x)})
     demo()

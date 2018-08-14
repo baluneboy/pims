@@ -1,5 +1,8 @@
+#!/usr/bin/env python
 
+import mayavi
 from mayavi import mlab
+from mayavi.modules.grid_plane import GridPlane
 import numpy as np
 from kinematics.rotation import ypr_to_3_rotation_matrices
 
@@ -119,7 +122,14 @@ def plot_4_coords():
     return objs
 
 
-mlab.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(1200, 900))
-objs = plot_4_coords()
-mlab.orientation_axes()
-mlab.show()
+def demo():
+    mlab.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(1200, 900))
+    objs = plot_4_coords()
+    # mlab.orientation_axes()
+    # gp = GridPlane()
+    # gp.grid_plane.axis = 'y'
+    mlab.show()
+
+
+if __name__ == '__main__':
+    demo()
