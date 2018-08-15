@@ -4,45 +4,13 @@ import math
 import numpy as np
 
 
-def OBSOLETE_rotation_matrix(roll, pitch, yaw, invert=True):
-    """convert roll, pitch, yaw into a 3x3 float32 rotation matrix, inverting if requested
-    examples:
-    ---------
-    [ x'                           [ x
-      y'   = rotationMatrix(...) *   y
-      z' ]                           z ]
-    
-    [x' y' z'] = [x y z] * transpose(rotationMatrix(...))
-    
-    [ x0' y0' z0'   = [ x0 y0 z0  
-      x1' y1' z1'   =   x1 y1 z1   * transpose(rotationMatrix(...))
-      x2' y2' z2'   =   x2 y2 z2
-       .   .   .         .  .  .
-      xn' yn' zn' ] =   xn yn zn ]
-    """
-    r = roll * math.pi/180.0  # convert to radians
-    p = pitch * math.pi/180.0
-    w = yaw * math.pi/180.0
-    cr = math.cos(r)
-    sr = math.sin(r)
-    cp = math.cos(p)
-    sp = math.sin(p)
-    cw = math.cos(w)
-    sw = math.sin(w)
-
-    # use numpy array
-    rot = np.array(( [      cp*cw,          cp*sw,      -sp  ],
-                     [ sr*sp*cw-cr*sw, sr*sp*sw+cr*cw, sr*cp ],
-                     [ cr*sp*cw+sr*sw, cr*sp*sw-sr*cw, cr*cp ] ), np.float32)
-
-    # invert is the same as transpose for any rotation matrix
-    if invert:
-        rot = np.transpose(rot)
-    return rot
-
-
 def ypr_to_3_rotation_matrices(yaw, pitch, roll):
-    """return 3 independent rotation matrices about Z (yaw), Y (pitch), X (roll)"""
+    """return 3 individual rotation matrices derived from rotation sequence:
+    1. Z-axis (yaw), then
+    2. Y'-axis (pitch), then
+    3. X''-axis (roll)
+    NOTE: this is useful for visualization of sequence that we typically do for SSA transformation
+    """
     r = math.pi/180.0 * roll  # convert to radians
     p = math.pi/180.0 * pitch
     w = math.pi/180.0 * yaw
@@ -65,8 +33,9 @@ def ypr_to_3_rotation_matrices(yaw, pitch, roll):
 
 
 def ypr_to_rotation_matrix(yaw, pitch, roll):
-    """matrix multiply 3 rotations about Z (yaw), Y (pitch), X (roll) to yield single, net rotation matrix
-    example:
+    """return matrix corresponds to net transformation resulting from matrix multiply of 3 independent rotations
+    first about Z-axis (yaw), second about Y'-axis (pitch), last about X''-axis (roll)
+    Example:
     ---------
     [ xA                            [ xS
       yA   = rotation_matrix(...) *   yS
@@ -80,31 +49,18 @@ def ypr_to_rotation_matrix(yaw, pitch, roll):
 
 
 def is_rotation_matrix(m):
-    """Checks if a matrix is a valid rotation matrix."""
+    """return True if input matrix is a valid rotation matrix"""
     rt = np.transpose(m)
     should_be_identity = np.dot(rt, m)
     eye = np.identity(3, dtype=m.dtype)
     n = np.linalg.norm(eye - should_be_identity)
+    # print n
     return n < 1e-6
-
-
-def change_of_basis_to_ypr(a, b, c, d, e, f, g, h, i, show_matrix=False):
-    """return tuple (yaw, pitch, roll) corresponding to change of basis matrix from sensor to SSA coordinate system
-    [ xA        [ xS      [  a   b   c      [ xS     [ a*xS + b*yS + c*zS
-      yA   = M *  yS    =    d   e   f    *   yS   =   d*xS + e*yS + f*zS
-      zA ]        zS ]       g   h   i  ]     zS ]     g*xS + h*yS + i*zS ]
-    """
-    m = np.array([[a, b, c], [d, e, f], [g, h, i]])
-    if show_matrix:
-        print 'change of basis matrix is:'
-        print m
-    y, p, r = rotation_matrix_to_ypr(m)
-    return y, p, r
 
 
 def rotation_matrix_to_ypr(m):
     """return array with yaw, pitch, roll angles derived from change of basis (rotation) matrix
-    change of basis matrix is from sensor to SSA coordinates like so:
+    NOTE: the change of basis matrix takes us from sensor to SSA coordinates like so:
     [ xA        [ xS      [  a   b   c      [ xS     [ a*xS + b*yS + c*zS
       yA   = m *  yS    =    d   e   f    *   yS   =   d*xS + e*yS + f*zS
       zA ]        zS ]       g   h   i  ]     zS ]     g*xS + h*yS + i*zS ]
@@ -125,6 +81,23 @@ def rotation_matrix_to_ypr(m):
         z = 0
 
     return np.array([z, y, x]) * 180.0 / np.pi
+
+
+def change_of_basis_to_ypr(a, b, c, d, e, f, g, h, i, show_matrix=False):
+    """return tuple (yaw, pitch, roll) for sequence of 3 rotations that correspond to change of basis matrix
+    NOTE: the change of basis matrix takes us from sensor to SSA coordinates like so:
+    [ xA        [ xS      [  a   b   c      [ xS     [ a*xS + b*yS + c*zS
+      yA   = M *  yS    =    d   e   f    *   yS   =   d*xS + e*yS + f*zS
+      zA ]        zS ]       g   h   i  ]     zS ]     g*xS + h*yS + i*zS ]
+    """
+    m = np.array([[a, b, c],
+                  [d, e, f],
+                  [g, h, i]])
+    if show_matrix:
+        print 'change of basis matrix is:'
+        print m
+    y, p, r = rotation_matrix_to_ypr(m)
+    return y, p, r
 
 
 def demo():
