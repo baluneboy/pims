@@ -13,6 +13,7 @@ def demo_eng_units():
     x = decimal.Decimal(str(11334264123))
     print x.to_eng_string()
 
+
 def demo_plotnsave_monthrange_histpad():
     start = datetime.date(2017, 1, 1)
     stop = datetime.date(2017, 3, 1)
@@ -21,19 +22,22 @@ def demo_plotnsave_monthrange_histpad():
 
 def demo_save_range_of_months():
     # FIXME this has to be able to step year boundaries!
-    year = 2017
-    month1 = 1
-    month2 = 9
-    save_range_of_months(year, month1, month2, sensor='121f03')
+    year = 2018
+    month1 = 4
+    month2 = 11
+    save_range_of_months(year, month1, month2, sensor='121f05')
 
 
 def demo_plotnsave_daterange_histpad():
-    start = datetime.date(2017, 1, 1)
-    stop = datetime.date(2017, 9, 30)
-    stop = datetime.date(2017, 3, 31)
-    plotnsave_daterange_histpad(start, stop, sensor='121f03')
+    #start = datetime.date(2016, 1, 1)
+    #stop = datetime.date(2016, 3, 31)
+    start = datetime.date(2018, 1, 18)
+    stop = datetime.date(2018, 11, 30)    
+    stop = datetime.date(2018, 1, 22)    
+    plotnsave_daterange_histpad(start, stop, sensor='121f05')
 
 
 if __name__ == '__main__':
-    demo_eng_units()
-    #demo_plotnsave_daterange_histpad()
+    #demo_eng_units()
+    #demo_save_range_of_months()
+    demo_plotnsave_daterange_histpad()

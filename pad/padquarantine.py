@@ -12,6 +12,8 @@ from scipy import stats
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.files.utils import listdir_filename_pattern
+from pims.files.filter_pipeline import FileFilterPipeline, DateRangePadFile
+
 
 # get list of (file, rate) tuples sorted by rate
 def file_rate_tuples(r):
@@ -81,6 +83,11 @@ def is_over_half_g(datafile):
     a = array_fromfile(datafile, columns=4, out_dtype=np.float32)
     return max_abs(a) > 0.5
 
+def is_too_small(datafile, max_bytes):
+    """check data file <= than max_bytes"""
+    b = os.path.getsize(datafile)
+    return b <= max_bytes    
+    
 # process single subdir to see if/what needs to be quarantined, return count of quarantined
 def process_header_files(subdir):
     """process single subdir to see if/what needs to be quarantined, return count of quarantined"""
@@ -107,7 +114,7 @@ def process_header_files(subdir):
     # if needed, then move to quarantined
     qdir = os.path.join(subdir, 'quarantined')
     if quarantined_list and not os.path.isdir(qdir):
-            os.mkdir( qdir )
+        os.mkdir( qdir )
     for f, fs in quarantined_list:
         #print 'move %s to %s' % (f, qdir)
         #print 'move %s to %s' % (f.rstrip('.header'), qdir)
@@ -126,12 +133,48 @@ def process_amplitudes(subdir):
     # if needed, then move to quarantined
     qdir = os.path.join(subdir, 'quarantined')
     if quarantined_amplitude_list and not os.path.isdir(qdir):
-            os.mkdir( qdir )
+        os.mkdir( qdir )
     for f in quarantined_amplitude_list:
         shutil.move(f, qdir)                    # move header file
         shutil.move(f.rstrip('.header'), qdir)  # move data file
 
     return len(quarantined_amplitude_list)
+
+
+def process_too_small_files(subdir, max_bytes):
+    """process single subdir to see if/what needs to be 'too-small' quarantined, return count of quarantined"""
+    # get list of header files (this works for all sensors, that's why)
+    hdrfiles = listdir_filename_pattern(subdir, '.*\.header$')
+    quarantined_list = [ i for i in hdrfiles if is_too_small(i.rstrip('.header'), max_bytes) ]
+    
+    # if needed, then move to quarantined
+    qdir = os.path.join(subdir, 'quarantined')
+    if quarantined_list and not os.path.isdir(qdir):
+        os.mkdir( qdir )
+    for f in quarantined_list:
+        shutil.move(f, qdir)                    # move header file
+        shutil.move(f.rstrip('.header'), qdir)  # move data file
+
+    return len(quarantined_list)
+
+
+# FIXME this is not very surgical about start/stop range [but can it be better?]
+def process_daterange_files(subdir, start, stop):
+    """process single subdir to see if/what's in daterange and quarantines those, return count of quarantined"""
+    # get list of header files (this works for all sensors, that's why)
+    hdrfiles = listdir_filename_pattern(subdir, '.*\.header$')
+    ffp = FileFilterPipeline(DateRangePadFile(start, stop))
+        
+    # if needed, then move to quarantined
+    num_quar = len(list(ffp(hdrfiles)))
+    qdir = os.path.join(subdir, 'quarantined')
+    if  num_quar > 0 and not os.path.isdir(qdir):
+        os.mkdir( qdir )
+    for f in ffp(hdrfiles):
+        shutil.move(f, qdir)                    # move header file
+        shutil.move(f.rstrip('.header'), qdir)  # move data file
+    
+    return num_quar
 
 
 def main(daydir):

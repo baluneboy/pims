@@ -551,6 +551,18 @@ def query_cu_packet_temps(d1, d2, table='cu_packet', schema='samsnew', host='yod
     return df
 
 
+def query_tsh_packet_temps(tsh, d1, d2, table='tshes_house_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get tsh temperature records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    query = "select timestamp, tempX, tempY, tempZ from %s.%s where tshes_id = '%s' and timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, tsh, t1, t2)
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
 def query_gse_packet_current(d1, d2, table='gse_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
     """get records from d1 to d2"""
     constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)

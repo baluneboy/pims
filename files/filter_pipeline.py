@@ -74,6 +74,22 @@ class BigFile(object):
     def __str__(self):
         return 'is a file with at least %d bytes' % self.min_bytes
 
+#---------------------------------------------------
+# Operator is a too-small-file callable class
+class TooSmallFile(object):
+    
+    def __init__(self, max_bytes=1024*500):
+        self.max_bytes = max_bytes
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            file_bytes = os.path.getsize(f) 
+            if file_bytes <= self.max_bytes:
+                yield f
+
+    def __str__(self):
+        return 'is a file with at most %d bytes' % self.max_bytes
+
 #---------------------------------------------------    
 # old Operator #3 is an extension-checking function
 def old_has_ext(file_list, ext='pdf'):

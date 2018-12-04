@@ -27,7 +27,7 @@ def parameters_ok():
 
     for param in ['sensor_location', 'sensor']:
         if parameters[param] is None:
-            print 'ABORT BECAUSE ' + param + ' IS None'
+            print 'ABORT BECAUSE NO ' + param + ' SPECIFIED (None)'
             return False
         elif not isinstance(parameters[param], str):
             print 'ABORT BECAUSE ' + param + ' IS NOT A STRING'
@@ -150,6 +150,7 @@ def build_output_filename(sensor, loc, date_str, top_dir):
 def show_results(yaw, pitch, roll, cs_spacing, txt_zpos):
 
     # TODO save figure for configuration management purposes (filename convention sensor, location, date, etc.)
+    # TODO add annotations on the figure for sensor, location and date [DATE OF WHAT?]
 
     mlab.figure(bgcolor=(1, 1, 1), fgcolor=(0, 0, 0), size=(1200, 900))
 

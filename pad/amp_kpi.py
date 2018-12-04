@@ -36,13 +36,28 @@ JEN_MSID_MAP = {
         'UEZE05RT1608J': 'ER5_Drawer2_Power_Status',
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
-        'UEZE06RT1389C': 'ER6_Locker3_Current', 
-        }
+        'UEZE06RT1389C': 'ER6_Locker3_Current',
+        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',  # added on 2018-08-23
+        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',  # added on 2018-08-23
+}
 
 ER6_LOCKER3_MSID_MAP = {
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current', 
         }
+
+# FIXME the raw sheet shows that we include first day of next month (filter dataframe to exclude that row EARLY ON)
+
+# FIXME what's the best way to leave placeholders for MAMS, but not include in processing at all?
+
+# FIXME group assignments should be as follows -- right?
+# continuous = OSS, HiRAP, 121f03, CU
+# power_rack_dependent = 121f02, f05, f04, f08
+# payload_dependent = es03, es05, es06, es09
+
+# FIXME es09 shows 2 result rows in kpi sheet - once for each MSG outlet; maybe go with outlet time nearest PAD total?
+
+# FIXME 121f04 column J text Denominator should be MSID for ER7_EE_F01_Power_Status
 
 # FIXME mkdir as needed and write output xlsx to like /misc/yoda/www/plots/batch/padtimes/sams_monthly/2014 << YYYY subdir
 
@@ -231,7 +246,9 @@ def generic_sto2dataframe(stofile, query_chain=None, predicate=None):
         'UEZE05RT1608J': 'ER5_Drawer2_Power_Status',
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
-        'UEZE06RT1389C': 'ER6_Locker3_Current',        
+        'UEZE06RT1389C': 'ER6_Locker3_Current',
+        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',  # added on 2018-08-23
+        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',  # added on 2018-08-23        
         }
     for k, v in msid_map.iteritems():
         df.rename(columns={k: v}, inplace=True)
@@ -329,7 +346,9 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UEZE05RT1608J': 'ER5_Drawer2_Power_Status',
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
-        'UEZE06RT1389C': 'ER6_Locker3_Current',        
+        'UEZE06RT1389C': 'ER6_Locker3_Current',
+        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',  # added on 2018-08-23
+        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',  # added on 2018-08-23        
         }
     for k, v in msid_map.iteritems():
         df.rename(columns={k: v}, inplace=True)
@@ -574,13 +593,13 @@ def emcs_sto2dataframe(stofile):
 #df = emcs_sto2dataframe('/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_Columbus_EMCS_Candidates/EMCSdata.sto')
 #raise SystemExit
 
-# set diff as list
+
 def list_diff(a, b):
     """set diff as list"""
     b = set(b)
     return [aa for aa in a if aa not in b]
 
-# return subset of dataframe that have status == 'S'
+
 def dataframe_subset(df, label, value_column, column_list):
     """return subset of dataframe that have status == 'S'"""
     # get and rename status column that corresponds to this value_column
@@ -607,7 +626,7 @@ def dataframe_subset(df, label, value_column, column_list):
     # return dataframe subset for this label
     return df_sub
 
-# process for specific payload (either CIR or FIR for now)
+
 def process_cir_fir(df, label, value_column, column_list, stofile):
     """process for specific payload (either CIR or FIR for now)"""
     # new dataframe (subset) for this payload
@@ -624,7 +643,7 @@ def process_cir_fir(df, label, value_column, column_list, stofile):
     # return dataframe for payload and date grouped dataframe too
     return df_payload, grouped_payload
 
-# convert sto file to dataframe, then process and write to csv
+
 def convert_sto2csv(stofile):
     """convert sto file to dataframe, then process and write to csv"""
     
@@ -779,10 +798,11 @@ def convert_sto2csv(stofile):
     df_msg2.to_csv( stofile.replace('.sto', '_msg2.csv') )
     grouped_msg2.to_csv( stofile.replace('.sto', '_MSG2_grouped.csv') )
 
-# get dataframe with padtimes aggregate
+
 def get_padtimes_aggregate():
     """get dataframe with padtimes aggregate"""
     pass
+
 
 def demo_modify_existing():
     wb = load_workbook(filename = r'/tmp/empty_book.xlsx')
@@ -792,7 +812,7 @@ def demo_modify_existing():
     #ws.cell('A19').value = '/</-/'
     #wb.save(filename = r'/tmp/empty_book.xlsx')
 
-# convert most recent sto file to dataframe, then process and write to xlsx
+
 def convert_latest_sto2xlsx():
     """convert most recent sto file to dataframe, then process and write to xlsx"""
     
@@ -810,8 +830,9 @@ def convert_latest_sto2xlsx():
     # at this point, xlsx version does not exist, so convert most recent sto to xlsx
     convert_sto2xlsx(stofile, xlsxfile)
 
-# read config info from xlsx file into dataframe
+
 def read_config_template(xlsx_file='/misc/yoda/www/plots/batch/padtimes/amp_kpi_config.xlsx'):
+    """read config info from xlsx file into dataframe"""
     xl_file = pd.ExcelFile(xlsx_file)
     #dfs = {sheet_name: xl_file.parse(sheet_name) for sheet_name in xl_file.sheet_names}
     df_config = xl_file.parse('config')
@@ -837,13 +858,14 @@ def convert_sto2xlsx(stofile, xlsxfile):
     
     # convert like 2014:077:00:02:04 to dates
     df['Date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
+    df['dtm'] = [ doytimestr_to_datetime( doy_gmtstr ) for doy_gmtstr in df.GMT ]
 
     # get date range from sto file
     date_min = min(df['Date'])
     date_max = max(df['Date'])
 
     # convert datetimes to str and overwrite GMT with those strings
-    df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.Date ]
+    df['GMT'] = [ d.strftime('%Y-%m-%d/%j,%H:%M:%S') for d in df.dtm ]
 
     ################################
     ### CIR ###
@@ -872,6 +894,17 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # pivot to aggregate daily sum for "rack hours" column (similar to grouped_cir)
     grouped_er3 = df_er3.groupby('Date').aggregate(np.sum)
     
+    ################################
+    ### ER7 ###
+    # new dataframe (subset) for ER3 (ER7_EE_F01_Power_Status == 'CLOSED')
+    df_er7 = dataframe_subset(df, 'er7', 'ER7_EE_F01_Power_Status', column_list)
+    
+    # normalize to change CLOSED to one, and OPENED to zero
+    df_er7.ER7_EE_F01_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er7.ER7_EE_F01_Power_Status.values ]        
+    
+    # pivot to aggregate daily sum for "rack hours" column (similar to grouped_cir)
+    grouped_er7 = df_er7.groupby('Date').aggregate(np.sum)    
+    
     ################################    
     ### ER5 ###    
     # new dataframe (subset) for ER5 (ER5_Drawer2_Power_Status == 'CLOSED')
@@ -881,7 +914,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     df_er5.ER5_Drawer2_Power_Status = [ normalize_generic(v, one_list, zero_list) for v in df_er5.ER5_Drawer2_Power_Status.values ]    
     
     # pivot to aggregate daily sum for "rack hours" column
-    grouped_er5 = df_er5.groupby('Date').aggregate(np.sum)    
+    grouped_er5 = df_er5.groupby('Date').aggregate(np.sum)
 
     ################################
     ### MSG OUTLET #1 ###
@@ -937,7 +970,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # merge (union via how='outer') all dataframes except for df_pad...
     #bamf_df = df_wall_clock.join([grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu, df_pad])
     bamf_df = df_wall_clock   
-    for gr in [grouped_er3, grouped_er5, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
+    for gr in [grouped_er3, grouped_er5, grouped_er7, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
         bamf_df = bamf_df.merge(gr, left_index=True, right_index=True, how='outer')
         
     #...now merge df_pad too, but now get intersection (based on Date index) using how='inner' this time
@@ -946,7 +979,15 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # drop unwanted columns
     unwanted_columns = ['mams_ossbtmf_hours', 'iss_radgse_hours', 'mma_0bba_hours', 'mma_0bbb_hours', 'mma_0bbc_hours', 'mma_0bbd_hours']
     for uc in unwanted_columns:
-        bamf_df = bamf_df.drop(uc, 1)    
+        bamf_df = bamf_df.drop(uc, 1)
+        
+    # drop unwanted rows (before first day of last month)
+    my_today = datetime.date.today()
+    my_this_month_day_one = my_today.replace(day=1)
+    my_last_month = my_this_month_day_one - datetime.timedelta(days=1)
+    first_day = my_last_month.replace(day=1)
+    last_day = my_this_month_day_one - datetime.timedelta(days=1)
+    bamf_df = bamf_df.loc[first_day:last_day]
 
     # Create a Pandas Excel writer using XlsxWriter as the engine.
     writer = pd.ExcelWriter(xlsxfile, engine='xlsxwriter')
@@ -967,7 +1008,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     overwrite_last_row_with_totals(xlsxfile, df_config, bamf_df)
     print 'reckoned GMT range\nmodified and saved %s with formulas and totals' % xlsxfile
     
-# produce output csv with per-system monthly sensor hour totals
+
 def main(csvfile, resource_csvfile):
     """produce output csv with per-system monthly sensor hour totals"""
     
@@ -1014,6 +1055,7 @@ def main(csvfile, resource_csvfile):
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
 
+
 def process_polar():
     stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_POLAR_Effect_on_60Hz_RMS/polar_day110.sto'
     df = polar_sto2dataframe(stofile)
@@ -1021,6 +1063,7 @@ def process_polar():
     
 #process_polar()
 #raise SystemExit
+
 
 def process_merlin3():
     stofile = '/misc/yoda/www/plots/user/handbook/source_docs/hb_vib_equipment_MERLIN3_Incubator/merlin3_day166.sto'  
@@ -1030,7 +1073,7 @@ def process_merlin3():
 #process_merlin3()
 #raise SystemExit    
 
-# read NRT List Request output (sto, tab delimited) file into dataframe
+
 def sto2dataframe(stofile, msid_map):
     """read ascii sto file into dataframe"""
     s = StringIO()
@@ -1064,9 +1107,9 @@ def sto2dataframe(stofile, msid_map):
 
     return df
 
-# read stofile and convert to matlab mat file
+
 def sto2mat(stofile, msid_map):
-    """
+    """read stofile and convert to matlab mat file
     1. read sto file into dataframe
     2. use msid_map dictionary to map MSIDs to matlab variable names
     3. get rid of other columns (where msid_map key is same as value)
@@ -1126,11 +1169,13 @@ msg4feb = """FIXME
 print '%s\n' % msg4feb
 #raise SystemExit
 
+
 if __name__ == '__main__':
     
+    # this first branch is main kpi route (convert_latest_sto2xlsx)
     if len(sys.argv) == 2:
         # run manually, like this: ./amp_kpi.py convert_latest_sto2xlsx
-        eval( sys.argv[1] + '()' )
+        eval(sys.argv[1] + '()')
         raise SystemExit
         
     elif len(sys.argv) == 3:

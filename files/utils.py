@@ -13,6 +13,10 @@ from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date
 from pims.strings.utils import remove_non_ascii
 
 
+def get_immediate_subdirs(a):
+    return [name for name in os.listdir(a) if os.path.isdir(os.path.join(a, name))]
+
+
 def file_age_days(fname):
     utime_file = os.path.getmtime(fname)
     utime_now = time.time()
