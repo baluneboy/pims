@@ -244,9 +244,12 @@ def get_axis_settings(xvals):
     xMinorLoc = MultipleLocator(0.5)
     print 'xvals_max', xvals_max
     if xvals_max > 40:
-        mult = 220
+        #mult = 220
+        #xMajorLoc = MultipleLocator(20)
+        #xMinorLoc = MultipleLocator(10)
+        mult = 120
         xMajorLoc = MultipleLocator(20)
-        xMinorLoc = MultipleLocator(10)
+        xMinorLoc = MultipleLocator(10)        
     elif xvals_max > 30:
         mult = 60
         xMajorLoc = MultipleLocator(5)
@@ -255,7 +258,8 @@ def get_axis_settings(xvals):
         mult = 24
         xMajorLoc = MultipleLocator(2)
         xMinorLoc = MultipleLocator(1)
-    xmax = round_up(max(xvals), mult)
+    #xmax = round_up(max(xvals), mult)
+    xmax = round_up(xvals_max, mult)
     axlims = [-1, xmax, -5, 105]
     yticks = np.arange(0, 104, 5)
     xticks = np.arange(xmax)
@@ -470,7 +474,8 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
     plt.ylabel(ylabstr)
 
     # draw typical plumb lines with annotation
-    yvals = [50, 95, ]  # one set of annotations for each of these values
+    #yvals = [50, 95, ]  # one set of annotations for each of these values
+    yvals = [50, 99.9, ]  # one set of annotations for each of these values
     reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals)
 
     # get axis settings based on data

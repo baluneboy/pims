@@ -11,7 +11,7 @@ from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
-from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa
+from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa, get_hdr_dict_fs_fc_sensor
 
 
 class FileFilterPipeline(object):
@@ -316,6 +316,46 @@ class HeaderMatchesRateCutoffLocSsaPad(object):
                                                                                   self.template['SensorCoordinateSystem_comment'],
                                                                                   )
 
+# for PAD to match SensorID, SampleRate and CutoffFreq
+class HeaderMatchesSensorRateCutoffPad(object):
+# <?xml version="1.0" encoding="US-ASCII"?>
+# <sams2_accel>
+# 	<SensorID>121f04</SensorID>
+# 	<TimeZero>2018_06_13_23_56_43.640</TimeZero>
+# 	<Gain>10.0</Gain>
+# 	<SampleRate>500.0</SampleRate>
+# 	<CutoffFreq>200.0</CutoffFreq>
+# 	<GData format="binary 32 bit IEEE float little endian" file="2018_06_13_23_56_43.640+2018_06_14_00_01_37.643.121f04"/>
+# 	<BiasCoeff x="1.23" y="4.46" z="7.89"/>
+# 	<SensorCoordinateSystem name="121f04" r="180.0" p="0.0" w="-90.0" x="156.6" y="-46.08" z="207.32" comment="LAB1P2, ER7, Cold Atom Lab Front Panel" time="2018_05_31_00_00_00.000"/>
+# 	<DataCoordinateSystem name="SSAnalysis" r="0.0" p="0.0" w="0.0" x="0.0" y="0.0" z="0.0" comment="S0, Geom. Ctr. ITA" time="2001_05_01_00_00_00.000"/>
+# 	<DataQualityMeasure>temperature+gain+axial-mis-alignment, No temperature compensation</DataQualityMeasure>
+# 	<ISSConfiguration>Increment:  28, Flight: ULF7</ISSConfiguration>
+# 	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
+# </sams2_accel>
+    
+    def __init__(self, sensor, fs, fc):
+        self.template = {
+            'SensorID': sensor,
+            'SampleRate': fs,
+            'CutoffFreq': fc
+            }
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if not f.endswith('.header'):
+                hdr_file = f + '.header'
+            else:
+                hdr_file = f
+            header_values = get_hdr_dict_fs_fc_sensor(hdr_file)
+            if header_values == self.template:
+                    yield f
+                
+    def __str__(self):
+        return 'is a PAD file with fs = %.3f, fc = %.3f, sensor = %s' % (self.template['SampleRate'],
+                                                                                  self.template['CutoffFreq'],
+                                                                                  self.template['SensorID'],
+                                                                                  )
 
 # FIXME this is sloppy way to get true file duration in minutes (crude but what we go with for now)
 class MinDurMinutesPad(object):
@@ -421,7 +461,8 @@ def demo3():
             '/misc/yoda/www/plots/user/sheep/ee_stats_2017-02-01.pkl']
     for f in ffp(inp1):
         print f
-        
+
+    
 def demo2():
     
     # Initialize processing pipeline (no file list as input yet)
@@ -435,7 +476,24 @@ def demo2():
         ]
     inp2 = [ os.path.join('/tmp/x/', f) for f in fnames ]
     for f in ffp(inp2):
-        print f  
+        print f
+    
+        
+def demo_gateway():
+    
+    import glob
+    
+    # Initialize processing pipeline (no file list as input yet)
+    ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad('121f03', 500, 200), MinDurMinutesPad(min_minutes=5.0))
+    print ffp
+    
+    # Apply processing pipeline input #1 (now ffp is callable)
+    #wild_path = '/misc/yoda/pub/pad/year2018/month01/day02/sams2_accel_121f03/*header'
+    wild_path = '/tmp/trashpad/year2018/month01/day02/sams2_accel_121f03/*header'
+    filenames = glob.glob(wild_path)
+    for f in ffp(filenames):
+        print f    
+    
 
 def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path='/misc/yoda/www/plots/batch'):
     import glob
@@ -464,6 +522,8 @@ def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path=
     
 
 if __name__ == "__main__":
-    sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
-    for sensor in sensors:
-        show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)
+    #sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
+    #for sensor in sensors:
+    #    show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)
+    demo_gateway()
+    
