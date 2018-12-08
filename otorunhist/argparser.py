@@ -108,8 +108,8 @@ def parse_inputs():
                         help=help_fromfile)
 
     # get tagged hour range triplets
-    help_taghours = "tag1,h1,h2 tag2,h3,h4; default is None (for all hours)"
-    parser.add_argument('-t', '--taghours', help=help_taghours, dest="taghours", type=taghours, nargs='+')
+    help_taghours = 'tag1,h1,h2 tag2,h3,h4; default is None (for all hours)'
+    parser.add_argument('-t', '--taghours', help=help_taghours, dest='taghours', type=taghours, nargs='+')
 
     # plot (or not)
     plot_parser = parser.add_mutually_exclusive_group(required=False)    
@@ -141,6 +141,14 @@ def parse_inputs():
         # check start/stop
         if args.stop < args.start:
             raise Exception('stop less than start')
+
+    # combine tagged hour ranges that share common tag
+    tagged_hours = {}
+    tag_set = set([tup[0] for tup in args.taghours])
+    for tag in tag_set:
+        hour_ranges = [(tup[1], tup[2]) for tup in args.taghours if tup[0] == tag]
+        tagged_hours[tag] = hour_ranges
+    args.taghours = tagged_hours
 
     return args
 
