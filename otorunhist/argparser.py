@@ -17,8 +17,7 @@ START_OFFSET = relativedelta(months=1, days=6)
 STOP_OFFSET = relativedelta(months=1)
 DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
 DEFAULT_SENSOR = '121f03'
-DEFAULT_PADDIR = '/misc/yoda/pub/pad'
-DEFAULT_HISTDIR = '/misc/yoda/www/plots/batch/results/dailyhistpad'
+DEFAULT_OTODIR = '/Users/ken/Documents/temporary_onethird'  # '/misc/yoda/www/plots/batch/results/onethird'
 DEFAULT_FROMFILE = '/tmp/padrunhistlist.txt'
 
 
@@ -51,6 +50,15 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+def taghours(s):
+    try:
+        tag, s1, s2 = s.split(',')
+        h1, h2 = map(int, (s1, s2))
+        return tag, h1, h2
+    except Exception:
+        raise argparse.ArgumentTypeError("Tagged hour ranges must be tag,start,stop triplets of string & 2 ints.")
+
+
 def show_args(args):
     """print arguments"""
 
@@ -67,7 +75,7 @@ def show_args(args):
 
 def parse_inputs():
     """parse input arguments using argparse from standard library"""
-    parser = argparse.ArgumentParser(description='Running tally for PAD histograms.')
+    parser = argparse.ArgumentParser(description='A Running Tally for OTO histograms.')
 
     # sensor of interest
     help_sensor = "a 200 Hz sensor (e.g. 121f03, 121f02); default is %s" % DEFAULT_SENSOR
@@ -87,17 +95,11 @@ def parse_inputs():
                         type=day_str,
                         help=help_stop)
 
-    # PAD dir
-    help_paddir = "PAD dir; default is %s" % DEFAULT_PADDIR
-    parser.add_argument('-p', '--paddir', default=DEFAULT_PADDIR,
+    # oto mat-files top dir
+    help_otodir = "OTO top dir; default is %s" % DEFAULT_OTODIR
+    parser.add_argument('-p', '--otodir', default=DEFAULT_OTODIR,
                         type=folder_str,
-                        help=help_paddir)
-
-    # output dir
-    help_histdir = "histogram dir; default is %s" % DEFAULT_HISTDIR
-    parser.add_argument('-g', '--histdir', default=DEFAULT_HISTDIR,
-                        type=folder_str,
-                        help=help_histdir)
+                        help=help_otodir)
 
     # get list of days from file
     help_fromfile = "from file; default is None"
@@ -105,12 +107,16 @@ def parse_inputs():
                         type=file_str,
                         help=help_fromfile)
 
+    # get tagged hour range triplets
+    help_taghours = "tag1,h1,h2 tag2,h3,h4; default is None (for all hours)"
+    parser.add_argument('-t', '--taghours', help=help_taghours, dest="taghours", type=taghours, nargs='+')
+
     # plot (or not)
     plot_parser = parser.add_mutually_exclusive_group(required=False)    
     plot_parser.add_argument('--plot', dest='plot', action='store_true')
     plot_parser.add_argument('--no-plot', dest='plot', action='store_false')
     parser.set_defaults(plot=False)
-    
+
     # verbosity
     parser.add_argument("-v", action="count", dest='verbosity',
                         help="increase output verbosity (max of 3)")
@@ -142,7 +148,6 @@ def parse_inputs():
 if __name__ == '__main__':
 
     ARGS = parse_inputs()
-
     DARGS = vars(ARGS)
     for k, v in DARGS.iteritems():
         print k, 'is', v
