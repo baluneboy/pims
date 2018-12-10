@@ -5,11 +5,12 @@ import re
 import time
 import datetime
 from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 from mutagen.mp3 import MP3
 
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_ESTIMATE_PDF_PATTERN
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
-from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, otomat_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
 from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa, get_hdr_dict_fs_fc_sensor
 
@@ -393,6 +394,30 @@ class DateRangePadFile(object):
     def __str__(self):
         return 'is a PAD file with fname stop > %s and fname start < %s' % (self.start, self.stop)
 
+
+class OtoDaySensorHours(object):
+
+    def __init__(self, day, sensor, hours):
+        self.sensor = sensor
+        self.day = parse(day)
+        self.hours = hours
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            sensor = f.split('.')[-2]
+            if not self.sensor == sensor:
+                return
+            fstart, fstop = otomat_fullfilestr_to_start_stop(f)
+            for h1, h2 in self.hours:
+                start = self.day + relativedelta(hours=h1)
+                stop = self.day + relativedelta(hours=h2)
+                if fstart > start and fstop < stop:
+                    yield f
+                
+    def __str__(self):
+        return 'is an OTO file with fname start/stop hour in given list of hour ranges'
+
+
 #class DateRangeStateFoscamFile(object):
 #    
 #    def __init__(self, start, stop, morning=True, state=None):
@@ -478,7 +503,24 @@ def demo2():
     for f in ffp(inp2):
         print f
     
-        
+    
+def demo_gateway2():
+    
+    import glob
+    
+    # Initialize processing pipeline (no file list as input yet)
+    day = datetime.datetime(2016,1,22)
+    hours = [(0,4), (22,23)]
+    ffp = FileFilterPipeline(OtoDaySensorHours(day, hours))
+    print ffp
+    
+    # Apply processing pipeline input #1 (now ffp is callable)
+    wild_path = '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/day22/sams2_accel_121f03/*mat'
+    filenames = glob.glob(wild_path)
+    for f in ffp(filenames):
+        print f 
+   
+   
 def demo_gateway():
     
     import glob
@@ -525,5 +567,5 @@ if __name__ == "__main__":
     #sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
     #for sensor in sensors:
     #    show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)
-    demo_gateway()
+    demo_gateway2()
     

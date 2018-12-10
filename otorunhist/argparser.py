@@ -17,7 +17,8 @@ START_OFFSET = relativedelta(months=1, days=6)
 STOP_OFFSET = relativedelta(months=1)
 DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
 DEFAULT_SENSOR = '121f03'
-DEFAULT_OTODIR = '/Users/ken/Documents/temporary_onethird'  # '/misc/yoda/www/plots/batch/results/onethird'
+DEFAULT_OTODIR = '/misc/yoda/www/plots/batch/results/onethird'
+DEFAULT_HISTDIR = '/misc/yoda/www/plots/batch/results/dailyhistoto'
 DEFAULT_FROMFILE = '/tmp/padrunhistlist.txt'
 
 
@@ -101,6 +102,12 @@ def parse_inputs():
                         type=folder_str,
                         help=help_otodir)
 
+    # output dir
+    help_histdir = "histogram dir; default is %s" % DEFAULT_HISTDIR
+    parser.add_argument('-g', '--histdir', default=DEFAULT_HISTDIR,
+                        type=folder_str,
+                        help=help_histdir)
+
     # get list of days from file
     help_fromfile = "from file; default is None"
     parser.add_argument('-f', '--fromfile', default=None,
@@ -143,11 +150,12 @@ def parse_inputs():
             raise Exception('stop less than start')
 
     # combine tagged hour ranges that share common tag
-    tagged_hours = {}
-    tag_set = set([tup[0] for tup in args.taghours])
-    for tag in tag_set:
-        hour_ranges = [(tup[1], tup[2]) for tup in args.taghours if tup[0] == tag]
-        tagged_hours[tag] = hour_ranges
+    tagged_hours = {'all': [(0, 23)]}
+    if args.taghours:
+        tag_set = set([tup[0] for tup in args.taghours])
+        for tag in tag_set:
+            hour_ranges = [(tup[1], tup[2]) for tup in args.taghours if tup[0] == tag]
+            tagged_hours[tag] = hour_ranges
     args.taghours = tagged_hours
 
     return args

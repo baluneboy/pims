@@ -20,14 +20,15 @@ from matplotlib.font_manager import FontProperties
 import argparser
 #from plumb_line import plumblines
 from pims.mathbase.basics import round_up
-from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_path, year_month_to_dtm_start_stop, ymd_pathstr_to_date
-from pims.files.filter_pipeline import FileFilterPipeline, BigFile
-#from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir
-#from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
+from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_oto_path, year_month_to_dtm_start_stop, ymd_pathstr_to_date
+from pims.files.filter_pipeline import FileFilterPipeline, OtoDaySensorHours
+from histpad.pad_filter_pipeline import sensor2subdir
+from histpad.file_disposal import DailyOtoHistFileDisposal, DailyOtoMinMaxFileDisposal
 #from ugaudio.explore import padread, pad_file_percentiles
 
 
-DEFAULT_PADDIR = argparser.DEFAULT_OTODIR
+DEFAULT_OTODIR = argparser.DEFAULT_OTODIR
+DEFAULT_HISTDIR = argparser.DEFAULT_HISTDIR
 
 
 class DateRangeException(Exception):
@@ -67,15 +68,13 @@ def get_where_clause(sensor):
     return dwhere
 
 
-def get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=2*1024*1024):
+def get_oto_day_sensor_files_taghours(files, day, sensor, hours=[(0,23),]):
 
     # initialize callable classes that act as filters for our pipeline
-    dwhere = get_where_clause(sensor)
-    file_filter1 = PadDataDaySensorWhere(day, sensor, where=dwhere)  # fc = 200 Hz (or 204.2 Hz)
-    file_filter2 = BigFile(min_bytes=min_bytes)                      # at least 2 MB
+    file_filter1 = OtoDaySensorHours(day, sensor, hours)
     
     # initialize processing pipeline with callable classes, but not using file list as input yet
-    ffp = FileFilterPipeline(file_filter1, file_filter2)
+    ffp = FileFilterPipeline(file_filter1)
     #print ffp
 
     # now apply processing pipeline to file list; at this point, ffp is callable
@@ -121,54 +120,6 @@ def demo_99pct_vecmag_array(min_bytes):
         plt.title(sensor)
         plt.show()
     do_plot()
-
-
-#
-#
-# def save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, bins=np.arange(-0.2, 0.2, 5e-5), vecmag_bins=np.arange(0, 0.5, 5e-5), min_bytes=2*1024*1024, indir=DEFAULT_PADDIR, outdir=DEFAULT_HISTDIR):
-#
-#     dr = get_date_range([start, stop])
-#     for d in dr:
-#
-#         day = d.strftime('%Y-%m-%d')
-#
-#         # get list of PAD data files for particular day and sensor
-#         pth = os.path.join( datetime_to_ymd_path(d), sensor2subdir(sensor) )
-#         print pth
-#         if os.path.exists(pth):
-#             tmp = os.listdir(pth)
-#             files = [ os.path.join(pth, f) for f in tmp ]
-#
-#             # now filter files
-#             my_files = get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=min_bytes)
-#             print '%s gives %d files' % (day, len(my_files))
-#
-#             len_files = len(my_files)
-#             if len_files > 0:
-#                 my_files.sort(key=os.path.basename)
-#                 outfile = os.path.join( pth.replace(indir, outdir), 'dailyhistpad.mat')
-#                 if os.path.exists(outfile):
-#                     raise Exception('OUTPUT FILE %s ALREADY EXISTS' % outfile)
-#                 else:
-#                     directory = os.path.dirname(outfile)
-#                     if not os.path.exists(directory):
-#                         os.makedirs(directory)
-#
-#                 dh = DailyHistFileDisposal(my_files[0], bins, vecmag_bins)
-#                 Nx, Ny, Nz, Nv = dh.run()
-#                 print '>> completed %s' % my_files[0]
-#                 for f in my_files[1:]:
-#                     dh = DailyHistFileDisposal(f, bins, vecmag_bins)
-#                     nx, ny, nz, nv = dh.run()
-#                     Nx += nx
-#                     Ny += ny
-#                     Nz += nz
-#                     Nv += nv
-#                     print '>> completed %s' % f
-#                 sio.savemat(outfile, {'Nx': Nx, 'Ny': Ny, 'Nz': Nz, 'Nv': Nv})
-#                 print
-#         else:
-#             print '%s gives NO FILES' % day
 
 #
 # def Jan_thru_Sep_2017():
@@ -849,11 +800,59 @@ def pad_percentiles_from_date_list_file(fname, sensor):
                 print sum95
 
 
-#import sys
-#sensor = 'es05006' # sys.argv[1]
-#fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_QUIETER.txt' # sys.argv[2] # 
-#pad_percentiles_from_date_list_file(fname, sensor)
-#sys.exit('bye')
+#save_dailyhistoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, indir=args.otodir, outdir=args.histdir)
+def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_OTODIR, outdir=DEFAULT_HISTDIR):
+
+    if taghours is None:
+        taghours = {'all': [(0, 23)]}
+
+    dr = get_date_range([start, stop])
+    for d in dr:
+        
+        day = d.strftime('%Y-%m-%d')
+        
+        # get list of OTO mat files for particular day, sensor and taghours
+        pth = datetime_to_dailyhist_oto_path(d, sensor_subdir=sensor2subdir(sensor))
+        print pth
+        if os.path.exists(pth):
+            tmp = os.listdir(pth)
+            files = [ os.path.join(pth, f) for f in tmp ]
+
+            for tag, hrs in taghours.iteritems():
+                #print tag, hrs
+                #continue
+            
+                # now filter files (just for taghours criteria)
+                # FIXME how do we dispense with tag for our taghours here?
+                my_files = get_oto_day_sensor_files_taghours(files, day, sensor, hours=hrs)
+                print '%s gives %d tag="%s" files' % (day, len(my_files), tag)
+
+                len_files = len(my_files)
+                if len_files > 0:
+                    my_files.sort(key=os.path.basename)
+                    outfile = os.path.join( pth.replace(indir, outdir), tag, 'dailyhistpad.mat')
+                    if os.path.exists(outfile):
+                        raise Exception('OUTPUT FILE %s ALREADY EXISTS' % outfile)
+                    else:
+                        directory = os.path.dirname(outfile)
+                        if not os.path.exists(directory):
+                            os.makedirs(directory)
+    
+                    dh = DailyOtoHistFileDisposal(my_files[0], bins)
+                    Nx, Ny, Nz, Nv = dh.run()
+                    print '>> completed %s' % my_files[0]
+                    for f in my_files[1:]:
+                        dh = DailyOtoHistFileDisposal(f, bins)
+                        nx, ny, nz, nv = dh.run()
+                        Nx += nx
+                        Ny += ny
+                        Nz += nz
+                        Nv += nv
+                        print '>> completed %s' % f
+                    sio.savemat(outfile, {'Nx': Nx, 'Ny': Ny, 'Nz': Nz, 'Nv': Nv})
+                    print
+        else:
+            print '%s gives NO FILES' % day
 
 
 if __name__ == '__main__':
@@ -878,17 +877,15 @@ if __name__ == '__main__':
     # 2nd RUN THIS BASH (WITH PLOTTING)
     # for F in 020 006 ""; do for S in es05 121f03; do for C in QUIET LOUD; do echo /home/pims/dev/programs/python/pims/padrunhist/main.py -s ${S}${F} --plot -f /home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_${C}ER.txt; done; done; done
 
-
     args = argparser.parse_inputs()
-    print args
-
-    raise SystemExit
     
     # handle the case when we get ad hoc dates from file (not typical date range)
     if args.fromfile is not None:
         
+        raise Exception('FIXME: in a hurry for gateway, so skipping "fromfile" processing type [NEEDS WORK], for now')
+        
         # for each date in list, verify padrunhist.mat exists along typical path (if not, then try to create it)
-        hist_mat_files = process_date_list_from_file(args.fromfile, args.sensor)
+        oto_mat_files = process_date_list_from_file(args.fromfile, args.sensor)
 
         # parse tag out of fromfile name
         bname_noext = os.path.splitext(args.fromfile)[0]
@@ -896,10 +893,12 @@ if __name__ == '__main__':
 
         if args.plot:
             # create plot for this ad hoc list of dates
-            plotnsave_histmatfiles(hist_mat_files, args.sensor, tag)
+            plotnsave_otomatfiles(oto_mat_files, args.sensor, tag)
         
     else:    
         if args.plot:
-            plotnsave_daterange_histpad(args.start, args.stop, sensor=args.sensor)
+            raise Exception('FIXME: in a hurry for gateway, so skipping "plot" [NEEDS WORK], for now')        
+            plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours)
         else:
-            save_dailyhistpad(args.start, args.stop, sensor=args.sensor, indir=args.paddir, outdir=args.histdir)
+            #print args
+            save_dailyhistoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, indir=args.otodir, outdir=args.histdir)
