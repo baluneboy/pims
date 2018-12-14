@@ -59,7 +59,6 @@ class DayGlobber(object):
         return s
 
 
-
 if __name__ == '__main__':
 
     d = '2017-01-02'

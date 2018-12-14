@@ -200,7 +200,7 @@ def save_monthlyhistpad(year, month, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
@@ -286,7 +286,7 @@ def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
@@ -394,7 +394,7 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]

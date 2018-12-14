@@ -17,8 +17,8 @@ START_OFFSET = relativedelta(months=1, days=6)
 STOP_OFFSET = relativedelta(months=1)
 DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
 DEFAULT_SENSOR = '121f03'
-DEFAULT_OTODIR = '/misc/yoda/www/plots/batch/results/onethird'
-DEFAULT_HISTDIR = '/misc/yoda/www/plots/batch/results/dailyhistoto'
+DEFAULT_INDIR = '/misc/yoda/www/plots/batch/results/onethird'
+DEFAULT_OUTDIR = '/misc/yoda/www/plots/batch/results/dailyhistoto'
 DEFAULT_FROMFILE = '/tmp/padrunhistlist.txt'
 
 
@@ -97,16 +97,16 @@ def parse_inputs():
                         help=help_stop)
 
     # oto mat-files top dir
-    help_otodir = "OTO top dir; default is %s" % DEFAULT_OTODIR
-    parser.add_argument('-p', '--otodir', default=DEFAULT_OTODIR,
+    help_indir = "input (top) dir of oto mat files; default is %s" % DEFAULT_INDIR
+    parser.add_argument('-i', '--indir', default=DEFAULT_INDIR,
                         type=folder_str,
-                        help=help_otodir)
+                        help=help_indir)
 
     # output dir
-    help_histdir = "histogram dir; default is %s" % DEFAULT_HISTDIR
-    parser.add_argument('-g', '--histdir', default=DEFAULT_HISTDIR,
+    help_outdir = "output (top) dir of hist results; default is %s" % DEFAULT_OUTDIR
+    parser.add_argument('-o', '--outdir', default=DEFAULT_OUTDIR,
                         type=folder_str,
-                        help=help_histdir)
+                        help=help_outdir)
 
     # get list of days from file
     help_fromfile = "from file; default is None"
@@ -150,7 +150,7 @@ def parse_inputs():
             raise Exception('stop less than start')
 
     # combine tagged hour ranges that share common tag
-    tagged_hours = {'all': [(0, 23)]}
+    tagged_hours = {'all': [(0, 24)]}
     if args.taghours:
         tag_set = set([tup[0] for tup in args.taghours])
         for tag in tag_set:
