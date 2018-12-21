@@ -850,13 +850,14 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                     for hrange in hrs:
                         h1 = datetime.datetime.combine(d.to_pydatetime().date(),
                                                   datetime.time(hrange[0], 0))
+                        
                         # special handling of right end in hour range to capture hour 23 to end of day
                         if hrange[1] == 24:
-                            hh, mm = 23, 59
+                            hh, mm, ss = 23, 59, 59
                         else:
-                            hh, mm = hrange[1], 0
+                            hh, mm, ss = hrange[1], 0, 0
                         h2 = datetime.datetime.combine(d.to_pydatetime().date(),
-                                                  datetime.time(hh, mm))
+                                                  datetime.time(hh, mm, ss))
 
                         # include with this tag if file is completely within hrs range
                         if fstart >= h1 and fstop <= h2:
