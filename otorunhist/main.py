@@ -799,6 +799,20 @@ def pad_percentiles_from_date_list_file(fname, sensor):
                 print sum95
 
 
+def update_grms_minmax(old_min, old_max, fmins, fmaxs):
+    """update running [x y z] min & max values based on a file's [x y z] min & max"""
+    new_min = np.nanmin(np.vstack((old_min, fmins)), axis=0)
+    new_max = np.nanmax(np.vstack((old_max, fmaxs)), axis=0)
+    return new_min, new_max
+
+
+def update_grms_sumnum(old_sum, old_num, fsums, fnums):
+    """update running [x y z] sum & count values based on a file's [x y z] sum & count"""
+    new_sum = np.nansum(np.vstack((old_sum, fsums)), axis=0)
+    new_num = np.nansum(np.vstack((old_num, fnums)), axis=0)
+    return new_sum, new_num
+
+
 def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR, outdir=DEFAULT_OUTDIR):
     """iterate over each day, then iterate over day's files & finally by taghours to build/sum results"""
 
@@ -812,13 +826,22 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
         
         # get list of OTO mat files for particular day, sensor and taghours
         pth = datetime_to_dailyhist_oto_path(d, sensor_subdir=sensor2subdir(sensor))
-        print pth
+
+        # initialize file counts with same keys as taghours (count files for each tag)
+        fcounts = dict.fromkeys(taghours.keys(), 0)
+
+        # initialize running values for each of      X        Y        Z
+        grms_min = dict.fromkeys(taghours.keys(),  [ np.inf,  np.inf,  np.inf])
+        grms_max = dict.fromkeys(taghours.keys(),  [-np.inf, -np.inf, -np.inf])
+        grms_sum = dict.fromkeys(taghours.keys(),  [0, 0, 0])
+        grms_num = dict.fromkeys(taghours.keys(),  [0, 0, 0])
+
         if os.path.exists(pth):
             tmp = os.listdir(pth)
             files = [os.path.join(pth, f) for f in tmp]
 
             for f in files:
-                print f
+                #print f
 
                 for tag, hrs in taghours.iteritems():
 
@@ -836,9 +859,26 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                         h2 = datetime.datetime.combine(d.to_pydatetime().date(),
                                                   datetime.time(hh, mm, ss))
 
-                        # keeper if file is completely within hrs range
+                        # include with this tag if file is completely within hrs range
                         if fstart >= h1 and fstop <= h2:
-                            print "%s " % tag
+                            fcounts[tag] += 1
+                            a = sio.loadmat(os.path.join(f))
+                            # print a['grms'].shape
+                            # print a['foto'].shape
+
+                            # update running min & max with file (if need be)
+                            fmins = np.nanmin(a['grms'], axis=0)
+                            fmaxs = np.nanmax(a['grms'], axis=0)
+                            grms_min[tag], grms_max[tag] = update_grms_minmax(grms_min[tag], grms_max[tag], fmins, fmaxs)
+
+                            # update running sum & count with file
+                            fsums = np.nansum(a['grms'], axis=0)
+                            fnums = np.count_nonzero(~np.isnan(a['grms']), axis=0)
+                            grms_sum[tag], grms_num[tag] = update_grms_sumnum(grms_sum[tag], grms_num[tag], fsums, fnums)
+
+                            # grms_sum[tag] +=
+                            # raise SystemExit
+                            #print "%s " % tag
 
                         continue
 
@@ -872,6 +912,9 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                                 print '>> completed %s' % f
                             sio.savemat(outfile, {'Nx': Nx, 'Ny': Ny, 'Nz': Nz, 'Nv': Nv})
                             print
+
+            print pth, fcounts, grms_sum, grms_num
+
         else:
             print '%s gives NO FILES' % day
 
