@@ -862,9 +862,10 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                         if fstart >= h1 and fstop <= h2:
                             fcounts[tag] += 1
                             a = sio.loadmat(os.path.join(f))
-                            # print a['grms'].shape
-                            # print a['foto'].shape
-
+                            print a['grms'].shape
+                            print a['foto'].shape
+                            print a
+                            raise SystemExit
                             # update running min & max with file (if need be)
                             fmins = np.nanmin(a['grms'], axis=0)
                             fmaxs = np.nanmax(a['grms'], axis=0)
