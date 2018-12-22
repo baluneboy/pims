@@ -12,6 +12,7 @@ import datetime
 import numpy as np
 import pandas as pd
 import scipy.io as sio
+import itertools
 # from pathlib import Path
 from matplotlib import rc, pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
@@ -35,6 +36,13 @@ DEFAULT_OUTDIR = argparser.DEFAULT_OUTDIR
 class DateRangeException(Exception):
     def __init__(self, *args, **kwargs):
         Exception.__init__(self, *args, **kwargs)
+
+
+def ranges(i):
+    """return range from a list of integers"""
+    for a, b in itertools.groupby(enumerate(i), lambda (x, y): y - x):
+        b = list(b)
+        yield b[0][1], b[-1][1]
 
 
 def get_date_range(value):
@@ -813,6 +821,13 @@ def update_grms_sumnum(old_sum, old_num, fsums, fnums):
     return new_sum, new_num
 
 
+def get_info_from_first_file(f1):
+    """return num_freqs from first file"""
+    v = sio.loadmat(f1)
+    num_freqs = len(v['foto'])
+    return num_freqs
+
+
 def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR, outdir=DEFAULT_OUTDIR):
     """iterate over each day, then iterate over day's files & finally by taghours to build/sum results"""
 
@@ -830,24 +845,36 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
         # initialize file counts with same keys as taghours (count files for each tag)
         fcounts = dict.fromkeys(taghours.keys(), 0)
 
-        # initialize running values for each of      X        Y        Z
-        grms_min = dict.fromkeys(taghours.keys(),  [ np.inf,  np.inf,  np.inf])
-        grms_max = dict.fromkeys(taghours.keys(),  [-np.inf, -np.inf, -np.inf])
-        grms_sum = dict.fromkeys(taghours.keys(),  [0, 0, 0])
-        grms_num = dict.fromkeys(taghours.keys(),  [0, 0, 0])
+        # initialize dict to hold file index values, kinda time keeper per tag
+        fidx = {}
+        for k in taghours.keys():
+            fidx[k] = []
+
+        # # initialize running values for each of      X        Y        Z
+        # grms_min = dict.fromkeys(taghours.keys(),  [ np.inf,  np.inf,  np.inf])
+        # grms_max = dict.fromkeys(taghours.keys(),  [-np.inf, -np.inf, -np.inf])
+        # grms_sum = dict.fromkeys(taghours.keys(),  [0, 0, 0])
+        # grms_num = dict.fromkeys(taghours.keys(),  [0, 0, 0])
 
         if os.path.exists(pth):
-            tmp = os.listdir(pth)
-            files = [os.path.join(pth, f) for f in tmp]
+            files = [os.path.join(pth, f) for f in os.listdir(pth)]
+            num_freqs = get_info_from_first_file(files[0])
+            fat = np.empty((len(files), num_freqs, 3))  # CAREFUL EMPTY INIT HAS GARBAGE VALUES
+            fat[:] = np.nan  # NEED FILL RIGHT AFTER EMPTY TO CLEAN UP GARBAGE VALUES
 
-            for f in files:
+            for c, f in enumerate(files):
+
                 #print f
+
+                a = sio.loadmat(f)
+                fat[:][:][c] = a['grms']
 
                 for tag, hrs in taghours.iteritems():
 
                     fstart, fstop = otomat_fullfilestr_to_start_stop(f)
 
                     for hrange in hrs:
+
                         h1 = datetime.datetime.combine(d.to_pydatetime().date(),
                                                   datetime.time(hrange[0], 0))
                         
@@ -859,65 +886,28 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                         h2 = datetime.datetime.combine(d.to_pydatetime().date(),
                                                   datetime.time(hh, mm, ss))
 
-                        # include with this tag if file is completely within hrs range
+                        # if completely within hour range, then include with this tag
                         if fstart >= h1 and fstop <= h2:
                             fcounts[tag] += 1
-                            a = sio.loadmat(os.path.join(f))
-                            print a['grms'].shape
-                            print a['foto'].shape
-                            print a
-                            raise SystemExit
-                            # update running min & max with file (if need be)
-                            fmins = np.nanmin(a['grms'], axis=0)
-                            fmaxs = np.nanmax(a['grms'], axis=0)
-                            grms_min[tag], grms_max[tag] = update_grms_minmax(grms_min[tag], grms_max[tag], fmins, fmaxs)
+                            fidx[tag].append(c)  # append file idx, c, to include w/ this tag
 
-                            # update running sum & count with file
-                            fsums = np.nansum(a['grms'], axis=0)
-                            fnums = np.count_nonzero(~np.isnan(a['grms']), axis=0)
-                            grms_sum[tag], grms_num[tag] = update_grms_sumnum(grms_sum[tag], grms_num[tag], fsums, fnums)
+            print pth, fcounts,\
+                '{:7d} non-NaNs in fat array for day {:s}'.\
+                format(np.count_nonzero(~np.isnan(fat)), day)
 
-                            # grms_sum[tag] +=
-                            # raise SystemExit
-                            #print "%s " % tag
-
-                        continue
-
-                        # now filter files (just for taghours criteria)
-                        # FIXME how best do we use/dispense with tag for our taghours here?
-                        my_files = get_oto_day_sensor_files_taghours(files, day, sensor, hours=hrs)
-                        print '%s, hrs=%s gives %d tag="%s" files' % (day, str(hrs), len(my_files), tag)
-                        continue
-
-                        len_files = len(my_files)
-                        if len_files > 0:
-                            my_files.sort(key=os.path.basename)
-                            outfile = os.path.join(pth.replace(indir, outdir), tag, 'dailyhistoto.mat')
-                            if os.path.exists(outfile):
-                                raise Exception('OUTPUT FILE %s ALREADY EXISTS' % outfile)
-                            else:
-                                directory = os.path.dirname(outfile)
-                                if not os.path.exists(directory):
-                                    os.makedirs(directory)
-
-                            dh = DailyOtoHistFileDisposal(my_files[0], bins)
-                            Nx, Ny, Nz, Nv = dh.run()
-                            print '>> completed %s' % my_files[0]
-                            for f in my_files[1:]:
-                                dh = DailyOtoHistFileDisposal(f, bins)
-                                nx, ny, nz, nv = dh.run()
-                                Nx += nx
-                                Ny += ny
-                                Nz += nz
-                                Nv += nv
-                                print '>> completed %s' % f
-                            sio.savemat(outfile, {'Nx': Nx, 'Ny': Ny, 'Nz': Nz, 'Nv': Nv})
-                            print
-
-            print pth, fcounts, grms_sum, grms_num
+            # TODO this is where we use per-day fidx (indexing) for next phase of analysis
+            for k, v in fidx.iteritems():
+                # print '\t', k, len(v)  # np.nanmax(fat[np.array(v)], axis=0)
+                # np.nanmin(fat[np.array(v)], axis=0)
+                # np.nanmax(fat[np.array(v)], axis=0)
+                # np.nansum(fat[np.array(v)], axis=0)
+                # FOR COUNT, USE NEXT LINE:
+                # np.divide(np.nansum(fat[np.array(v)], axis=0), np.nanmean(fat[np.array(v)], axis=0))
+                print '{:>9s} accrued {:>4d} file indexes'.format(k, len(v))
 
         else:
-            print '%s gives NO FILES' % day
+
+            print '%s had NO FILES to work with' % day
 
 
 if __name__ == '__main__':
@@ -942,7 +932,7 @@ if __name__ == '__main__':
 
     args = argparser.parse_inputs()
 
-    print args
+    # print args
 
     # handle the case when we get ad hoc dates from file (not typical date range)
     if args.fromfile is not None:
