@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 
-"""Running histogram(s) of acceleration vector magnitude.
+"""Running histogram(s) of OTOB grms values (per-axis and RSS).
 
-This module provides classes for computing/plotting running histograms of SAMS (PAD file) data.
+This module provides classes for computing/plotting running OTOB histograms of OTO (mat files) data.
 
 """
 
