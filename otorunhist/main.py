@@ -25,6 +25,7 @@ from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_
 from pims.utils.pimsdateutil import otomat_fullfilestr_to_start_stop, ymd_pathstr_to_date
 from pims.files.filter_pipeline import FileFilterPipeline, OtoDaySensorHours
 from histpad.pad_filter_pipeline import sensor2subdir
+from pims.otorunhist.otomatfile import OtoMatFile, OtoParamFileException
 from histpad.file_disposal import DailyOtoHistFileDisposal, DailyOtoMinMaxFileDisposal
 # from ugaudio.explore import padread, pad_file_percentiles
 
@@ -858,15 +859,27 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
 
         if os.path.exists(pth):
             files = [os.path.join(pth, f) for f in os.listdir(pth)]
-            num_freqs = get_info_from_first_file(files[0])
+
+            # FIXME rename oto_data1 to oto_mat1 and oto_data to oto_mat
+
+            oto_data1 = OtoMatFile(files[0])
+            #num_freqs = get_info_from_first_file(files[0])
+            num_freqs = len(oto_data1.data['foto'])
+
             fat = np.empty((len(files), num_freqs, 3))  # CAREFUL EMPTY INIT HAS GARBAGE VALUES
             fat[:] = np.nan  # NEED FILL RIGHT AFTER EMPTY TO CLEAN UP GARBAGE VALUES
 
             for c, f in enumerate(files):
 
-                #print f
+                # verify OTO parameters from this file match the one from very 1st file
+                oto_data = OtoMatFile(f)
+                if oto_data != oto_data1:
+                    print 'something wrong with OTO params for %s' % f
+                    continue
 
-                a = sio.loadmat(f)
+                # load data from file
+                # a = sio.loadmat(f)
+                a = oto_data.data
                 fat[:][:][c] = a['grms']
 
                 for tag, hrs in taghours.iteritems():
