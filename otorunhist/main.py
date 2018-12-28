@@ -39,11 +39,11 @@ class DateRangeException(Exception):
         Exception.__init__(self, *args, **kwargs)
 
 
-def ranges(i):
-    """return range from a list of integers"""
-    for a, b in itertools.groupby(enumerate(i), lambda (x, y): y - x):
-        b = list(b)
-        yield b[0][1], b[-1][1]
+# def ranges(i):
+#     """return range from a list of integers"""
+#     for a, b in itertools.groupby(enumerate(i), lambda (x, y): y - x):
+#         b = list(b)
+#         yield b[0][1], b[-1][1]
 
 
 def get_date_range(value):
@@ -66,18 +66,7 @@ def get_date_range(value):
     return dr
 
 
-def get_where_clause(sensor):
-    if sensor.endswith('006'):
-        dwhere = {'CutoffFreq': 6.0}
-    elif sensor.endswith('020'):
-        dwhere = {'CutoffFreq': 20.0}        
-    elif sensor.startswith('es0'):
-        dwhere = {'CutoffFreq': 204.2}
-    else:
-        dwhere = {'CutoffFreq': 200}
-    return dwhere
-
-
+# FIXME should we be using this instead of listdir(pth)?
 def get_oto_day_sensor_files_taghours(files, day, sensor, hours=None):
 
     # handle hours default as all hours
@@ -95,742 +84,19 @@ def get_oto_day_sensor_files_taghours(files, day, sensor, hours=None):
     return list(ffp(files))
 
 
-def demo_pad_pct99(sensor, y, m, d, min_bytes=2*1024*1024):
-    from ugaudio.load import padread
-    ymd_dir = datetime_to_ymd_path(datetime.date(y, m, d))
-    glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
-    fnames = glob.glob(glob_pat)
-    fnames_filt = get_pad_day_sensor_files_minbytes(fnames, '%4d-%02d-%02d' % (y, m, d), sensor, min_bytes=min_bytes)
-    arr = np.empty((0, 4))
-    for fname in fnames_filt:
-        # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
-        b = padread(fname)
-        a = b - b.mean(axis=0)       # demean each column
-        #a = np.delete(a, 0, 1)       # delete first (time) column
-        a[:,0] = np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2)  # replace 1st column with vecmag
-        p = np.percentile(np.abs(a), 99, axis=0)
-        #print '{:e}  {:e}  {:e}  {:e}'.format(*p)
-        arr = np.append(arr, [p], axis=0)
+def get_out_mat_file_name(start, stop, sensor, taghrs):
+    """return string for basename of output mat-file name"""
+    # LIKE 2016-01-01_2016-01-31_121f03_sleep_all_wake.mat
+    return '_'.join([start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor] + taghrs.keys()) + '_otorunhist.mat'
 
-    return arr
 
-
-def demo_99pct_vecmag_array(min_bytes):
-    #drange = pd.date_range('2017-09-01', '2017-12-01')
-    #drange = pd.date_range('2017-09-01', '2017-09-02')
-    #sensor = '121f03006'
-    drange = pd.date_range('2017-01-01', '2018-01-01')
-    sensor = 'es05020'
-    print sensor
-    print '{:>9}  {:4}  {:2}  {:2}'.format('# Files', 'Year', 'Mo', 'Da')
-    def do_plot():
-        pcts = np.empty((0, 4), np.float)
-        for d in drange:
-            pct = demo_pad_pct99(sensor, d.year, d.month, d.day, min_bytes=min_bytes)
-            pcts = np.append(pcts, pct, axis=0)
-            print '{:9}  {:4}  {:02}  {:02}'.format(pcts.shape[0], d.year, d.month, d.day)
-        plt.plot(pcts[:,0] * 1e3)
-        plt.ylabel('99th Pctile of Accel. Mag. (mg)')
-        plt.title(sensor)
-        plt.show()
-    do_plot()
-
-#
-# def Jan_thru_Sep_2017():
-#     start = datetime.date(2017,  1, 1)
-#     stop  = datetime.date(2017, 10, 1) - datetime.timedelta(days=1)
-#     save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, min_bytes=2*1024*1024)
-#
-#
-# def save_monthlyhistpad(year, month, sensor='121f03', fc=200):
-#
-#     # load bins and vecmag_bins
-#     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-#     # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
-#     a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, name_bins_mat))
-#     vecmag_bins = a['vecmag_bins'][0]
-#     bins = a['bins'][0]
-#
-#     # initialize start/stop for month of interest
-#     start, stop = year_month_to_dtm_start_stop(year, month)
-#
-#     hv = np.zeros_like(vecmag_bins)
-#     hx = np.zeros_like(bins)
-#     hy = np.zeros_like(bins)
-#     hz = np.zeros_like(bins)
-#
-#     files = []
-#     for d in pd.date_range(start, stop):
-#         f = os.path.join(datetime_to_dailyhist_path(d), 'dailyhistpad.mat')
-#         if os.path.exists(f):
-#             files.append(f)
-#             data = sio.loadmat(f)
-#             hv += data['Nv'][0]
-#             hx += data['Nx'][0]
-#             hy += data['Ny'][0]
-#             hz += data['Nz'][0]
-#             print '%d' % np.sum(hv)
-#     print ''
-#
-#     # output filename relative to common path
-#     outdir = DEFAULT_OUTDIR
-#     tmpdir = datetime_to_dailyhist_path(datetime.datetime(year, month, 1))
-#     outdir = str(Path(tmpdir).parents[1])  # this moves 2 levels up
-#     outfile = os.path.join(outdir, 'month%02dhistpad_%s.mat' % (month, sensor))
-#
-#     # save to output file
-#     sio.savemat(outfile, {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-#     print outfile
-
-
-def get_axis_settings(xvals):
-    xvals_max = max(xvals)
-    mult = 5  
-    xMajorLoc = MultipleLocator(1)
-    xMinorLoc = MultipleLocator(0.5)
-    print 'xvals_max', xvals_max
-    if xvals_max > 40:
-        #mult = 220
-        #xMajorLoc = MultipleLocator(20)
-        #xMinorLoc = MultipleLocator(10)
-        mult = 120
-        xMajorLoc = MultipleLocator(20)
-        xMinorLoc = MultipleLocator(10)        
-    elif xvals_max > 30:
-        mult = 60
-        xMajorLoc = MultipleLocator(5)
-        xMinorLoc = MultipleLocator(1)
-    elif xvals_max > 12:
-        mult = 24
-        xMajorLoc = MultipleLocator(2)
-        xMinorLoc = MultipleLocator(1)
-    #xmax = round_up(max(xvals), mult)
-    xmax = round_up(xvals_max, mult)
-    axlims = [-1, xmax, -5, 105]
-    yticks = np.arange(0, 104, 5)
-    xticks = np.arange(xmax)
-    return xMajorLoc, xMinorLoc, axlims, yticks, xticks
-
-
-def get_axis_settings_xyz(x, y, z, axlims):
-    if axlims[1] > 30:
-        xMajorLoc = MultipleLocator(10)
-        xMinorLoc = MultipleLocator(5)
-        axlims = [-60, 60, -0.01, 0.51]
-        yticks = [0, 0.1, 0.2, 0.3, 0.4, 0.5]
-        xticks = np.arange(-60, 60, 10)
-    else:
-        xMajorLoc = MultipleLocator(1)
-        xMinorLoc = MultipleLocator(0.5)
-        axlims = [-5, 5, -0.1, 5.1]
-        yticks = np.arange(0, 6)
-        xticks = np.arange(-5, 5, 1)
-    return xMajorLoc, xMinorLoc, axlims, yticks, xticks
-
-
-def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
-
-    # load bins and vecmag_bins
-    name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
-    a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, name_bins_mat))
-    vecmag_bins = a['vecmag_bins'][0]
-    bins = a['bins'][0]
-
-    hv = np.zeros_like(vecmag_bins)
-    hx = np.zeros_like(bins)
-    hy = np.zeros_like(bins)
-    hz = np.zeros_like(bins)
-    
-    files = []
-    for d in pd.date_range(start, stop):
-        f = os.path.join(datetime_to_dailyhist_path(d, sensor_subdir=sensor2subdir(sensor)), 'dailyhistpad.mat')
-        if os.path.exists(f):
-            files.append(f)
-            data = sio.loadmat(f)
-            hv += data['Nv'][0]
-            hx += data['Nx'][0]
-            hy += data['Ny'][0]
-            hz += data['Nz'][0]
-            num_pts = np.sum(hv)
-            #print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d.date()), num_pts, f)
-    print ''
-    
-    # output filename relative to common path
-    outdir = os.path.join(DEFAULT_OUTDIR, 'plots')
-    outname = '%s_to_%s_%s' % (start, stop, sensor)
-    outstub = os.path.join(outdir, outname)
-    
-    # save to output mat file
-    outmat = outstub + '.mat'
-    sio.savemat(outstub + '.mat', {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outmat
-
-    font = {'family' : 'DejaVu Sans',
-            'weight' : 'normal',
-            'size'   : 18}
-    
-    rc('font', **font)
-
-    hFig = plt.figure();
-    hFig.set_size_inches(11, 8.5)  # landscape
-
-    majorFormatter = FormatStrFormatter('%d')
-    yMajorLoc = MultipleLocator(10)
-    yMinorLoc = MultipleLocator(5)
-    plt.minorticks_on
-
-    # title
-    ht = plt.title('SAMS 200 Hz Vibratory Data (Mean Subtracted) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
-    #ht.set_fontsize(16)
-
-    bins_mg = vecmag_bins/1e-3
-    pctiles = 100*np.cumsum(hv)/np.sum(hv)
-    hLine, = plt.plot(bins_mg, pctiles, linewidth=3, color='k')  # note comma for tuple unpacking on LHS gets hLine out of list returned
-    plt.xlabel('Acceleration Vector Magnitude (milli-g)')
-    num_pts_str = "{:,.0f} data pts".format(num_pts)
-    bbox = {'fc': '0.8', 'pad': 4}
-    font0 = FontProperties()
-    font = font0.copy()
-    font.set_size(9)
-    # plt.text(-0.01, 103.0, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
-
-    # FIXME can we get text annotation with num_pts_str to find its own location somehow
-    #an2 = ax.annotate("Test 2", xy=(1, 0.5), xycoords=an1.get_window_extent, xytext=(30,0), textcoords="offset points")    
-    
-    plt.ylabel('Cumulative Distribution (%)')
-
-    # draw typical plumb lines with annotation
-    yvals = [50, 95, ]  # one set of annotations for each of these values
-    reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals)
-
-    # get axis settings based on data
-    xMajorLoc, xMinorLoc, axlims, yt, xt = get_axis_settings(xvals)
-    plt.axis(axlims)
-    plt.yticks(yt)
-    plt.xticks(xt)
-
-    # now add num_pts text box top/center
-    xspan = axlims[1] - axlims[0]
-    xtxt = axlims[0] + ( 0.5 * xspan )
-    yspan = axlims[3] - axlims[2]
-    ytxt = axlims[2] + 0.98* yspan
-    plt.text(xtxt, ytxt, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
-
-    # set xaxis major tick
-    plt.gca().xaxis.set_major_locator(xMajorLoc)
-    plt.gca().xaxis.set_major_formatter(majorFormatter)
-    
-    # set yaxis major tick
-    plt.gca().yaxis.set_major_locator(yMajorLoc)
-    plt.gca().yaxis.set_major_formatter(majorFormatter)    
-    
-    # for the minor ticks, use no labels; default NullFormatter
-    plt.gca().xaxis.set_minor_locator(xMinorLoc)    
-    plt.gca().yaxis.set_minor_locator(yMinorLoc)    
-    plt.gca().grid(True, which='both', linestyle='dashed')
-
-    outpdf = outmat.replace('.mat', '.pdf')    
-    plt.savefig(outpdf)
-    print "evince", outpdf, "&"
-
-
-def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
-
-    # load bins and vecmag_bins
-    name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
-    a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, name_bins_mat))
-    vecmag_bins = a['vecmag_bins'][0]
-    bins = a['bins'][0]
-
-    hv = np.zeros_like(vecmag_bins)
-    hx = np.zeros_like(bins)
-    hy = np.zeros_like(bins)
-    hz = np.zeros_like(bins)
-
-    files = []
-    for d in pd.date_range(start, stop):
-        f = os.path.join(datetime_to_dailyhist_path(d, sensor_subdir=sensor2subdir(sensor)), 'dailyhistpad.mat')
-        if os.path.exists(f):
-            files.append(f)
-            data = sio.loadmat(f)
-            hv += data['Nv'][0]
-            hx += data['Nx'][0]
-            hy += data['Ny'][0]
-            hz += data['Nz'][0]
-            num_pts = np.sum(hv)
-            # print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d.date()), num_pts, f)
-    print ''
-
-    # output filename relative to common path
-    outdir = os.path.join(DEFAULT_OUTDIR, 'plots')
-    outname = '%s_to_%s_%s' % (start, stop, sensor)
-    outstub = os.path.join(outdir, outname)
-
-    # save to output mat file
-    outmat = outstub + '.mat'
-    sio.savemat(outstub + '.mat',
-                {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outmat
-
-    # ################################################
-    # plot vector magnitude cumulative distribution
-    # ################################################
-
-    ylabstr = 'Cumulative Distribution (%)'
-    xlab_prefix = 'Acceleration Vector Magnitude'
-    bins_mg = vecmag_bins / 1e-3
-    pctiles = 100 * np.cumsum(hv) / np.sum(hv)
-
-    font = {'family': 'DejaVu Sans',
-            'weight': 'normal',
-            'size': 18}
-
-    rc('font', **font)
-
-    hFig = plt.figure()
-    hFig.set_size_inches(11, 8.5)  # landscape
-
-    majorFormatter = FormatStrFormatter('%d')
-    yMajorLoc = MultipleLocator(10)
-    yMinorLoc = MultipleLocator(5)
-    plt.minorticks_on
-
-    # title
-    ht = plt.title(
-        'SAMS 200 Hz Vibratory Data (Mean Subtracted) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
-    # ht.set_fontsize(16)
-
-    hLine, = plt.plot(bins_mg, pctiles, linewidth=3,
-                      color='k')  # note comma for tuple unpacking on LHS gets hLine out of list returned
-    plt.xlabel('%s (milli-g)' % xlab_prefix)
-    num_pts_str = "{:,.0f} data pts".format(num_pts)
-    bbox = {'fc': '0.8', 'pad': 4}
-    font0 = FontProperties()
-    font = font0.copy()
-    font.set_size(9)
-    # plt.text(-0.01, 103.0, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
-
-    # FIXME can we get text annotation with num_pts_str to find its own location somehow
-    # an2 = ax.annotate("Test 2", xy=(1, 0.5), xycoords=an1.get_window_extent, xytext=(30,0), textcoords="offset points")
-
-    plt.ylabel(ylabstr)
-
-    # draw typical plumb lines with annotation
-    #yvals = [50, 95, ]  # one set of annotations for each of these values
-    yvals = [50, 99.9, ]  # one set of annotations for each of these values
-    reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals)
-
-    # get axis settings based on data
-    xMajorLoc, xMinorLoc, axlims, yt, xt = get_axis_settings(xvals)
-    plt.axis(axlims)
-    plt.yticks(yt)
-    plt.xticks(xt)
-
-    # now add num_pts text box top/center
-    xspan = axlims[1] - axlims[0]
-    xtxt = axlims[0] + (0.5 * xspan)
-    yspan = axlims[3] - axlims[2]
-    ytxt = axlims[2] + 0.98 * yspan
-    plt.text(xtxt, ytxt, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
-
-    # set xaxis major tick
-    plt.gca().xaxis.set_major_locator(xMajorLoc)
-    plt.gca().xaxis.set_major_formatter(majorFormatter)
-
-    # set yaxis major tick
-    plt.gca().yaxis.set_major_locator(yMajorLoc)
-    plt.gca().yaxis.set_major_formatter(majorFormatter)
-
-    # for the minor ticks, use no labels; default NullFormatter
-    plt.gca().xaxis.set_minor_locator(xMinorLoc)
-    plt.gca().yaxis.set_minor_locator(yMinorLoc)
-    plt.gca().grid(True, which='both', linestyle='dashed')
-
-    outpdf = outmat.replace('.mat', '_vcdf.pdf')  # xyzh
-    plt.savefig(outpdf)
-    print "evince", outpdf, "&"
-
-    # ################################################
-    #  plot xyz probability densities
-    # ################################################
-
-    ylabstr = 'Probability Density (%)'
-    xlab_prefix = 'Acceleration'
-    bins_mg = bins / 1e-3
-    xvalues = 100 * hx / np.sum(hx)
-    yvalues = 100 * hy / np.sum(hy)
-    zvalues = 100 * hz / np.sum(hz)
-    num_pts = np.sum(hx)
-    num_pts_str = "{:,.0f} records".format(num_pts)
-
-    hFig = plt.figure()
-    hFig.set_size_inches(11, 8.5)  # landscape
-
-    # title
-    ht = plt.title(
-        'SAMS 200 Hz Vibratory Data (Mean Subtracted) for\nSensor %s from GMT %s through %s' % (sensor, start, stop))
-    # ht.set_fontsize(16)
-
-    hLineX, = plt.plot(bins_mg, xvalues, linewidth=2,
-                      color='r')  # note comma for tuple unpacking on LHS gets hLine out of list returned
-    hLineY, = plt.plot(bins_mg, yvalues, linewidth=2,
-                      color='g')  # note comma for tuple unpacking on LHS gets hLine out of list returned
-    hLineZ, = plt.plot(bins_mg, zvalues, linewidth=2,
-                      color='b')  # note comma for tuple unpacking on LHS gets hLine out of list returned
-    plt.xlabel('%s (milli-g)' % xlab_prefix)
-    plt.ylabel('Probability Density (%)')
-
-    # get axis settings based on data
-    xMajorLoc, xMinorLoc, axlims2, yt, xt = get_axis_settings_xyz(xvalues, yvalues, zvalues, axlims)
-    plt.axis(axlims2)
-    plt.yticks(yt)
-    plt.xticks(xt)
-
-    # branch based on returned ax limits
-    if axlims2[3] < 2:
-        yMajorFormatter = FormatStrFormatter('%0.1f')
-        yMajorLoc = MultipleLocator(0.1)
-        yMinorLoc = MultipleLocator(0.05)
-    else:
-        yMajorFormatter = FormatStrFormatter('%d')
-        yMajorLoc = MultipleLocator(1)
-        yMinorLoc = MultipleLocator(0.5)
-    plt.minorticks_on
-
-    # now add num_pts text box top/center
-    xspan = axlims2[1] - axlims2[0]
-    xtxt = axlims2[0] + (0.5 * xspan)
-    yspan = axlims2[3] - axlims2[2]
-    ytxt = axlims2[2] + 0.98 * yspan
-    plt.text(xtxt, ytxt, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=0, fontproperties=font)
-
-    # set xaxis major tick
-    plt.gca().xaxis.set_major_locator(xMajorLoc)
-    plt.gca().xaxis.set_major_formatter(majorFormatter)
-
-    # set yaxis major tick
-    plt.gca().yaxis.set_major_locator(yMajorLoc)
-    plt.gca().yaxis.set_major_formatter(yMajorFormatter)
-
-    # for the minor ticks, use no labels; default NullFormatter
-    plt.gca().xaxis.set_minor_locator(xMinorLoc)
-    plt.gca().yaxis.set_minor_locator(yMinorLoc)
-    plt.gca().grid(True, which='both', linestyle='dashed')
-
-    plt.legend((hLineX, hLineY, hLineZ), ('X-Axis', 'Y-Axis', 'Z-Axis'))
-
-    outpdf = outmat.replace('.mat', '_xyzp.pdf')  # xyzp
-    plt.savefig(outpdf)
-    print "evince", outpdf, "&"
-
-
-def plotnsave_histmatfiles(files, sensor, tag):
-
-    # load bins and vecmag_bins    
-    if sensor.endswith('006'):
-        bname_bins_matfile = 'dailyhistpad_bins_006.mat'            
-    elif sensor.endswith('020'):
-        bname_bins_matfile = 'dailyhistpad_bins_020.mat'
-    else:
-        bname_bins_matfile = 'dailyhistpad_bins_200.mat'
-
-    # load bins and vecmag_bins
-    a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, bname_bins_matfile))
-    vecmag_bins = a['vecmag_bins'][0][:-1]
-    bins = a['bins'][0][:-1]    
-
-    hv = np.zeros_like(vecmag_bins)
-    hx = np.zeros_like(bins)
-    hy = np.zeros_like(bins)
-    hz = np.zeros_like(bins)
-    
-    for f in files:
-        if f is not None and os.path.exists(f):
-            data = sio.loadmat(f)
-            hv += data['Nv'][0]
-            hx += data['Nx'][0]
-            hy += data['Ny'][0]
-            hz += data['Nz'][0]
-            num_pts = np.sum(hv)
-            d = ymd_pathstr_to_date(f)
-            #print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d), num_pts, f)
-    print ''
-    
-    # output filename relative to common path
-    outdir = os.path.join(DEFAULT_OUTDIR, 'plots')
-    outname = '%s_%s' % (tag, sensor)
-    outstub = os.path.join(outdir, outname)
-    
-    # save to output mat file
-    outmat = outstub + '.mat'
-    sio.savemat(outstub + '.mat', {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outmat
-
-    font = {'family' : 'DejaVu Sans',
-            'weight' : 'normal',
-            'size'   : 18}
-    
-    rc('font', **font)
-
-    hFig = plt.figure();
-    hFig.set_size_inches(11, 8.5)  # landscape
-
-    majorFormatter = FormatStrFormatter('%d')
-    yMajorLoc = MultipleLocator(10)
-    yMinorLoc = MultipleLocator(5)
-    plt.minorticks_on
-
-    my_units = 'milli-g'
-    x_units = 'mg'
-    title_hz = '200 Hz'
-    sf = 1e-3
-    if sensor.endswith('006'):
-        my_units = 'micro-g'
-        x_units = 'ug'
-        title_hz = '6 Hz'
-        sf = 1e-6
-    elif sensor.endswith('020'):
-        my_units = 'micro-g'
-        x_units = 'ug'
-        title_hz = '20 Hz'
-        sf = 1e-6
-        
-    # title
-    ht = plt.title('SAMS %s Vibratory Data (Mean Subtracted) for\nSensor %s (%s)' % (title_hz, sensor, tag))
-    #ht.set_fontsize(16)
-    
-    xbins = vecmag_bins / sf
-    pctiles = 100*np.cumsum(hv)/np.sum(hv)
-    hLine, = plt.plot(xbins, pctiles, linewidth=3, color='k')  # note comma for tuple unpacking on LHS gets hLine out of list returned
-    plt.xlabel('Acceleration Vector Magnitude (%s)' % my_units)
-    num_pts_str = "{:,.0f} data pts".format(num_pts)
-    bbox = {'fc': '0.8', 'pad': 4}
-    font0 = FontProperties()
-    font = font0.copy()
-    font.set_size(9)
-    #plt.text(-2.2, 108.5, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=45, fontproperties=font)
-    
-    # FIXME can we get text annotation with num_pts_str to find its own location somehow
-    #an2 = ax.annotate("Test 2", xy=(1, 0.5), xycoords=an1.get_window_extent, xytext=(30,0), textcoords="offset points")    
-    
-    plt.ylabel('Cumulative Distribution (%)')
-
-    # draw typical plumb lines with annotation
-    yvals = [50, 95, ]  # one set of annotations for each of these values
-    reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals, x_units=x_units)
-
-    # get axis settings based on data
-    xMajorLoc, xMinorLoc, axlims, yt, xt = get_axis_settings(xvals)
-    plt.axis(axlims)
-    plt.yticks(yt)
-    plt.xticks(xt)
-    
-    plt.text(axlims[1], 50, num_pts_str, {'ha': 'center', 'va': 'center', 'bbox': bbox}, rotation=90, fontproperties=font)    
-    
-    # set xaxis major tick
-    plt.gca().xaxis.set_major_locator(xMajorLoc)
-    plt.gca().xaxis.set_major_formatter(majorFormatter)
-    
-    # set yaxis major tick
-    plt.gca().yaxis.set_major_locator(yMajorLoc)
-    plt.gca().yaxis.set_major_formatter(majorFormatter)    
-    
-    # for the minor ticks, use no labels; default NullFormatter
-    plt.gca().xaxis.set_minor_locator(xMinorLoc)    
-    plt.gca().yaxis.set_minor_locator(yMinorLoc)    
-    plt.gca().grid(True, which='both', linestyle='dashed')
-
-    outpdf = outmat.replace('.mat', '.pdf')    
-    plt.savefig(outpdf)
-    print "evince", outpdf, "&"
-
-
-def plotnsave_monthrange_histpad(start, stop, sensor='121f03'):
-
-    # "floor" start date to begin of month
-    start = start.replace(day=1)
-    
-    # "ceil" stop date to end of month
-    stop = (stop.replace(day=1) + datetime.timedelta(days=32) - datetime.timedelta(days=1)).replace(day=1)
-    stop -= datetime.timedelta(days=1)
-    
-    # FIXME we could tap into monthly saved files instead of stepping day-by-day (DIFFERENT VAR NAMES IN MONTHLY THOUGH)
-    plotnsave_daterange_histpad(start, stop, sensor='121f03')
-
-
-class CreateMatFile(object):
-    """
-    It's easy to write code that does the right thing when everything is going
-    well. It's much harder to write code that does a good job when things go
-    wrong. Properly manipulating exceptions can help you troubleshoot problems.
-    
-    A problem could arise with the traceback for an exception that shows the
-    problem starting in e.g. get_matfile. When debugging problems, it's
-    enormously helpful to know the real origin, which might be in e.g. do_run.
-    
-    To solve that problem, we'll store more than the exception, we'll also store
-    the traceback at the time of the original problem, e.g. in get_matfile, we
-    use the full three-argument form of the raise statement to use the original
-    traceback too!!!
-    
-    Now when we run it, the traceback points to dailyhistpad_matsave, called
-    from e.g. do_run, which is the real culprit (not from e.g. get_matfile).
-    
-    The three-argument raise statement is a little odd, owing to
-    its legacy from the old days of Python when exceptions could be things
-    other than instances of subclasses of Exception. This accounts for the odd
-    tuple-dance we do on the saved exc_info.
-    
-    """
-    
-    def __init__(self, day, sensor, where=None):
-        self.day = day
-        self.sensor = sensor
-        self.where = where
-        self.exc_info = None
-        self.mat_file = None
-         
-    def do_run(self):
-        try:
-            self.mat_file = self.dailyhistpad_matsave()
-        except Exception, e:
-            self.exc_info = sys.exc_info()
-     
-    def dailyhistpad_matsave(self):
-        """do_something_dangerous"""
-        
-        if self.where is None:
-            self.where = get_where_clause(self.sensor)
-
-        if self.sensor.endswith('006'):
-            #bins = np.arange(-0.2, 0.2-5e-5, 5e-5) / 1e3
-            #vecmag_bins = np.arange(0, 0.5, 5e-5) / 1e3
-            bname_bins_matfile = 'dailyhistpad_bins_006.mat'            
-        elif self.sensor.endswith('020'):
-            #bins = np.arange(-0.2, 0.2-5e-5, 5e-5) / 1e1
-            #vecmag_bins = np.arange(0, 0.5, 5e-5) / 1e1
-            bname_bins_matfile = 'dailyhistpad_bins_020.mat'
-        elif 199 < self.where['CutoffFreq'] < 205:
-            #bins = np.arange(-0.2, 0.2-5e-5, 5e-5)
-            #vecmag_bins = np.arange(0, 0.5, 5e-5)
-            bname_bins_matfile = 'dailyhistpad_bins_200.mat'
-        else:
-            raise Exception('unhandled use case for CutoffFreq or sample rate implied by 006 sensor suffix')
-
-        # load bins and vecmag_bins
-        a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, bname_bins_matfile))
-        vecmag_bins = a['vecmag_bins'][0]
-        bins = a['bins'][0]
-
-        #save_dailyhistpad(self.day, self.day, self.sensor, self.where)            
-        save_dailyhistpad(self.day, self.day, sensor=self.sensor, where=self.where, bins=bins, vecmag_bins=vecmag_bins)
-    
-    def get_matfile(self):
-        """get_result"""
-        
-        # this is that odd python legacy tuple dance here
-        if self.exc_info: raise self.exc_info[1], None, self.exc_info[2]
-        return self.mat_file
-    
-
-def process_date_list_from_file(fname, sensor):
-    files = []
-    where = get_where_clause(sensor)
-    with open(fname, 'r') as infile:
-        for line in infile:
-            ymd_path = line.rstrip('\n')
-            mat_file = os.path.join(ymd_path, sensor2subdir(sensor), 'dailyhistpad.mat')
-            if os.path.exists(mat_file):
-                print 'padrunhist mat file exists {}'.format(mat_file)
-            else:
-                print 'padrunhist mat file create {}'.format(mat_file)
-                day = ymd_pathstr_to_date(mat_file)
-                cmf = CreateMatFile(day, sensor, where=where)
-                print 'doing histogram processing for our running mat file result'
-                cmf.do_run()
-                print 'now we have mat file for', day
-                mat_file = cmf.get_matfile()
-            files.append(mat_file)
-    return files
-
-
-
-def pad_percentiles_from_date_list_file(fname, sensor):
-
-    files = []
-    where = get_where_clause(sensor)
-    with open(fname, 'r') as infile:
-        for line in infile:
-            ymd_path = line.rstrip('\n')
-            d = ymd_pathstr_to_date(ymd_path)
-
-            # get list of PAD data files for particular day and sensor
-            pth = os.path.join( datetime_to_ymd_path(d), sensor2subdir(sensor) )
-            if os.path.exists(pth):
-                tmp = os.listdir(pth)
-                files = [ os.path.join(pth, f) for f in tmp ]
-    
-                # now filter files
-                my_files = get_pad_day_sensor_files_minbytes(files, d.strftime('%Y-%m-%d'), sensor, min_bytes=2*1024*1024)            
-                summary = '%s %s gives %d files' % (pth, d.strftime('%Y-%m-%d'), len(my_files))
-
-                #for pad_file in my_files:
-                #    p = pad_file_percentiles(pad_file)
-                #    print ' > {:9.4f} ug    {:9.4f} ug'.format(p[0]/1e-6, p[1]/1e-6)            
-
-                n = np.empty((0, 1))
-                sum50 = np.empty((0, 1))
-                sum95 = np.empty((0, 1))
-                arr = np.empty((0, 4))
-                for fname in my_files:
-                    # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
-                    b = padread(fname)
-                    a = b - b.mean(axis=0)       # demean each column
-                    #a = np.delete(a, 0, 1)       # delete first (time) column
-                    a[:,0] = np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2)  # replace 1st column with vecmag
-                    #print '{:e}  {:e}  {:e}  {:e}'.format(*p)
-                    arr = np.append(arr, a, axis=0)
-                p = np.percentile(np.abs(arr[:, 0]), [50, 95], axis=0)
-                s = ' > {:6.2f} ug  {:6.2f} ug'.format(p[0]/1e-6, p[1]/1e-6)
-                
-                n = np.append(n, arr.shape[0], axis=0)
-                sum50 = np.append(sum50, p[0]/1e-6, axis=0)
-                sum95 = np.append(sum95, p[1]/1e-6, axis=0)
-                
-                print s, arr.shape, summary
-                print n
-                print sum50
-                print sum95
-
-
-def update_grms_minmax(old_min, old_max, fmins, fmaxs):
-    """update running [x y z] min & max values based on a file's [x y z] min & max"""
-    new_min = np.nanmin(np.vstack((old_min, fmins)), axis=0)
-    new_max = np.nanmax(np.vstack((old_max, fmaxs)), axis=0)
-    return new_min, new_max
-
-
-def update_grms_sumnum(old_sum, old_num, fsums, fnums):
-    """update running [x y z] sum & count values based on a file's [x y z] sum & count"""
-    new_sum = np.nansum(np.vstack((old_sum, fsums)), axis=0)
-    new_num = np.nansum(np.vstack((old_num, fnums)), axis=0)
-    return new_sum, new_num
-
-
-def get_info_from_first_file(f1):
-    """return num_freqs from first file"""
-    v = sio.loadmat(f1)
-    num_freqs = len(v['foto'])
-    return num_freqs
-
-
-def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR, outdir=DEFAULT_OUTDIR):
+def OBSOLETE_save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR, outdir=DEFAULT_OUTDIR, verbosity=None):
     """iterate over each day, then iterate over day's files & finally by taghours to build/sum results"""
+
+    if verbosity <= 1:
+        np.warnings.filterwarnings('ignore', r'All-NaN slice encountered')
+        np.warnings.filterwarnings('ignore', r'invalid value encountered')
+        np.warnings.filterwarnings('ignore', r'All-NaN axis encountered')
 
     if taghours is None:
         taghours = {'all': [(0, 24)]}
@@ -846,42 +112,56 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
         # initialize file counts with same keys as taghours (count files for each tag)
         fcounts = dict.fromkeys(taghours.keys(), 0)
 
-        # initialize dict to hold file index values, kinda time keeper per tag
+        # initialize dict to hold file index values, kind of a time-keeper per tag
         fidx = {}
         for k in taghours.keys():
             fidx[k] = []
 
-        # # initialize running values for each of      X        Y        Z
-        # grms_min = dict.fromkeys(taghours.keys(),  [ np.inf,  np.inf,  np.inf])
-        # grms_max = dict.fromkeys(taghours.keys(),  [-np.inf, -np.inf, -np.inf])
-        # grms_sum = dict.fromkeys(taghours.keys(),  [0, 0, 0])
-        # grms_num = dict.fromkeys(taghours.keys(),  [0, 0, 0])
-
+        # dive down to process files in YMD/sensor path
         if os.path.exists(pth):
-            files = [os.path.join(pth, f) for f in os.listdir(pth)]
 
-            # FIXME rename oto_data1 to oto_mat1 and oto_data to oto_mat
+            # files = [n for n in [os.path.join(pth, f) for f in os.listdir(pth)] if n.endswith('%s.mat' % sensor)]
+            unfiltered_files = [os.path.join(pth, f) for f in os.listdir(pth)]
+            files = get_oto_day_sensor_files_taghours(unfiltered_files, day, sensor)
 
-            oto_data1 = OtoMatFile(files[0])
-            #num_freqs = get_info_from_first_file(files[0])
-            num_freqs = len(oto_data1.data['foto'])
+            if len(files) < 1:
+                print 'no matching OTO mat files for %s' % pth
+                continue
 
-            fat = np.empty((len(files), num_freqs, 3))  # CAREFUL EMPTY INIT HAS GARBAGE VALUES
-            fat[:] = np.nan  # NEED FILL RIGHT AFTER EMPTY TO CLEAN UP GARBAGE VALUES
+            # load particulars for very first file
+            oto_mat1 = OtoMatFile(files[0])
+            num_freqs = len(oto_mat1.data['foto'])
 
+            # initialize FreqAxisTime (fat) array for this day/sensor
+            fat_day = np.empty((len(files), num_freqs, 3))  # CAREFUL EMPTY INIT HAS GARBAGE VALUES
+            fat_day[:] = np.nan  # NEED FILL IMMEDIATELY AFTER EMPTY TO CLEAN UP GARBAGE VALUES
+
+            # initialize daily-ever-replacing stat arrays (init on first day only)
+            if d == dr[0]:
+                mins, maxs = np.empty((num_freqs, 3)), np.empty((num_freqs, 3))
+                sums, counts = np.empty((num_freqs, 3)), np.empty((num_freqs, 3))
+                mins[:] = np.inf
+                maxs[:] = -np.inf
+                sums[:] = 0.0
+                counts[:] = 0
+                out_pth = os.path.dirname(os.path.dirname(pth))
+
+            # iterate over OTO mat files that we have to work with
             for c, f in enumerate(files):
 
                 # verify OTO parameters from this file match the one from very 1st file
-                oto_data = OtoMatFile(f)
-                if oto_data != oto_data1:
-                    print 'something wrong with OTO params for %s' % f
-                    continue
+                oto_mat = OtoMatFile(f)
+                if oto_mat != oto_mat1:
+                    print 'mismatch in OTO mat file params for %s' % f
+                    continue  # to next file since this one does not match
 
                 # load data from file
-                # a = sio.loadmat(f)
-                a = oto_data.data
-                fat[:][:][c] = a['grms']
+                a = oto_mat.data
 
+                # insert OTO's grms values at appropriate time index (c index) in Fx3xT fat array
+                fat_day[:][:][c] = a['grms']
+
+                # iterate over taghours items to keep track of c index values for each taghours item
                 for tag, hrs in taghours.iteritems():
 
                     fstart, fstop = otomat_fullfilestr_to_start_stop(f)
@@ -897,7 +177,7 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                         else:
                             hh, mm, ss = hrange[1], 0, 0
                         h2 = datetime.datetime.combine(d.to_pydatetime().date(),
-                                                  datetime.time(hh, mm, ss))
+                                                       datetime.time(hh, mm, ss))
 
                         # if completely within hour range, then include with this tag
                         if fstart >= h1 and fstop <= h2:
@@ -906,7 +186,10 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
 
             print pth, fcounts,\
                 '{:7d} non-NaNs in fat array for day {:s}'.\
-                format(np.count_nonzero(~np.isnan(fat)), day)
+                format(np.count_nonzero(~np.isnan(fat_day)), day)
+
+            if verbosity > 1:
+                print 'verbosity', verbosity
 
             # TODO this is where we use per-day fidx (indexing) for next phase of analysis
             for k, v in fidx.iteritems():
@@ -916,11 +199,154 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
                 # np.nansum(fat[np.array(v)], axis=0)
                 # FOR COUNT, USE NEXT LINE:
                 # np.divide(np.nansum(fat[np.array(v)], axis=0), np.nanmean(fat[np.array(v)], axis=0))
-                print '{:>9s} accrued {:>4d} file indexes'.format(k, len(v))
+
+                if k in ['sleep', 'wake']:
+                    continue
+
+                print '{:>9s} accrued {:>4d} file indexes'.format(k, len(v)),
+                print np.nanmin(fat_day[np.array(v)], axis=0).shape  # Fx3 array of mins per day&tag
+
+                # replace evolving mins array in case this day's worth goes below in array sense
+                np.fmin(mins, np.nanmin(fat_day[np.array(v)], axis=0), out=mins)
+                # print 'MINS'; print mins[9:13][:]; print '-'*22
+
+                # replace evolving maxs array in case this day's worth goes above in array sense
+                np.fmax(maxs, np.nanmax(fat_day[np.array(v)], axis=0), out=maxs)
+                # print 'MAXS'; print maxs[9:13][:]; print '+'*22
+
+                # replace growing sums array with this day's contribution
+                day_sum = np.nansum(fat_day[np.array(v)], axis=0)
+                np.nansum(np.dstack((sums, day_sum)), axis=2, out=sums)
+                # print 'SUMS'; print sums[9:13][:]; print 's'*22
+
+                # add this day's count of non-NaN values onto growing counts array
+                day_count = np.count_nonzero(~np.isnan(fat_day[np.array(v)]), axis=0)
+                np.nansum(np.dstack((counts, day_count)), axis=2, out=counts)
+                # print 'COUNTS'; print counts[9:13][:]; print 'c'*22
 
         else:
 
             print '%s had NO FILES to work with' % day
+
+    out_name = get_out_mat_file_name(start, stop, sensor, taghours)
+    out_mat_file_name = os.path.join(out_pth, out_name)
+
+    mdict = {'sums': sums, 'counts': counts, 'mins': mins, 'maxs': maxs}
+    sio.savemat(out_mat_file_name, mdict)
+    print 'saved %s' % out_mat_file_name
+
+
+def update_file_indexer_for_tags(c, f, taghours, fidx):
+    """iterate over taghours items to keep track of c index values for each taghours item"""
+
+    for tag, hrs in taghours.iteritems():
+
+        fstart, fstop = otomat_fullfilestr_to_start_stop(f)
+        h1_file = fstart.time()
+        h2_file = fstop.time()
+
+        # compensate for file times that straddle beginning or end of a day
+        if h2_file < h1_file:
+            if h2_file.hour <= 12:
+                # straddles beginning of day
+                h1_file = datetime.time(0, 0, 0)
+            else:
+                # straddles end of day
+                h2_file = datetime.time(23, 59, 59)
+
+        for hrange in hrs:
+
+            # h1 = datetime.datetime.combine(d.to_pydatetime().date(),
+            #                                datetime.time(hrange[0], 0))
+            h1 = datetime.time(hrange[0], 0)
+
+            # special handling of right end in hour range to capture hour 23 to end of day
+            if hrange[1] == 24:
+                hh, mm, ss = 23, 59, 59
+            else:
+                hh, mm, ss = hrange[1], 0, 0
+            # h2 = datetime.datetime.combine(d.to_pydatetime().date(),
+            #                                datetime.time(hh, mm, ss))
+            h2 = datetime.time(hh, mm, ss)
+
+            # if completely within hour range, then include with this tag
+            if h1_file >= h1 and h2_file <= h2:
+                fidx[tag].append(c)  # append file idx, c, to include w/ this tag
+
+
+def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR,
+                      outdir=DEFAULT_OUTDIR, verbosity=None):
+    """iterate over each day, then iterate over day's files & finally by taghours to build/sum results"""
+
+    if verbosity <= 1:
+        np.warnings.filterwarnings('ignore', r'All-NaN slice encountered')
+        np.warnings.filterwarnings('ignore', r'invalid value encountered')
+        np.warnings.filterwarnings('ignore', r'All-NaN axis encountered')
+        np.warnings.filterwarnings('ignore', r'Mean of empty slice')
+
+    if taghours is None:
+        taghours = {'all': [(0, 24)]}
+
+    # get list of files that we will build big array from F x 3 x K (K is num_files)
+    files = []
+    dr = get_date_range([start, stop])
+    for d in dr:
+
+        day = d.strftime('%Y-%m-%d')
+
+        # get list of OTO mat files for particular day, sensor and taghours
+        pth = datetime_to_dailyhist_oto_path(d, sensor_subdir=sensor2subdir(sensor))
+
+        # dive down to process files in YMD/sensor path
+        if os.path.exists(pth):
+            unfiltered_files = [os.path.join(pth, f) for f in os.listdir(pth)]
+            files += get_oto_day_sensor_files_taghours(unfiltered_files, day, sensor)
+
+    print 'found %d files to work with' % len(files)
+
+    # load frequency-grms array (and some parameters) from very first file
+    oto_mat1 = OtoMatFile(files[0])
+    num_freqs = len(oto_mat1.data['foto'])
+
+    # initialize dict to hold file index values, kind of an index/time-keeper per tag
+    fidx = {}
+    for k in taghours.keys():
+        fidx[k] = []
+
+    # initialize big fat array with NaN's
+    num_files = len(files)
+    fat_array = np.empty((num_files, num_freqs, 3), dtype=float)
+    fat_array[:] = np.nan  # NEED FILL IMMEDIATELY AFTER EMPTY TO CLEAN UP GARBAGE VALUES
+
+    # iterate over OTO mat files to populate big fat array depth-wise with per-file Fx3 arrays
+    for c, f in enumerate(files):
+
+        # verify OTO parameters from this file match the one from very 1st file
+        oto_mat = OtoMatFile(f)
+        if oto_mat != oto_mat1:
+            print 'mismatch in OTO mat file params for %s' % f
+            continue  # to next file since this one does not match
+
+        # update file index (time) tracker
+        update_file_indexer_for_tags(c, f, taghours, fidx)
+
+        # load data from file
+        a = oto_mat.data
+
+        # insert OTO's grms values at appropriate time index (c index) in Fx3xT big fat array
+        fat_array[:][:][c] = a['grms']
+
+    print fat_array.shape
+
+    # for sleep_file in [files[i] for i in fidx['sleep']]:
+    #     print sleep_file
+
+    for k, v in fidx.iteritems():
+        print k
+        tag_mins = np.nanmin(fat_array[np.array(v)], axis=0)
+        tag_maxs = np.nanmax(fat_array[np.array(v)], axis=0)
+        tag_means = np.nanmean(fat_array[np.array(v)], axis=0)
+        print tag_means[9:13, :]
 
 
 if __name__ == '__main__':
@@ -946,6 +372,7 @@ if __name__ == '__main__':
     args = argparser.parse_inputs()
 
     # print args
+    # raise SystemExit
 
     # handle the case when we get ad hoc dates from file (not typical date range)
     if args.fromfile is not None:
@@ -966,7 +393,7 @@ if __name__ == '__main__':
     else:    
         if args.plot:
             raise Exception('FIXME: in a hurry for gateway, so skipping "plot" [NEEDS WORK], for now')        
-            plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours)
+            plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, verbosity=args.verbosity)
         else:
             # iterate over each day, then iterate over day's files & finally by taghours to build/sum results
-            save_dailyhistoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, indir=args.indir, outdir=args.outdir)
+            save_dailyhistoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, indir=args.indir, outdir=args.outdir, verbosity=args.verbosity)

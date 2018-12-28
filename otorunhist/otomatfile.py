@@ -66,6 +66,7 @@ class OtoMatFile(object):
         try:
             v = sio.loadmat(self.oto_mat_file)
         except Exception:
+            print 'FILE IS %s' % self.oto_mat_file
             raise OtoParamFileException('could not read a from oto mat file')
         return v
 
