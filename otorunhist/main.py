@@ -90,6 +90,12 @@ def get_out_mat_file_name(start, stop, sensor, taghrs):
     return '_'.join([start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor] + taghrs.keys()) + '_otorunhist.mat'
 
 
+def get_out_png_file_name(start, stop, sensor, tag):
+    """return string for basename of output png filename"""
+    # LIKE 2016-01-01_2016-01-31_121f03_sleep.png
+    return '_'.join([start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor] + [tag,]) + '_otorunhist.png'
+
+
 def OBSOLETE_save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR, outdir=DEFAULT_OUTDIR, verbosity=None):
     """iterate over each day, then iterate over day's files & finally by taghours to build/sum results"""
 
@@ -296,6 +302,7 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
 
         # get list of OTO mat files for particular day, sensor and taghours
         pth = datetime_to_dailyhist_oto_path(d, sensor_subdir=sensor2subdir(sensor))
+        out_pth = os.path.dirname(os.path.dirname(pth))
 
         # dive down to process files in YMD/sensor path
         if os.path.exists(pth):
@@ -347,70 +354,86 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
     # for sleep_file in [files[i] for i in fidx['sleep']]:
     #     print sleep_file
 
-    idx_f = 12
+    # idx_f = 12
+    # for k, v in fidx.iteritems():
+    #     print k
+    #     tag_mins = np.nanmin(fat_array[np.array(v)], axis=0)
+    #     tag_maxs = np.nanmax(fat_array[np.array(v)], axis=0)
+    #     tag_means = np.nanmean(fat_array[np.array(v)], axis=0)
+    #     print tag_means[idx_f, 3]
+    #
+    # # pluck vrms values for "all" hours for 12th freq band
+    # fband = fat_array[:, idx_f, 3]
+    # print np.percentile(fband, [25, 50, 75, 95], axis=0)
+
+    # save fat array
+    out_name = get_out_mat_file_name(start, stop, sensor, taghours)
+    out_mat_file_name = os.path.join(out_pth, out_name)
+    mdict = {'fat_array': fat_array, 'fidx': fidx}
+    sio.savemat(out_mat_file_name, mdict)
+    print 'saved %s' % out_mat_file_name
+
     for k, v in fidx.iteritems():
-        print k
-        tag_mins = np.nanmin(fat_array[np.array(v)], axis=0)
-        tag_maxs = np.nanmax(fat_array[np.array(v)], axis=0)
-        tag_means = np.nanmean(fat_array[np.array(v)], axis=0)
-        print tag_means[idx_f, 3]
 
-    # pluck vrms values for "all" hours for 12th freq band
-    fband = fat_array[:, idx_f, 3]
-    print np.percentile(fband, [25, 50, 75, 95], axis=0)
+        # create a figure instance
+        fig = plt.figure(1, figsize=(10.0, 7.5))
 
-    # create a figure instance
-    fig = plt.figure(1, figsize=(9, 6))
+        # create an axes instance
+        ax = fig.add_subplot(111)
 
-    # create an axes instance
-    ax = fig.add_subplot(111)
+        # create the boxplot with fill color (via patch_artist)
+        # bp = ax.boxplot(np.log10(fat_array[:, :, 3]), patch_artist=True)
+        bp = ax.boxplot(np.log10(fat_array[np.array(v)][:, :, 3]), patch_artist=True)
 
-    # create the boxplot with fill color (via patch_artist)
-    bp = ax.boxplot(np.log10(fat_array[:, :, 3]), patch_artist=True)
+        # change outline color, fill color and linewidth of the boxes
+        for box in bp['boxes']:
+            box.set(color='blue', linewidth=1)  # change outline color
+            box.set(facecolor='white')  # change fill color
 
-    # change outline color, fill color and linewidth of the boxes
-    for box in bp['boxes']:
-        box.set(color='blue', linewidth=1)  # change outline color
-        box.set(facecolor='white')  # change fill color
+        # change color and linewidth of the whiskers
+        for whisker in bp['whiskers']:
+            whisker.set(color='gray', linewidth=1)
 
-    # change color and linewidth of the whiskers
-    for whisker in bp['whiskers']:
-        whisker.set(color='gray', linewidth=1)
+        # change color and linewidth of the caps
+        for cap in bp['caps']:
+            cap.set(color='gray', linewidth=1)
 
-    # change color and linewidth of the caps
-    for cap in bp['caps']:
-        cap.set(color='gray', linewidth=1)
+        # change color and linewidth of the medians
+        for median in bp['medians']:
+            median.set(color='red', linewidth=1)
 
-    # change color and linewidth of the medians
-    for median in bp['medians']:
-        median.set(color='red', linewidth=1)
+        # change the style of fliers and their fill
+        for flier in bp['fliers']:
+            flier.set(marker='o', color='#e7298a', alpha=0.5, markersize=2)
 
-    # change the style of fliers and their fill
-    for flier in bp['fliers']:
-        flier.set(marker='o', color='#e7298a', alpha=0.5, markersize=2)
+        # custom x-tick labels
+        locs, labels = plt.xticks()
+        freq_ticks = [0.01, 0.1, 1, 10.0, 100.0]
+        locs_new = np.interp(freq_ticks, np.concatenate(freqs).ravel(), locs)
+        plt.xticks(locs_new, freq_ticks)
 
-    locs, labels = plt.xticks()
+        # title
+        title_str = '{0} through {1}, {2}, {3}'.format(
+            start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'),
+            sensor, k)
+        plt.title(title_str)
 
-    freq_ticks = [0.01, 0.1, 1, 10.0, 100.0]
-    locs_new = np.interp(freq_ticks, np.concatenate(freqs).ravel(), locs)
+        # labels and grid
+        plt.xlabel('Frequency (Hz)')
+        plt.ylabel('Acceleration  $log_{10}(g_{rms})$')
+        plt.grid(True)
 
-    # custom x-axis labels
-    plt.xticks(locs_new, freq_ticks)
+        plt.tight_layout()
 
-    plt.title('Date Range, Sensor, Tag/Hours')
+        # FIXME do a per-tag png_name below
 
-    plt.xlabel('Frequency (Hz)')
-    plt.ylabel('Acceleration log10(grms)')
-    plt.grid(True)
+        # save the figure
+        png_name = os.path.join(out_pth, get_out_png_file_name(start, stop, sensor, k))
+        fig.savefig(png_name, bbox_inches='tight')
+        print 'saved %s' % png_name
 
-    plt.tight_layout()
-
-    # Save the figure
-    fig.savefig('/tmp/boxplot_outliers.png', bbox_inches='tight')
-
-# FIXME need to clean up plot for publishing and save fat_array (per-month for now)
-
-    plt.show()
+        # plt.show()
+        plt.close(fig)
 
 
 if __name__ == '__main__':
