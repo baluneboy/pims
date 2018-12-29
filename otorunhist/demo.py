@@ -313,7 +313,7 @@ if __name__ == '__main__':
     # demo_stack()
     # raise SystemExit
 
-    demo_dill_load()
+    demo_vertical_boxplot()
     raise SystemExit
 
     demo_rigged_full_month_fat_array()

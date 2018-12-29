@@ -397,6 +397,14 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
     # custom x-axis labels
     plt.xticks(locs_new, freq_ticks)
 
+    plt.title('Date Range, Sensor, Tag/Hours')
+
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('Acceleration log10(grms)')
+    plt.grid(True)
+
+    plt.tight_layout()
+
     # Save the figure
     fig.savefig('/tmp/boxplot_outliers.png', bbox_inches='tight')
 
