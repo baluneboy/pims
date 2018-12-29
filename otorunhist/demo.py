@@ -6,6 +6,9 @@ import numpy as np
 # from main import plotnsave_daterange_histpad, plotnsave_monthrange_histpad, save_range_of_months
 from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
+import seaborn as sns
+import matplotlib.pyplot as plt
+import pandas as pd
 
 
 class FatArray(object):
@@ -144,6 +147,113 @@ def demo_rigged_full_month_fat_array():
     # np.nansum(np.dstack((zero, this_sum2)), axis=2, out=zero); print zero; print '-'*22
 
 
+def demo_hist2d():
+    import matplotlib as mpl
+    import matplotlib.pyplot as plt
+
+    xedges = [0, 1, 3, 5]
+    yedges = [0, 2, 3, 4, 6]
+
+    x = np.random.normal(2, 1, 100)
+    y = np.random.normal(1, 1, 100)
+    H, xedges, yedges = np.histogram2d(x, y, bins=(xedges, yedges))
+    H = H.T  # Let each row list bins with common y range.
+
+    fig = plt.figure(figsize=(7, 3))
+    ax = fig.add_subplot(131, title='imshow: square bins')
+    plt.imshow(H, interpolation='nearest', origin='low',
+               extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]])
+
+    ax = fig.add_subplot(132, title='pcolormesh: actual edges',
+                         aspect='equal')
+    X, Y = np.meshgrid(xedges, yedges)
+    ax.pcolormesh(X, Y, H)
+    plt.show()
+
+
+def demo_violinplot():
+
+    sns.set(style="whitegrid")
+
+    # Load the example dataset of brain network correlations
+    df = sns.load_dataset("brain_networks", header=[0, 1, 2], index_col=0)
+
+    # Pull out a specific subset of networks
+    used_networks = [1, 3, 4, 5, 6, 7, 8, 11, 12, 13, 16, 17]
+    used_columns = (df.columns.get_level_values("network")
+                    .astype(int)
+                    .isin(used_networks))
+    df = df.loc[:, used_columns]
+
+    # Compute the correlation matrix and average over networks
+    corr_df = df.corr().groupby(level="network").mean()
+    corr_df.index = corr_df.index.astype(int)
+    corr_df = corr_df.sort_index().T
+
+    # Set up the matplotlib figure
+    f, ax = plt.subplots(figsize=(11, 6))
+
+    # Draw a violinplot with a narrower bandwidth than the default
+    sns.violinplot(data=corr_df, palette="Set3", bw=.2, cut=1, linewidth=1)
+
+    # Finalize the figure
+    ax.set(ylim=(-.7, 1.05))
+    sns.despine(left=True, bottom=True)
+
+    plt.show()
+
+
+def demo_vertical_boxplot():
+
+    df = pd.DataFrame({'Freq':   [1,   2,   3,      4,   5],
+                       'Score1': [100, 150, 110,    180, 125],
+                       'Score2': [200, 210, np.nan, 125, 293],
+                       'Score3': [50,  35,  200,    100, 180]})
+    tdf = df.set_index('Freq').T
+    print tdf
+    tdf.boxplot()
+    plt.show()
+
+
+def demo_hist_hexbin():
+    """
+    hexbin is an axes method or pyplot function that is essentially
+    a pcolor of a 2-D histogram with hexagonal cells.  It can be
+    much more informative than a scatter plot; in the first subplot
+    below, try substituting 'scatter' for 'hexbin'.
+    """
+
+    import numpy as np
+    import matplotlib.pyplot as plt
+
+    np.random.seed(0)
+    n = 100000
+    x = np.random.standard_normal(n)
+    y = 2.0 + 3.0 * x + 4.0 * np.random.standard_normal(n)
+    xmin = x.min()
+    xmax = x.max()
+    ymin = y.min()
+    ymax = y.max()
+
+    fig, axs = plt.subplots(ncols=2, sharey=True, figsize=(7, 4))
+    fig.subplots_adjust(hspace=0.5, left=0.07, right=0.93)
+    ax = axs[0]
+    hb = ax.hexbin(x, y, gridsize=50, cmap='viridis')
+    ax.axis([xmin, xmax, ymin, ymax])
+    ax.set_title("Hexagon binning")
+    cb = fig.colorbar(hb, ax=ax)
+    cb.set_label('counts')
+
+    ax = axs[1]
+    hb = ax.hexbin(x, y, gridsize=50, bins='log', cmap='viridis')
+    ax.axis([xmin, xmax, ymin, ymax])
+    ax.set_title("With a log color scale")
+    cb = fig.colorbar(hb, ax=ax)
+    cb.set_label('log10(N)')
+
+    plt.show()
+
+
 def demo_rigged_elementwise_count_ignore_nans():
 
     #                            T  F  3
@@ -202,6 +312,9 @@ if __name__ == '__main__':
 
     # demo_stack()
     # raise SystemExit
+
+    demo_dill_load()
+    raise SystemExit
 
     demo_rigged_full_month_fat_array()
     # demo_kde()

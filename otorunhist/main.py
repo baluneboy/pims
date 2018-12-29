@@ -306,16 +306,18 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
 
     # load frequency-grms array (and some parameters) from very first file
     oto_mat1 = OtoMatFile(files[0])
-    num_freqs = len(oto_mat1.data['foto'])
+    freq_bands = oto_mat1.data['foto'].reshape((-1, 2))
+    freqs = np.mean(freq_bands, axis=1).reshape((-1, 1))  # reshape as column array
+    num_freqs = len(freqs)
 
     # initialize dict to hold file index values, kind of an index/time-keeper per tag
     fidx = {}
     for k in taghours.keys():
         fidx[k] = []
 
-    # initialize big fat array with NaN's
+    # initialize big fat array with NaN's (add a 4th column after XYZ for V=RSS(x,y,z))
     num_files = len(files)
-    fat_array = np.empty((num_files, num_freqs, 3), dtype=float)
+    fat_array = np.empty((num_files, num_freqs, 4), dtype=float)
     fat_array[:] = np.nan  # NEED FILL IMMEDIATELY AFTER EMPTY TO CLEAN UP GARBAGE VALUES
 
     # iterate over OTO mat files to populate big fat array depth-wise with per-file Fx3 arrays
@@ -331,22 +333,76 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
         update_file_indexer_for_tags(c, f, taghours, fidx)
 
         # load data from file
-        a = oto_mat.data
+        data = oto_mat.data
 
-        # insert OTO's grms values at appropriate time index (c index) in Fx3xT big fat array
-        fat_array[:][:][c] = a['grms']
+        # get desired xyz array from data
+        a = data['grms'][0::2]  # stride 2 across rows because we saved in staircase fashion
 
-    print fat_array.shape
+        # compute RSS(x,y,z) to get 4th, overall RMS column (i.e. vecmag, v, column)
+        xyzv = np.hstack((a, np.linalg.norm(a, axis=1).reshape((num_freqs, 1))))
+
+        # insert OTO grms (xyzv) values at appropriate time index (c index) in Fx3xT big fat array
+        fat_array[:][:][c] = xyzv
 
     # for sleep_file in [files[i] for i in fidx['sleep']]:
     #     print sleep_file
 
+    idx_f = 12
     for k, v in fidx.iteritems():
         print k
         tag_mins = np.nanmin(fat_array[np.array(v)], axis=0)
         tag_maxs = np.nanmax(fat_array[np.array(v)], axis=0)
         tag_means = np.nanmean(fat_array[np.array(v)], axis=0)
-        print tag_means[9:13, :]
+        print tag_means[idx_f, 3]
+
+    # pluck vrms values for "all" hours for 12th freq band
+    fband = fat_array[:, idx_f, 3]
+    print np.percentile(fband, [25, 50, 75, 95], axis=0)
+
+    # create a figure instance
+    fig = plt.figure(1, figsize=(9, 6))
+
+    # create an axes instance
+    ax = fig.add_subplot(111)
+
+    # create the boxplot with fill color (via patch_artist)
+    bp = ax.boxplot(np.log10(fat_array[:, :, 3]), patch_artist=True)
+
+    # change outline color, fill color and linewidth of the boxes
+    for box in bp['boxes']:
+        box.set(color='blue', linewidth=1)  # change outline color
+        box.set(facecolor='white')  # change fill color
+
+    # change color and linewidth of the whiskers
+    for whisker in bp['whiskers']:
+        whisker.set(color='gray', linewidth=1)
+
+    # change color and linewidth of the caps
+    for cap in bp['caps']:
+        cap.set(color='gray', linewidth=1)
+
+    # change color and linewidth of the medians
+    for median in bp['medians']:
+        median.set(color='red', linewidth=1)
+
+    # change the style of fliers and their fill
+    for flier in bp['fliers']:
+        flier.set(marker='o', color='#e7298a', alpha=0.5, markersize=2)
+
+    locs, labels = plt.xticks()
+
+    freq_ticks = [0.01, 0.1, 1, 10.0, 100.0]
+    locs_new = np.interp(freq_ticks, np.concatenate(freqs).ravel(), locs)
+
+    # custom x-axis labels
+    plt.xticks(locs_new, freq_ticks)
+
+    # Save the figure
+    fig.savefig('/tmp/boxplot_outliers.png', bbox_inches='tight')
+
+# FIXME need to clean up plot for publishing and save fat_array (per-month for now)
+
+    plt.show()
 
 
 if __name__ == '__main__':
@@ -390,10 +446,12 @@ if __name__ == '__main__':
             # create plot for this ad hoc list of dates
             plotnsave_otomatfiles(oto_mat_files, args.sensor, tag)
         
-    else:    
+    else:
+
         if args.plot:
             raise Exception('FIXME: in a hurry for gateway, so skipping "plot" [NEEDS WORK], for now')        
             plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, verbosity=args.verbosity)
+
         else:
             # iterate over each day, then iterate over day's files & finally by taghours to build/sum results
             save_dailyhistoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, indir=args.indir, outdir=args.outdir, verbosity=args.verbosity)
