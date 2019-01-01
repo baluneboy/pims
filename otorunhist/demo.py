@@ -203,6 +203,123 @@ def demo_violinplot():
     plt.show()
 
 
+def get_data():
+    L = list()
+    L.append(np.array([[[-5.00, -5.01, -5.02, -5.03],
+                        [-5.04, -5.05, -5.06, -5.07],
+                        [-5.08, -5.09, -5.10, -55.11]],
+
+                       [[-5.12, -5.13, -5.14, -5.15],
+                        [-5.16, -5.17, -5.18, -5.19],
+                        [-5.20, -5.21, -5.22, -5.23]]]))
+
+    L.append(np.array([[[-6.00, -6.01, -6.02, -6.03],
+                        [-6.04, -6.05, -6.06, -6.07],
+                        [-6.08, -6.09, -6.10, -6.11]],
+
+                       [[-6.12, -6.13, -6.14, -6.15],
+                        [-6.16, -6.17, -6.18, -66.19],
+                        [-6.20, -6.21, -6.22, -66.23]]]))
+
+    L.append(np.array([[[-7.00, -7.01, -7.02, -7.03],
+                        [-7.04, -7.05, -7.06, -7.07],
+                        [-7.08, -7.09, -7.10, -7.11]],
+
+                       [[-7.12, -7.13, -7.14, -77.15],
+                        [-7.16, -7.17, -7.18, -77.19],
+                        [-7.20, -7.21, -7.22, -77.23]]]))
+
+    return [10.0**i for i in L]
+
+
+def get_log10_data_and_exts(raw_data):
+    """return log10(raw_data) and min & max"""
+    data = np.log10(raw_data)
+    return data, np.nanmin(data), np.nanmax(data)
+
+
+def get_log10_bins():
+    """return logarithmic bin width, edges, centers and count"""
+    grms_min, grms_max = 1.0e-9, 1.0  # yes, hard coded
+    data_min = np.log10(grms_min)
+    data_max = np.log10(grms_max)
+    bin_width = 0.01  # this is in log10 domain
+    bin_edges = np.arange(data_min, data_max + bin_width, bin_width)
+    bin_centers = [i + bin_width / 2.0 for i in bin_edges[:-1]]
+    num_bins = len(bin_edges)
+    return bin_edges, bin_centers, bin_width, num_bins
+
+
+def my_zeros(n):
+    """return array of zeros with shape n (use either scalar or tuple for shape)"""
+    return np.zeros(n, dtype='int64')
+
+
+def demo_running_log10_hist(ax_cols=None):
+    """running histogram of log10(data)"""
+
+    # handle columns (axes) we want to process
+    # NOTE: for rss(x,y,z), use ax_cols = [3, ]; idx=3 is fourth (last) column
+    if ax_cols is None:
+        ax_cols = [0, 1, 2, 3]
+
+    fake_data = get_data()
+
+    # get hard-coded bin values
+    bin_edges, bin_centers, bin_width, num_bins = get_log10_bins()
+
+    # initialize running values for counting out-of-bound values & total count
+    # a count for each ax_col
+    count_out_bounds, total_count = my_zeros(len(ax_cols)), my_zeros(len(ax_cols))
+
+    # initialize running values for histogram(s)
+    hist_counts = my_zeros((num_bins - 1, len(ax_cols)))
+
+    # iterate over (fake data sets for now, but...) periodic, processed OTO mat files
+    for raw_data in fake_data:
+
+        # iterate over axes (columns)
+        for c in ax_cols:
+
+            # now working with log10(raw_data) in column c
+            data, data_min, data_max = get_log10_data_and_exts(raw_data[:, :, c])
+
+            # update counts (per-axis)
+            count_out_bounds[c] += ((data < bin_edges[0]) | (data >= bin_edges[-1])).sum()
+            hist_counts[:, c] += np.histogram(data, bin_edges)[0]  # idx=0 bc no need for 2nd return value
+            total_count[c] += np.count_nonzero(~np.isnan(data))
+
+            print "ax_col: {:d}, {:,} + {:,} = {:,}".format(c, sum(hist_counts[:, c]), count_out_bounds[c],
+                                                            total_count[c])
+
+    # for k, left_edge in enumerate(bin_edges[:-1]):
+    #     print hist_counts[k, 3], bin_edges[k], bin_edges[k + 1]
+
+    return
+
+    # csum = np.cumsum(hist_counts, dtype=float)
+
+    fig, ax = plt.subplots()
+
+    # Plot the histogram heights against integers on the x axis
+    ax.bar(bin_edges[:-1], hist_counts, width=1)
+    plt.xlim(min(bin_edges), max(bin_edges))
+
+    # # Set the ticks to the center of the bins (bars)
+    # ax.set_xticks(bin_edges)
+    #
+    # # Set the xticklabels to a string that tells us what the bin edges were
+    # ax.set_xticklabels(['{} - {}'.format(bin_edges[i], bin_edges[i + 1]) for i, j in enumerate(hist_counts)])
+
+    # Set the ticks to the center of the bins (bars)
+    ax.set_xticks(bin_centers)
+
+    # Set the xticklabels to bin_centers
+    ax.set_xticklabels(['{:0g}'.format(i) for i in bin_centers])
+
+    plt.show()
+
+
 def demo_vertical_boxplot():
 
     df = pd.DataFrame({'Freq':   [1,   2,   3,      4,   5],
@@ -313,7 +430,7 @@ if __name__ == '__main__':
     # demo_stack()
     # raise SystemExit
 
-    demo_vertical_boxplot()
+    demo_running_log10_hist(ax_cols=None)
     raise SystemExit
 
     demo_rigged_full_month_fat_array()
