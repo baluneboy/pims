@@ -314,7 +314,7 @@ def demo_running_log10_hist(pickle_files, tag, ax_cols=None):
     # initialize running values for histogram(s)
     hist_counts = my_zeros((num_bins - 1, len(ax_cols)))
 
-    # iterate over date-ranged, processed OTO count pickle files
+    # iterate over date-range, processed OTO count pickle files
     for pickle_file in pickle_files:
 
         with open(pickle_file, 'rb') as handle:
@@ -336,33 +336,35 @@ def demo_running_log10_hist(pickle_files, tag, ax_cols=None):
         raw_data = fat_array[np.array(v)]
 
         # iterate over input for axes (columns), ax_cols
-        for c in ax_cols:
+        for idx, c in enumerate(ax_cols):
 
             # let's get it so we are working with log10(raw_data) from this column, c
             data, data_min, data_max = get_log10_data_and_exts(raw_data[:, :, c])
 
             # update counts (per-axis)
             non_nan_data = data[~np.isnan(data)]  # one way of suppressing annoying warnings
-            # count_out_bounds[c] += ((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1])).sum()
-            count_out_bounds[c] += np.sum((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1]))
-            hist_counts[:, c] += np.histogram(data, bin_edges)[0]  # idx=0 bc no need for 2nd return value
-            total_count[c] += np.count_nonzero(~np.isnan(data))
+            count_out_bounds[idx] += np.sum((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1]))
+            hist_counts[:, idx] += np.histogram(data, bin_edges)[0]  # idx=0 bc no need for 2nd return value
+            total_count[idx] += np.count_nonzero(~np.isnan(data))
 
             print "{:s}-axis (col={:d}) had {:,} good + {:,} outbounds = {:,} total".format(col_defs[c], c,
-                                                                                            sum(hist_counts[:, c]),
-                                                                                            count_out_bounds[c],
-                                                                                            total_count[c])
+                                                                                            sum(hist_counts[:, idx]),
+                                                                                            count_out_bounds[idx],
+                                                                                            total_count[idx])
+
+    # FIXME the next fixme and todo are hard-coded on 4th column (where idx = 3), so not generalized really
 
     # FIXME this is where we'd output spreadsheet like product for Gateway (percentile 5-number summary)
     # # display just for ax_col = 3 (all)
     # for k, left_edge in enumerate(bin_edges[:-1]):
     #     print hist_counts[k, 3], bin_edges[k], bin_edges[k + 1]
 
-    return
-
     # TODO this is where we use matplotlib's separate boxplot stats vs. plot parts to do plotting based on cumsum pctile
 
-    # csum = np.cumsum(hist_counts, dtype=float)
+    csum_pct = 100.0 * np.cumsum(hist_counts[:, 3], dtype=float) / np.sum(hist_counts[:, 3])
+    print csum_pct
+
+    return
 
     fig, ax = plt.subplots()
 
@@ -429,6 +431,12 @@ def demo_manual_boxplot(bin_centers):
 
     # Set the xticklabels to bin_centers
     ax.set_xticklabels(['{:0g}'.format(i) for i in bin_centers])
+
+    # # custom x-tick labels
+    # locs, labels = plt.xticks()
+    # freq_ticks = [0.01, 0.1, 1, 10.0, 100.0]
+    # locs_new = np.interp(freq_ticks, np.concatenate(freqs).ravel(), locs)
+    # plt.xticks(locs_new, freq_ticks)
 
     plt.show()
 
@@ -530,9 +538,9 @@ def demo_stack():
 
 if __name__ == '__main__':
 
-    bin_centers = np.arange(0.01, 0.46 + 0.01, 0.01)
-    demo_manual_boxplot(bin_centers)
-    raise SystemExit
+    # bin_centers = np.arange(0.01, 0.46 + 0.01, 0.01)
+    # demo_manual_boxplot(bin_centers)
+    # raise SystemExit
 
     pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-02_121f03_sleep_all_wake_otorunhist.pkl',
                     '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-03_2016-01-04_121f03_sleep_all_wake_otorunhist.pkl']
