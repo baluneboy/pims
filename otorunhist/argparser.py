@@ -131,6 +131,10 @@ def parse_inputs():
     # get parsed args
     args = parser.parse_args()
 
+    # handle verbosity
+    if args.verbosity is None:
+        args.verbosity = 0
+
     # handle the case when fromfile option is used (and we ignore start/stop)
     if args.fromfile is not None:
         print 'using fromfile option, so ignore start/stop info'

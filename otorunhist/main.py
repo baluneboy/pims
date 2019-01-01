@@ -7,7 +7,7 @@ This module provides classes for computing/plotting running OTOB histograms of O
 """
 
 import os
-import glob
+import cPickle as pkl
 import datetime
 import numpy as np
 import pandas as pd
@@ -66,10 +66,10 @@ def get_date_range(value):
     return dr
 
 
-# FIXME should we be using this instead of listdir(pth)?
-def get_oto_day_sensor_files_taghours(files, day, sensor, hours=None):
+def get_oto_day_sensor_files_taghours(files, day, sensor, hours=None, verbosity=0):
+    """return list of files that match day, sensor and hours criteria"""
 
-    # handle hours default as all hours
+    # handle hours; default as all hours
     if hours is None:
         hours = [(0, 24), ]
 
@@ -78,16 +78,18 @@ def get_oto_day_sensor_files_taghours(files, day, sensor, hours=None):
     
     # initialize processing pipeline with callable classes, but not using file list as input yet
     ffp = FileFilterPipeline(file_filter1)
-    #print ffp
 
-    # now apply processing pipeline to file list; at this point, ffp is callable
+    if verbosity > 1:
+        print ffp
+
+    # now apply processing pipeline to input files list
     return list(ffp(files))
 
 
-def get_out_mat_file_name(start, stop, sensor, taghrs):
+def get_pickle_filename(start, stop, sensor, taghrs):
     """return string for basename of output mat-file name"""
     # LIKE 2016-01-01_2016-01-31_121f03_sleep_all_wake.mat
-    return '_'.join([start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor] + taghrs.keys()) + '_otorunhist.mat'
+    return '_'.join([start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor] + taghrs.keys()) + '_otorunhist.pkl'
 
 
 def get_out_png_file_name(start, stop, sensor, tag):
@@ -234,7 +236,7 @@ def OBSOLETE_save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins
 
             print '%s had NO FILES to work with' % day
 
-    out_name = get_out_mat_file_name(start, stop, sensor, taghours)
+    out_name = get_pickle_filename(start, stop, sensor, taghours)
     out_mat_file_name = os.path.join(out_pth, out_name)
 
     mdict = {'sums': sums, 'counts': counts, 'mins': mins, 'maxs': maxs}
@@ -280,54 +282,59 @@ def update_file_indexer_for_tags(c, f, taghours, fidx):
                 fidx[tag].append(c)  # append file idx, c, to include w/ this tag
 
 
-def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logspace(-12, -2, 11), indir=DEFAULT_INDIR,
-                      outdir=DEFAULT_OUTDIR, verbosity=None):
-    """iterate over each day, then iterate over day's files & finally by taghours to build/sum results"""
+def save_otorunhist_matfile(start, stop, sensor='121f03', taghours=None, verbosity=0):
+    """save mat file with fat_array, filenames and file index for tag hours in day range"""
 
+    # turn off some numpy warnings
     if verbosity <= 1:
         np.warnings.filterwarnings('ignore', r'All-NaN slice encountered')
-        np.warnings.filterwarnings('ignore', r'invalid value encountered')
+        np.warnings.filterwarnings('ignore', r'Invalid value encountered')
         np.warnings.filterwarnings('ignore', r'All-NaN axis encountered')
         np.warnings.filterwarnings('ignore', r'Mean of empty slice')
 
+    # we always want at least this tag
     if taghours is None:
         taghours = {'all': [(0, 24)]}
 
-    # get list of files that we will build big array from F x 3 x K (K is num_files)
+    # get list of files that we will build big fat_array from KxFx4 (F is num_freqs, K is num_files, 4 axes)
     files = []
     dr = get_date_range([start, stop])
-    for d in dr:
+    # print 'date range: {} to {}'.format(dr[0].strftime('%Y-%m-%d'), dr[-1].strftime('%Y-%m-%d'))
 
+    for dt64 in dr:
+
+        d = pd.to_datetime(dt64)
         day = d.strftime('%Y-%m-%d')
 
         # get list of OTO mat files for particular day, sensor and taghours
         pth = datetime_to_dailyhist_oto_path(d, sensor_subdir=sensor2subdir(sensor))
-        out_pth = os.path.dirname(os.path.dirname(pth))
 
         # dive down to process files in YMD/sensor path
         if os.path.exists(pth):
             unfiltered_files = [os.path.join(pth, f) for f in os.listdir(pth)]
             files += get_oto_day_sensor_files_taghours(unfiltered_files, day, sensor)
 
+    out_pth = os.path.dirname(os.path.dirname(pth))
+
     print 'found %d files to work with' % len(files)
 
     # load frequency-grms array (and some parameters) from very first file
     oto_mat1 = OtoMatFile(files[0])
-    freq_bands = oto_mat1.data['foto'].reshape((-1, 2))
-    freqs = np.mean(freq_bands, axis=1).reshape((-1, 1))  # reshape as column array
+    freq_bands = oto_mat1.data['foto'].reshape((-1, 2))   # -1 tells numpy to infer first dimension
+    freqs = np.mean(freq_bands, axis=1).reshape((-1, 1))  # reshape as column array via (-1, 1)
     num_freqs = len(freqs)
 
     # initialize dict to hold file index values, kind of an index/time-keeper per tag
-    fidx = {}
+    fidx = {}  # LIKE Dict[tag_str, List[hour_ranges]]
     for k in taghours.keys():
-        fidx[k] = []
+        fidx[k] = list()
 
-    # initialize big fat array with NaN's (add a 4th column after XYZ for V=RSS(x,y,z))
+    # initialize big fat_array with NaN's (add a 4th column after XYZ for v=RSS(x,y,z))
     num_files = len(files)
     fat_array = np.empty((num_files, num_freqs, 4), dtype=float)
-    fat_array[:] = np.nan  # NEED FILL IMMEDIATELY AFTER EMPTY TO CLEAN UP GARBAGE VALUES
+    fat_array[:] = np.nan  # NEED THIS NAN-FILL IMMEDIATELY AFTER EMPTY TO CLEAN UP GARBAGE VALUES
 
-    # iterate over OTO mat files to populate big fat array depth-wise with per-file Fx3 arrays
+    # iterate over OTO mat files to populate big fat_array depth-wise with per-file Fx4 arrays
     for c, f in enumerate(files):
 
         # verify OTO parameters from this file match the one from very 1st file
@@ -336,19 +343,19 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
             print 'mismatch in OTO mat file params for %s' % f
             continue  # to next file since this one does not match
 
-        # update file index (time) tracker
+        # update fidx, which is our file index (time) tracker
         update_file_indexer_for_tags(c, f, taghours, fidx)
 
         # load data from file
         data = oto_mat.data
 
         # get desired xyz array from data
-        a = data['grms'][0::2]  # stride 2 across rows because we saved in staircase fashion
+        a = data['grms'][0::2]  # stride 2 across rows because we redundantly saved in staircase fashion
 
-        # compute RSS(x,y,z) to get 4th, overall RMS column (i.e. vecmag, v, column)
+        # compute RSS(x,y,z) to get 4th, overall RMS column (i.e. vecmag, v, as last column)
         xyzv = np.hstack((a, np.linalg.norm(a, axis=1).reshape((num_freqs, 1))))
 
-        # insert OTO grms (xyzv) values at appropriate time index (c index) in Fx3xT big fat array
+        # insert OTO grms (xyzv) values at appropriate time index (c index) in TxFx4 big fat_array
         fat_array[:][:][c] = xyzv
 
     # for sleep_file in [files[i] for i in fidx['sleep']]:
@@ -366,12 +373,38 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
     # fband = fat_array[:, idx_f, 3]
     # print np.percentile(fband, [25, 50, 75, 95], axis=0)
 
-    # save fat array
-    out_name = get_out_mat_file_name(start, stop, sensor, taghours)
-    out_mat_file_name = os.path.join(out_pth, out_name)
-    mdict = {'fat_array': fat_array, 'fidx': fidx}
-    sio.savemat(out_mat_file_name, mdict)
-    print 'saved %s' % out_mat_file_name
+    # pickle save fat_array, fidx and files
+    out_name = get_pickle_filename(start, stop, sensor, taghours)
+    pickle_file = os.path.join(out_pth, out_name)
+
+    my_dict = dict()
+    my_dict['fat_array'] = fat_array
+    my_dict['fidx'] = fidx
+    my_dict['files'] = files
+    my_dict['freqs'] = freqs
+    my_dict['start'] = start
+    my_dict['stop'] = stop
+    my_dict['sensor'] = sensor
+    my_dict['taghours'] = taghours
+
+    with open(pickle_file, 'wb') as handle:
+        pkl.dump(my_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
+
+    print 'saved %s' % pickle_file
+
+
+def plot_otohist(pickle_file):
+
+    with open(pickle_file, 'rb') as handle:
+        my_dict = pkl.load(handle)
+
+    fidx = my_dict['fidx']
+    fat_array = my_dict['fat_array']
+    # files = my_dict['files']
+    freqs = my_dict['freqs']
+    start = my_dict['start']
+    stop = my_dict['stop']
+    sensor = my_dict['sensor']
 
     for k, v in fidx.iteritems():
 
@@ -381,9 +414,8 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
         # create an axes instance
         ax = fig.add_subplot(111)
 
-        # create the boxplot with fill color (via patch_artist)
-        # bp = ax.boxplot(np.log10(fat_array[:, :, 3]), patch_artist=True)
-        bp = ax.boxplot(np.log10(fat_array[np.array(v)][:, :, 3]), patch_artist=True)
+        # create the boxplot with fill color (via patch_artist); whisker caps at 1th & 99th percentiles
+        bp = ax.boxplot(np.log10(fat_array[np.array(v)][:, :, 3]), whis=[1, 99], patch_artist=True)
 
         # change outline color, fill color and linewidth of the boxes
         for box in bp['boxes']:
@@ -396,7 +428,7 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
 
         # change color and linewidth of the caps
         for cap in bp['caps']:
-            cap.set(color='gray', linewidth=1)
+            cap.set(color='lime', linewidth=1)
 
         # change color and linewidth of the medians
         for median in bp['medians']:
@@ -425,22 +457,30 @@ def save_dailyhistoto(start, stop, sensor='121f03', taghours=None, bins=np.logsp
 
         plt.tight_layout()
 
-        # FIXME do a per-tag png_name below
+        # # save the figure
+        # png_name = os.path.join(out_pth, get_out_png_file_name(start, stop, sensor, k))
+        # pdf_name = png_name.replace('.png', '.pdf')
+        # fig.savefig(pdf_name, bbox_inches='tight')
+        # print 'saved %s' % pdf_name
 
-        # save the figure
-        png_name = os.path.join(out_pth, get_out_png_file_name(start, stop, sensor, k))
-        fig.savefig(png_name, bbox_inches='tight')
-        print 'saved %s' % png_name
-
-        # plt.show()
-        plt.close(fig)
+        plt.show()
+        # plt.close(fig)
 
 
 if __name__ == '__main__':
 
+    # pick_file = '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-31_121f03_sleep_all_wake_otorunhist.pkl'
+    # plot_otohist(pick_file)
+    # raise SystemExit
+
     # PROCESS SLEEP/WAKE example
-    # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE   -t TAG1,h1,h2 TAG2,h3,h4
-    # ./main.py -s 121f03 -d 2016-01-01 -e 2016-03-31 -t sleep,0,4  wake,8,16
+    #                                                    hour-range   hour-range
+    #                                                         vv vv        vv vv
+    # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE   -t TAG1,h1,h2   TAG2,h3,h4
+    # ./main.py -s 121f03 -d 2016-01-01 -e 2016-03-31 -t sleep,0,4    wake,8,16 -vv
+    # OR
+    #      an example of non-contiguous set of hour ranges     v v                  vv vv
+    # ./main.py -s 121f03 -d 2016-01-01 -e 2016-03-31 -t sleep,0,4  wake,8,16 sleep,23,24 -vv
     
     # PLOT example for daterange
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE --plot
@@ -485,4 +525,4 @@ if __name__ == '__main__':
 
         else:
             # iterate over each day, then iterate over day's files & finally by taghours to build/sum results
-            save_dailyhistoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, indir=args.indir, outdir=args.outdir, verbosity=args.verbosity)
+            save_otorunhist_matfile(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, verbosity=args.verbosity)

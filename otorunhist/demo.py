@@ -9,6 +9,7 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.pyplot as plt
 import pandas as pd
+import cPickle as pkl
 
 
 class FatArray(object):
@@ -203,6 +204,42 @@ def demo_violinplot():
     plt.show()
 
 
+def demo_pickle_save():
+
+    # a = {'hello': 'world', 'bye': 4}
+    #
+    pickle_file = '/tmp/myfile.pkl'
+    # with open(pickle_file, 'wb') as handle:
+    #     pickle.dump(a, handle, protocol=pickle.HIGHEST_PROTOCOL)
+    #
+    # with open(pickle_file, 'rb') as handle:
+    #     b = pickle.load(handle)
+    #
+    # print a == b
+    # print type(a), type(b)
+
+    fat_array = np.arange(24).reshape((2, 3, 4))
+    fidx = np.array([1, 2, 3, 9])
+    files = ['one', 'two']
+
+    my_dict = dict()
+    my_dict['fat_array'] = fat_array
+    my_dict['fidx'] = fidx
+    my_dict['files'] = files
+
+    with open(pickle_file, 'wb') as handle:
+        pkl.dump(my_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
+
+    # Here is one that loads it.
+
+    with open(pickle_file, 'rb') as handle:
+        new_dict = pkl.load(handle)
+
+    print np.all(new_dict['fat_array'] == my_dict['fat_array'])
+    print new_dict['fidx'] == my_dict['fidx']
+    print new_dict['files'] == my_dict['files']
+
+
 def get_data():
     L = list()
     L.append(np.array([[[-5.00, -5.01, -5.02, -5.03],
@@ -255,28 +292,47 @@ def my_zeros(n):
     return np.zeros(n, dtype='int64')
 
 
-def demo_running_log10_hist(ax_cols=None):
+def demo_running_log10_hist(pickle_files, tag, ax_cols=None):
     """running histogram of log10(data)"""
+
+    # define our columns
+    col_defs = {0: 'x', 1: 'y', 2: 'z', 3: 'v'}
 
     # handle columns (axes) we want to process
     # NOTE: for rss(x,y,z), use ax_cols = [3, ]; idx=3 is fourth (last) column
     if ax_cols is None:
         ax_cols = [0, 1, 2, 3]
 
-    fake_data = get_data()
-
     # get hard-coded bin values
     bin_edges, bin_centers, bin_width, num_bins = get_log10_bins()
 
     # initialize running values for counting out-of-bound values & total count
-    # a count for each ax_col
+    # NOTE: each of the following has a count for each ax_col
     count_out_bounds, total_count = my_zeros(len(ax_cols)), my_zeros(len(ax_cols))
 
     # initialize running values for histogram(s)
     hist_counts = my_zeros((num_bins - 1, len(ax_cols)))
 
-    # iterate over (fake data sets for now, but...) periodic, processed OTO mat files
-    for raw_data in fake_data:
+    # iterate over date-ranged, processed OTO count pickle files
+    for pickle_file in pickle_files:
+
+        with open(pickle_file, 'rb') as handle:
+            my_dict = pkl.load(handle)
+
+        fidx = my_dict['fidx']
+        fat_array = my_dict['fat_array']
+        # files = my_dict['files']
+        # freqs = my_dict['freqs']
+        # start = my_dict['start']
+        # stop = my_dict['stop']
+        # sensor = my_dict['sensor']
+
+        if tag not in fidx.keys():
+            print 'tag = %s not among keys in %s' % (tag, pickle_file)
+            continue  # to next file since this one's missing tag
+
+        v = fidx[tag]
+        raw_data = fat_array[np.array(v)]
 
         # iterate over axes (columns)
         for c in ax_cols:
@@ -285,17 +341,24 @@ def demo_running_log10_hist(ax_cols=None):
             data, data_min, data_max = get_log10_data_and_exts(raw_data[:, :, c])
 
             # update counts (per-axis)
-            count_out_bounds[c] += ((data < bin_edges[0]) | (data >= bin_edges[-1])).sum()
+            non_nan_data = data[~np.isnan(data)]  # one way of suppressing annoying warnings
+            count_out_bounds[c] += ((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1])).sum()
             hist_counts[:, c] += np.histogram(data, bin_edges)[0]  # idx=0 bc no need for 2nd return value
             total_count[c] += np.count_nonzero(~np.isnan(data))
 
-            print "ax_col: {:d}, {:,} + {:,} = {:,}".format(c, sum(hist_counts[:, c]), count_out_bounds[c],
-                                                            total_count[c])
+            print "{:s}-axis (col={:d}) had {:,} good + {:,} outbounds = {:,} total".format(col_defs[c], c,
+                                                                                            sum(hist_counts[:, c]),
+                                                                                            count_out_bounds[c],
+                                                                                            total_count[c])
 
+    # FIXME this is where we output spreadsheet like product for Gateway
+    # # display just for ax_col = 3 (all)
     # for k, left_edge in enumerate(bin_edges[:-1]):
     #     print hist_counts[k, 3], bin_edges[k], bin_edges[k + 1]
 
     return
+
+    # TODO this is where we use matplotlib's separate boxplot stats vs. plot parts to do plotting based on cumsum pctile
 
     # csum = np.cumsum(hist_counts, dtype=float)
 
@@ -427,10 +490,12 @@ if __name__ == '__main__':
     #
     # raise SystemExit
 
-    # demo_stack()
+    # demo_pickle_save()
     # raise SystemExit
 
-    demo_running_log10_hist(ax_cols=None)
+    pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-02_121f03_sleep_all_wake_otorunhist.pkl',
+                    '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-03_2016-01-04_121f03_sleep_all_wake_otorunhist.pkl']
+    demo_running_log10_hist(pickle_files, 'sleep', ax_cols=None)
     raise SystemExit
 
     demo_rigged_full_month_fat_array()
