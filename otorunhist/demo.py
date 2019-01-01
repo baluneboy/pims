@@ -8,6 +8,7 @@ from scipy.stats import gaussian_kde
 import matplotlib.pyplot as plt
 import seaborn as sns
 import matplotlib.pyplot as plt
+import matplotlib.cbook as cbook
 import pandas as pd
 import cPickle as pkl
 
@@ -334,15 +335,16 @@ def demo_running_log10_hist(pickle_files, tag, ax_cols=None):
         v = fidx[tag]
         raw_data = fat_array[np.array(v)]
 
-        # iterate over axes (columns)
+        # iterate over input for axes (columns), ax_cols
         for c in ax_cols:
 
-            # now working with log10(raw_data) in column c
+            # let's get it so we are working with log10(raw_data) from this column, c
             data, data_min, data_max = get_log10_data_and_exts(raw_data[:, :, c])
 
             # update counts (per-axis)
             non_nan_data = data[~np.isnan(data)]  # one way of suppressing annoying warnings
-            count_out_bounds[c] += ((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1])).sum()
+            # count_out_bounds[c] += ((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1])).sum()
+            count_out_bounds[c] += np.sum((non_nan_data < bin_edges[0]) | (non_nan_data >= bin_edges[-1]))
             hist_counts[:, c] += np.histogram(data, bin_edges)[0]  # idx=0 bc no need for 2nd return value
             total_count[c] += np.count_nonzero(~np.isnan(data))
 
@@ -351,7 +353,7 @@ def demo_running_log10_hist(pickle_files, tag, ax_cols=None):
                                                                                             count_out_bounds[c],
                                                                                             total_count[c])
 
-    # FIXME this is where we output spreadsheet like product for Gateway
+    # FIXME this is where we'd output spreadsheet like product for Gateway (percentile 5-number summary)
     # # display just for ax_col = 3 (all)
     # for k, left_edge in enumerate(bin_edges[:-1]):
     #     print hist_counts[k, 3], bin_edges[k], bin_edges[k + 1]
@@ -376,6 +378,54 @@ def demo_running_log10_hist(pickle_files, tag, ax_cols=None):
 
     # Set the ticks to the center of the bins (bars)
     ax.set_xticks(bin_centers)
+
+    # Set the xticklabels to bin_centers
+    ax.set_xticklabels(['{:0g}'.format(i) for i in bin_centers])
+
+    plt.show()
+
+
+def demo_manual_boxplot(bin_centers):
+
+    num_freqs = len(bin_centers)
+
+    # fake data to get stats as placeholder
+    np.random.seed(19841211)
+    data = np.random.lognormal(size=(4, num_freqs), mean=123, sigma=4.56)
+    labels = 'A' * num_freqs
+
+    # compute the boxplot stats
+    stats = cbook.boxplot_stats(data, labels=labels)
+
+    # After we've computed the stats, we can go through and change anything. Just to prove it, I'll
+    # set the median of each set to the median of all the data, and double the means
+
+    for n in range(len(stats)):
+        stats[n]['whishi'] = np.float64(5)
+        stats[n]['q3'] = np.float64(4)
+        stats[n]['med'] = np.float64(3)
+        stats[n]['q1'] = np.float64(2)
+        stats[n]['whislo'] = np.float64(1)
+        # -----------------------------------
+        stats[n]['label'] = 'A'
+        stats[n]['mean'] = np.nan
+        stats[n]['cilo'] = -np.inf
+        stats[n]['cihi'] = np.inf
+        stats[n]['fliers'] = np.array([np.nan, ])
+        stats[n]['iqr'] = np.nan
+
+    # print list(stats[0])  # ['label', 'mean', 'iqr', 'cilo', 'cihi', 'whishi', 'whislo', 'fliers', 'q1', 'med', 'q3']
+
+    font_size = 10  # fontsize
+
+    fig, ax = plt.subplots(figsize=(10, 7.5))
+
+    ax.bxp(stats, showfliers=False)
+
+    ax.set_title('Manual Boxplots', fontsize=font_size)
+
+    # Set the ticks to the center of the bins (bars)
+    ax.set_xticks(range(1, num_freqs + 1))
 
     # Set the xticklabels to bin_centers
     ax.set_xticklabels(['{:0g}'.format(i) for i in bin_centers])
@@ -480,18 +530,9 @@ def demo_stack():
 
 if __name__ == '__main__':
 
-    # gf = FatArray()
-    # for i in xrange(140*92*3):
-    #     gf.update([i])
-    #
-    # print len(gf.data)
-    # gf.finalize()
-    # print len(gf.data)
-    #
-    # raise SystemExit
-
-    # demo_pickle_save()
-    # raise SystemExit
+    bin_centers = np.arange(0.01, 0.46 + 0.01, 0.01)
+    demo_manual_boxplot(bin_centers)
+    raise SystemExit
 
     pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-02_121f03_sleep_all_wake_otorunhist.pkl',
                     '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-03_2016-01-04_121f03_sleep_all_wake_otorunhist.pkl']
