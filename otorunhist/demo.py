@@ -236,7 +236,7 @@ def get_log10_bins():
 
 def my_zeros(n):
     """return array of zeros with shape n (use either scalar or tuple for shape)"""
-    return np.zeros(n, dtype='int64')
+    return np.zeros(n, dtype='float64')
 
 
 def demo_sum_otorunhist_pickle_files(pickle_files, tag, axs='xyzv'):
@@ -298,9 +298,9 @@ def demo_sum_otorunhist_pickle_files(pickle_files, tag, axs='xyzv'):
 
     # now get cumulative sum percentage (to later pluck percentiles from)
     for idh, k in enumerate(ax_cols):
-        top = np.cumsum(hist_counts, axis=1, dtype=float)[idh]
-        bot = np.sum(hist_counts, axis=1)[idh]
-        csum_pct[idh] = 100.0 * np.divide(top, bot, out=np.zeros_like(top), where=(bot != 0))
+        top = np.cumsum(hist_counts, axis=1, dtype='float64')[idh]
+        bot = np.sum(hist_counts, axis=1, dtype='float64')[idh]
+        csum_pct[idh] = 100.0 * np.true_divide(top, bot, out=np.zeros_like(top, dtype='float64'), where=(bot != 0))
 
     return hist_counts, csum_pct
 

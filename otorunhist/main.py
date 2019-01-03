@@ -797,9 +797,9 @@ if __name__ == '__main__':
     # plot_otohist(pickle_file)
     # raise SystemExit
 
-    my_manual_boxplotter(pickle_files)
-    print 'bye'
-    raise SystemExit
+    # my_manual_boxplotter(pickle_files)
+    # print 'bye'
+    # raise SystemExit
 
     # PROCESS SLEEP/WAKE example
     #                                                    hour-range   hour-range
