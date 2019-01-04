@@ -268,12 +268,12 @@ def demo_sum_otorunhist_pickle_files(pickle_files, tag, axs='xyzv'):
 
         fat_array = my_dict['fat_array']  # ndarray   972x46x4: type `float64`, ~(1 Mb)
         fidx = my_dict['fidx']            # dict      n=3 << ex/ sleep, wake and all
-        taghours = my_dict['taghours']    # dict      n=3 << ex/ sleep, wake and all
-        files = my_dict['files']          # list      n=972
-        freqs = my_dict['freqs']          # ndarray   46x1: 46 elems, type `float64`
-        sensor = my_dict['sensor']        # str       ex/ 121f03
-        start = my_dict['start']          # date      ex/ 2016-01-01
-        stop = my_dict['stop']            # date      ex/ 2016-01-07
+        # taghours = my_dict['taghours']    # dict      n=3 << ex/ sleep, wake and all
+        # files = my_dict['files']          # list      n=972
+        # freqs = my_dict['freqs']          # ndarray   46x1: 46 elems, type `float64`
+        # sensor = my_dict['sensor']        # str       ex/ 121f03
+        # start = my_dict['start']          # date      ex/ 2016-01-01
+        # stop = my_dict['stop']            # date      ex/ 2016-01-07
 
         if tag not in fidx.keys():
             print 'tag = %s not among keys in %s' % (tag, pickle_file)
@@ -303,6 +303,19 @@ def demo_sum_otorunhist_pickle_files(pickle_files, tag, axs='xyzv'):
         csum_pct[idh] = 100.0 * np.true_divide(top, bot, out=np.zeros_like(top, dtype='float64'), where=(bot != 0))
 
     return hist_counts, csum_pct
+
+
+def demo_masked(csum_pct, log10rms_bin_centers, pctile):
+    csum_pct_ma = np.ma.masked_where(csum_pct < pctile, csum_pct)
+    csum_pct_ma.set_fill_value(-1)
+    num_f, num_r, num_a = csum_pct_ma.shape
+    rms_tiles = np.tile(log10rms_bin_centers.reshape(-1, 1), (num_f, 1, num_a))
+    print rms_tiles.shape
+    print csum_pct_ma.shape
+    log10rms_values = np.ma.masked_where(csum_pct < pctile, rms_tiles)
+    log10rms_values.set_fill_value(-1)
+    print log10rms_values.filled()
+    print csum_pct_ma.filled()
 
 
 def demo_manual_boxplot(sensor, start, stop, tag, ax_cols, bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True):
@@ -466,6 +479,11 @@ def demo_stack():
 
 
 if __name__ == '__main__':
+
+    csum_pct = np.arange(24).reshape((2, 3, 4))
+    log10rms_bin_centers = np.arange(0.11, 0.33, 0.11)
+    demo_masked(csum_pct, log10rms_bin_centers, 9.5)
+    raise SystemExit
 
     pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',
                     '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl']
