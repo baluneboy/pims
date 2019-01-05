@@ -222,7 +222,7 @@ def get_log10_data_and_exts(raw_data):
     return data, np.nanmin(data), np.nanmax(data)
 
 
-def get_log10_bins():
+def demo_get_log10_bins():
     """return logarithmic bin width, edges, centers and count"""
     grms_min, grms_max = 1.0e-9, 1.0  # yes, hard coded
     data_min = np.log10(grms_min)
@@ -306,16 +306,26 @@ def demo_sum_otorunhist_pickle_files(pickle_files, tag, axs='xyzv'):
 
 
 def demo_masked(csum_pct, log10rms_bin_centers, pctile):
-    csum_pct_ma = np.ma.masked_where(csum_pct < pctile, csum_pct)
-    csum_pct_ma.set_fill_value(-1)
-    num_f, num_r, num_a = csum_pct_ma.shape
+
+    # use shape to tile rms bin center values for plucking via mask
+    num_f, num_r, num_a = csum_pct.shape  # num of: freqs, rms and axes
     rms_tiles = np.tile(log10rms_bin_centers.reshape(-1, 1), (num_f, 1, num_a))
-    print rms_tiles.shape
-    print csum_pct_ma.shape
-    log10rms_values = np.ma.masked_where(csum_pct < pctile, rms_tiles)
-    log10rms_values.set_fill_value(-1)
-    print log10rms_values.filled()
-    print csum_pct_ma.filled()
+
+    # mask off/out RMS values where cumsum percentage is strictly less than percentile value
+    log10rms_values = np.ma.masked_where(csum_pct < pctile, rms_tiles)  # keep at/above pctile
+
+    # create outer list, one outer list element for each axis
+    log10rms_values_at_pctile = list()
+    for ax in log10rms_values:
+        # inner list for this axis holds 1st RMS value where percentile meets/beats pctile (or None if all masked out)
+        values_for_this_ax = list()
+        for fr in ax.T:
+            rms_list = list(fr.compressed())
+            values_for_this_ax.append(next(iter(rms_list), None))
+        log10rms_values_at_pctile.append(values_for_this_ax)
+
+    return log10rms_values_at_pctile
+
 
 
 def demo_manual_boxplot(sensor, start, stop, tag, ax_cols, bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True):
@@ -478,11 +488,143 @@ def demo_stack():
     print np.stack(arrays, axis=2).shape
 
 
+def demo_jury_rig_pickle_file():
+
+    # freqs[10] is   0.10065 Hz
+    # freqs[20] is   1.00665 Hz
+    # freqs[30] is  10.0665  Hz
+    # freqs[40] is 102.275   Hz
+
+    pickle_file = '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl'
+    with open(pickle_file, 'rb') as handle:
+        my_dict = pkl.load(handle)
+
+    fat_array = my_dict['fat_array']  # ndarray   972x46x4: type `float64`, ~(1 Mb)
+    fidx = my_dict['fidx']            # dict      n=3 << ex/ sleep, wake and all
+    taghours = my_dict['taghours']    # dict      n=3 << ex/ sleep, wake and all
+    files = my_dict['files']          # list      n=972
+    freqs = my_dict['freqs']          # ndarray   46x1: 46 elems, type `float64`
+    sensor = my_dict['sensor']        # str       ex/ 121f03
+    start = my_dict['start']          # date      ex/ 2016-01-01
+    stop = my_dict['stop']            # date      ex/ 2016-01-07
+
+    v = fat_array[:, :, 3]
+
+    # v[:, 10][0:99] = 1e-6
+    # v[:, 10][100:399] = 1e-7
+    # v[:, 10][400:599] = 1e-8
+    # v[:, 10][600:899] = 10 ** (-7.5)
+    # v[:, 10][900:] = 10 ** (-5.5)
+    #
+    # v[:, 20][0:199] = 10 ** (-8.5)
+    # v[:, 20][200:399] = 10 ** (-8.2)
+    # v[:, 20][400:499] = 10 ** (-7.5)
+    # v[:, 20][500:899] = 10 ** (-6.5)
+    # v[:, 20][900:] = 10 ** (-6.0)
+    #
+    # v[:, 30][0:99] = 1e-7
+    # v[:, 30][100:399] = 1e-8
+    # v[:, 30][400:599] = 1e-6
+    # v[:, 30][600:899] = 10 ** (-6.5)
+    # v[:, 30][900:] = 10 ** (-8.5)
+    #
+    # v[:, 40][0:199] =   10 ** (-7.5)
+    # v[:, 40][200:399] = 10 ** (-6.2)
+    # v[:, 40][400:499] = 10 ** (-5.5)
+    # v[:, 40][500:899] = 10 ** (-4.5)
+    # v[:, 40][900:] =    10 ** (-8.9)
+
+    v[:, 10][0:199] = 10 ** (-8.5)
+    v[:, 10][200:399] = 10 ** (-7.0)
+    v[:, 10][400:599] = 10 ** (-5.5)
+    v[:, 10][600:799] = 10 ** (-4.0)
+    v[:, 10][800:] = 10 ** (-2.5)
+
+    v[:, 20][0:199] = 10 ** (-8.5)
+    v[:, 20][200:399] = 10 ** (-8.2)
+    v[:, 20][400:499] = 10 ** (-7.5)
+    v[:, 20][500:899] = 10 ** (-6.5)
+    v[:, 20][900:] = 10 ** (-6.0)
+
+    v[:, 30][0:199] = 10 ** (-7.5)
+    v[:, 30][200:399] = 10 ** (-6.0)
+    v[:, 30][400:599] = 10 ** (-4.5)
+    v[:, 30][600:799] = 10 ** (-4.0)
+    v[:, 30][800:] = 10 ** (-3.5)
+
+    v[:, 40][0:199] =   10 ** (-7.5)
+    v[:, 40][200:399] = 10 ** (-6.2)
+    v[:, 40][400:499] = 10 ** (-5.5)
+    v[:, 40][500:899] = 10 ** (-4.5)
+    v[:, 40][900:] =    10 ** (-8.9)
+
+    fat_array[:, :, 3] = v
+    my_dict['fat_array'] = fat_array
+    new_pickle_file = pickle_file.replace('.pkl', '.pkl.dummy')
+    with open(new_pickle_file, 'wb') as handle:
+        pkl.dump(my_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
+    print 'wrote %s' % new_pickle_file
+
+
+def demo_look_jury_rig_pickle_file():
+
+    # freqs[10] is   0.10065 Hz
+    # freqs[20] is   1.00665 Hz
+    # freqs[30] is  10.0665  Hz
+    # freqs[40] is 102.275   Hz
+
+    pickle_file = '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl.dummy'
+    with open(pickle_file, 'rb') as handle:
+        my_dict = pkl.load(handle)
+
+    fat_array = my_dict['fat_array']  # ndarray   972x46x4: type `float64`, ~(1 Mb)
+    fidx = my_dict['fidx']            # dict      n=3 << ex/ sleep, wake and all
+    taghours = my_dict['taghours']    # dict      n=3 << ex/ sleep, wake and all
+    files = my_dict['files']          # list      n=972
+    freqs = my_dict['freqs']          # ndarray   46x1: 46 elems, type `float64`
+    sensor = my_dict['sensor']        # str       ex/ 121f03
+    start = my_dict['start']          # date      ex/ 2016-01-01
+    stop = my_dict['stop']            # date      ex/ 2016-01-07
+
+    print fat_array.shape
+    print fidx.keys()
+
+    pass
+
+
 if __name__ == '__main__':
 
-    csum_pct = np.arange(24).reshape((2, 3, 4))
-    log10rms_bin_centers = np.arange(0.11, 0.33, 0.11)
-    demo_masked(csum_pct, log10rms_bin_centers, 9.5)
+    # demo_jury_rig_pickle_file()
+    # demo_look_jury_rig_pickle_file()
+    # raise SystemExit
+
+    #                                 AbyRbyF
+    # csum_pct = np.arange(24).reshape((2, 3, 4))
+    # log10rms_bin_centers = np.arange(0.11, 0.33, 0.11)
+
+    from main import sum_otorunhist_pickle_files, get_log10rms_bins
+
+    dummy_pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl.dummy',
+                    '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl.dummy']
+
+    hist_counts, csum_pct = sum_otorunhist_pickle_files(dummy_pickle_files, 'all', axs='xyzv')
+    log10rms_bin_edges, log10rms_bin_centers, log10rms_bin_width, num_log10rms_bins = get_log10rms_bins()
+
+    print csum_pct
+    print log10rms_bin_centers
+    print '@' * 33
+
+    # build list for percentiles' RMS values
+    percentile_stats = list()
+    pctiles = [1.0, 25.0, 50.0, 75.0, 99.0]
+    for pctile in pctiles:
+        log10rms_vals_for_pctile = demo_masked(csum_pct, log10rms_bin_centers, pctile)
+        percentile_stats.append(log10rms_vals_for_pctile)
+
+    # since we got 1st 2 dimensions reversed above, let's get back to AxRxF ordering here
+    raf = np.array(percentile_stats)    # RxAxF is RMSxAXISxFREQ
+    arf = np.transpose(raf, (1, 0, 2))  # AxRxF is AXISxRMSxFREQ
+    print arf
     raise SystemExit
 
     pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',

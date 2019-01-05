@@ -687,27 +687,25 @@ def get_percentile(log10rms_bin_centers, csum_pct, pctile, axs='xyzv'):
     return ugrms_pctile, actual_pctile, idxs_pctile
 
 
-def do_manual_boxplot(sensor, start, stop, tag, ax_cols, bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True):
+def do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True):
 
-    num_freqs = len(bin_centers)
+    num_freqs = len(freq_bin_ctrs)
 
     # fake data to get stats as placeholder
     np.random.seed(19841211)
     data = np.random.lognormal(size=(4, num_freqs), mean=123, sigma=4.56)
     labels = 'A' * num_freqs
 
-    # compute the boxplot stats
+    # compute the boxplot stats to secure placeholder stats for now
     stats = cbook.boxplot_stats(data, labels=labels)
 
-    # After we've computed the stats, we can go through and change anything. Just to prove it, I'll
-    # set the median of each set to the median of all the data, and double the means
-
+    # go through and manually change stats at each OTO freq. band; len(stats) = num_freqs
     for n in range(len(stats)):
-        stats[n]['whishi'] = np.float64(5)
-        stats[n]['q3'] = np.float64(4)
-        stats[n]['med'] = np.float64(3)
-        stats[n]['q1'] = np.float64(2)
-        stats[n]['whislo'] = np.float64(1)
+        stats[n]['whishi'] = np.float64(arf_pctiles_for_ax[4, n])
+        stats[n]['q3'] = np.float64(arf_pctiles_for_ax[3, n])
+        stats[n]['med'] = np.float64(arf_pctiles_for_ax[2, n])
+        stats[n]['q1'] = np.float64(arf_pctiles_for_ax[1, n])
+        stats[n]['whislo'] = np.float64(arf_pctiles_for_ax[0, n])
         # -----------------------------------
         stats[n]['label'] = 'A'
         stats[n]['mean'] = np.nan
@@ -725,7 +723,7 @@ def do_manual_boxplot(sensor, start, stop, tag, ax_cols, bin_centers, hist_count
     ax.bxp(stats, showfliers=False)
 
     title_str = 'One-Third Octave Band RMS Acceleration Summary'
-    title_str += '\nSensor: %s, Tag: %s' % ('sensor', tag.upper())
+    title_str += '\nSensor: %s, Tag: %s' % (sensor, tag.upper())
     title_str += '\nGMT %s through %s' % (start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'))
     ax.set_title(title_str, fontsize=font_size)
 
@@ -740,12 +738,12 @@ def do_manual_boxplot(sensor, start, stop, tag, ax_cols, bin_centers, hist_count
         # custom xticklabels interpolated to "nice" frequencies
         locs, labels = plt.xticks()
         freq_ticks = [0.01, 0.1, 1, 10.0, 100.0]
-        locs_new = np.interp(freq_ticks, np.concatenate(bin_centers).ravel(), locs)
+        locs_new = np.interp(freq_ticks, np.concatenate(freq_bin_ctrs).ravel(), locs)
         plt.xticks(locs_new, freq_ticks)
 
     else:
-        # set the xticklabels to bin_centers with rotated text
-        ax.set_xticklabels(['{:0g}'.format(i) for i in bin_centers.ravel()])
+        # set the xticklabels to freq_bin_ctrs with rotated text
+        ax.set_xticklabels(['{:0g}'.format(i) for i in freq_bin_ctrs.ravel()])
         plt.xticks(rotation=90)
 
     plt.show()
@@ -811,6 +809,9 @@ def demo_pluck_show_percentiles(pickle_files):
 
     log10rms_bin_edges, log10rms_bin_centers, log10rms_bin_width, log10rms_num_bins = get_log10rms_bins()
 
+    arf = get_grand_percentiles_from_pickle_files(pickle_files, log10rms_bin_centers)
+
+
     axs = 'xyzv'
     # ax_cols = [AXMAP[i] for i in axs]
 
@@ -819,7 +820,7 @@ def demo_pluck_show_percentiles(pickle_files):
 
     print csum_pct.shape
 
-    pctiles = [1.0, 25.0, 50.0, 75.0, 99.0]
+    percentiles = [1.0, 25.0, 50.0, 75.0, 99.0]
 
     for pctile in pctiles:
 
@@ -851,7 +852,89 @@ def my_manual_boxplotter(pickle_files):
     hist_counts, total_count, count_out_bounds, csum_pct = sum_otorunhist_pickle_files(pickle_files, 'sleep', ax_cols=ax_cols)
 
     # stats = compute_otorunhist_percentiles(hist_counts, total_count, count_out_bounds)
-    do_manual_boxplot(sensor, start, stop, tag, ax_cols, freq_bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True)
+    do_manual_boxplot(sensor, start, stop, tag, freq_bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True)
+
+
+def get_log10rms_values_at_pctile(csum_pct, log10rms_bin_centers, pctile):
+    """Return log10(rms) values at the given percentile value."""
+
+    # use shape to tile rms bin center values for plucking via mask
+    num_f, num_r, num_a = csum_pct.shape  # LHS is num of freqs, rms and axes, respectively
+    rms_tiles = np.tile(np.array(log10rms_bin_centers).reshape(-1, 1), (num_f, 1, num_a))
+
+    # mask off/out RMS values where cumsum percentage is strictly less than percentile value
+    log10rms_values = np.ma.masked_where(csum_pct < pctile, rms_tiles)  # ... so keep at/above pctile
+
+    # create outer list, one outer list element for each axis
+    log10rms_values_at_pctile = list()
+    for ax in log10rms_values:
+        # inner list for this axis holds 1st RMS value where percentile meets/beats pctile (or None if all masked out)
+        values_for_this_ax = list()
+        for fr in ax.T:
+            rms_list = list(fr.compressed())
+            values_for_this_ax.append(next(iter(rms_list), None))
+        log10rms_values_at_pctile.append(values_for_this_ax)
+
+    return log10rms_values_at_pctile
+
+
+def get_grand_percentiles_from_pickle_files(pickle_files, log10rms_bin_centers, tag, axs):
+    """Return AxRxF array """
+
+    # sum over otorunhist pickle files
+    hist_counts, csum_pct = sum_otorunhist_pickle_files(pickle_files, tag, axs=axs)
+
+    # build list for percentiles' RMS values
+    percentile_stats = list()
+    percentiles = [1.0, 25.0, 50.0, 75.0, 99.0]
+    for pctile in percentiles:
+        log10rms_vals_for_pctile = get_log10rms_values_at_pctile(csum_pct, log10rms_bin_centers, pctile)
+        percentile_stats.append(log10rms_vals_for_pctile)
+
+    # since we reversed 1st two dimensions above, let's get back to AxRxF ordering here
+    raf = np.array(percentile_stats)    # RxAxF is RMSxAXISxFREQ
+    arf = np.transpose(raf, (1, 0, 2))  # AxRxF is AXISxRMSxFREQ
+
+    return arf
+
+
+def do_boxplots(pickle_files, tags, axs):
+    """produce boxplot(s) one for each tag/axs combo"""
+
+    # use first pickle file to gather needed info
+    with open(pickle_files[0], 'rb') as handle:
+        my_dict = pkl.load(handle)
+
+    freq_bin_ctrs = my_dict['freqs']
+    taghours = my_dict['taghours']  # dict  n=3 << ex/ sleep, wake and all
+    sensor = my_dict['sensor']  # ....str   ex/ 121f03
+    start = my_dict['start']  # ......date  ex/ datetime 2016-01-01
+    stop = my_dict['stop']  # ........date  ex/ datetime 2016-01-07
+
+    # be sure tags exist among keys
+    if not all([t in taghours.keys() for t in tags]):
+        raise Exception('could not find all tags among taghours keys')
+
+    # TODO verify the rest of pickle files match: freqs, taghours and sensor
+
+    # get log10(rms) bin centers
+    log10rms_bin_edges, log10rms_bin_centers, log10rms_bin_width, num_log10rms_bins = get_log10rms_bins()
+
+    for tag in tags:
+        # Get array of percentile results for just this tag
+        # A x R x F
+        # |   |   |
+        # |   |   \-- number of Frequency bands, OTO bands (46)
+        # |   \-------- number of RMS percentile values    (5) [1, 25, 50, 75, 99]
+        # \-------------- number of Axes                   (4) 'xyzv'
+        arf_pctiles = get_grand_percentiles_from_pickle_files(pickle_files, log10rms_bin_centers, tag, axs)
+
+        for a in axs:
+            ax = AXMAP[a]
+            arf_pctiles_for_ax = arf_pctiles[ax]
+
+            # Do manual boxplot with percentile results array
+            do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True)
 
 
 if __name__ == '__main__':
@@ -859,7 +942,11 @@ if __name__ == '__main__':
     pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',
                     '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl']
 
-    demo_pluck_show_percentiles(pickle_files)
+    tags = ['sleep', 'wake']
+    axs = 'xyzv'
+
+    do_boxplots(pickle_files, tags, axs)
+
     raise SystemExit
 
     # pickle_file = pickle_files[0]
@@ -870,7 +957,8 @@ if __name__ == '__main__':
     # print 'bye'
     # raise SystemExit
 
-    # PROCESS SLEEP/WAKE example
+    ####################################################
+    # EX/ Produce sleep/wake/all otorunhist pickle files << fat_array, fidx, freqs, taghours, files, sensor, start, stop
     #                                                    hour-range   hour-range
     #                                                         vv vv        vv vv
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE   -t TAG1,h1,h2   TAG2,h3,h4
@@ -878,20 +966,11 @@ if __name__ == '__main__':
     # OR
     #      an example of non-contiguous set of hour ranges     v v                  vv vv
     # ./main.py -s 121f03 -d 2016-01-01 -e 2016-03-31 -t sleep,0,4  wake,8,16 sleep,23,24 -vv
-    
-    # PLOT example for daterange
-    # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE --plot
-    # ./main.py -s 121f03 -d 2017-01-01 -e 2017-03-30 --plot
-    
-    # FROMFILE list of dates for this sensor
-    # ./main.py -s es05 -f /home/pims/Documents/simple_test.txt
-    # ./main.py -s es05 -f /home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20hz_Quieter.txt
 
-    # FIRST RUN THIS BASH (WITHOUT PLOTTING)
-    # for F in 020 006 ""; do for S in es05 121f03; do for C in QUIET LOUD; do echo /home/pims/dev/programs/python/pims/padrunhist/main.py -s ${S}${F} -f /home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_${C}ER.txt; done; done; done
-    #
-    # 2nd RUN THIS BASH (WITH PLOTTING)
-    # for F in 020 006 ""; do for S in es05 121f03; do for C in QUIET LOUD; do echo /home/pims/dev/programs/python/pims/padrunhist/main.py -s ${S}${F} --plot -f /home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_${C}ER.txt; done; done; done
+    ###############################################################
+    # EX/ Sum/combine otorunhist pickle files to produce boxplot(s)
+    # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE -t sleep --plot
+    # ./main.py -s 121f03 -d 2017-01-01 -e 2017-03-30 -t sleep --plot
 
     args = argparser.parse_inputs()
 
@@ -899,7 +978,7 @@ if __name__ == '__main__':
     # raise SystemExit
 
     # handle the case when we get ad hoc dates from file (not typical date range)
-    if args.fromfile is not None:
+    if False:  # args.fromfile is not None:
         
         raise Exception('FIXME: in a hurry for gateway, so skipping "fromfile" processing type [NEEDS WORK], for now')
         
