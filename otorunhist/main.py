@@ -687,7 +687,7 @@ def get_percentile(log10rms_bin_centers, csum_pct, pctile, axs='xyzv'):
     return ugrms_pctile, actual_pctile, idxs_pctile
 
 
-def do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True):
+def create_ptile_boxplot_for_ax(a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True):
 
     num_freqs = len(freq_bin_ctrs)
 
@@ -699,7 +699,7 @@ def do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctr
     # compute the boxplot stats to secure placeholder stats for now
     stats = cbook.boxplot_stats(data, labels=labels)
 
-    # go through and manually change stats at each OTO freq. band; len(stats) = num_freqs
+    # change stats at each OTO freq. band; len(stats) = len(freq_bin_ctrs)
     for n in range(len(stats)):
         stats[n]['whishi'] = np.float64(arf_pctiles_for_ax[4, n])
         stats[n]['q3'] = np.float64(arf_pctiles_for_ax[3, n])
@@ -716,7 +716,7 @@ def do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctr
 
     # print list(stats[0])  # ['label', 'mean', 'iqr', 'cilo', 'cihi', 'whishi', 'whislo', 'fliers', 'q1', 'med', 'q3']
 
-    font_size = 10  # fontsize
+    font_size = 12  # fontsize
 
     fig, ax = plt.subplots(figsize=(10, 7.5))
 
@@ -728,7 +728,12 @@ def do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctr
     ax.set_title(title_str, fontsize=font_size)
 
     plt.xlabel('Frequency (Hz)')
-    plt.ylabel('RMS Acceleration  $log_{10}(g)$')
+
+    if a == 'v':
+        stub = ''
+    else:
+        stub = '%s-Axis ' % a.upper()
+    plt.ylabel('%sRMS Acceleration  $log_{10}(g)$' % stub)
 
     # Set the ticks to indexes of freqs
     ax.set_xticks(range(1, num_freqs + 1))
@@ -852,7 +857,7 @@ def my_manual_boxplotter(pickle_files):
     hist_counts, total_count, count_out_bounds, csum_pct = sum_otorunhist_pickle_files(pickle_files, 'sleep', ax_cols=ax_cols)
 
     # stats = compute_otorunhist_percentiles(hist_counts, total_count, count_out_bounds)
-    do_manual_boxplot(sensor, start, stop, tag, freq_bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True)
+    create_ptile_boxplot_for_ax(sensor, start, stop, tag, freq_bin_centers, hist_counts, total_count, count_out_bounds, nice_freqs=True)
 
 
 def get_log10rms_values_at_pctile(csum_pct, log10rms_bin_centers, pctile):
@@ -898,7 +903,7 @@ def get_grand_percentiles_from_pickle_files(pickle_files, log10rms_bin_centers, 
     return arf
 
 
-def do_boxplots(pickle_files, tags, axs):
+def generate_perctile_boxplots(pickle_files, tags, axs):
     """produce boxplot(s) one for each tag/axs combo"""
 
     # use first pickle file to gather needed info
@@ -911,7 +916,7 @@ def do_boxplots(pickle_files, tags, axs):
     start = my_dict['start']  # ......date  ex/ datetime 2016-01-01
     stop = my_dict['stop']  # ........date  ex/ datetime 2016-01-07
 
-    # be sure tags exist among keys
+    # be sure tags exist among keys in our first pickle file
     if not all([t in taghours.keys() for t in tags]):
         raise Exception('could not find all tags among taghours keys')
 
@@ -934,31 +939,19 @@ def do_boxplots(pickle_files, tags, axs):
             arf_pctiles_for_ax = arf_pctiles[ax]
 
             # Do manual boxplot with percentile results array
-            do_manual_boxplot(arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True)
+            create_ptile_boxplot_for_ax(a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True)
 
 
 if __name__ == '__main__':
 
-    pickle_files = ['/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',
-                    '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl']
+    # TODO make it so that python can do the first step too
+    # 1. Run MATLAB code on mr-hankey to generate batch/results/onethird/YMD/sensor/*.mat [OTO RMS] data
+    # 2. Produce otorunhist pickle files that have fat_array segregated by taghours for a date range [maybe a month].
+    # 3. Produce RMS vs. OTO band frequency percentile plots for a given tag and axis (xyzv).
+    # SEE EX#2 & EX#3 BELOW FOR STEPS #2 AND #3 ABOVE.
 
-    tags = ['sleep', 'wake']
-    axs = 'xyzv'
-
-    do_boxplots(pickle_files, tags, axs)
-
-    raise SystemExit
-
-    # pickle_file = pickle_files[0]
-    # plot_otohist(pickle_file)
-    # raise SystemExit
-
-    # my_manual_boxplotter(pickle_files)
-    # print 'bye'
-    # raise SystemExit
-
-    ####################################################
-    # EX/ Produce sleep/wake/all otorunhist pickle files << fat_array, fidx, freqs, taghours, files, sensor, start, stop
+    #####################################################
+    # EX#2 Produce sleep/wake/all otorunhist pickle files << fat_array, fidx, freqs, taghours, files, sensor, start, stop
     #                                                    hour-range   hour-range
     #                                                         vv vv        vv vv
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE   -t TAG1,h1,h2   TAG2,h3,h4
@@ -967,18 +960,18 @@ if __name__ == '__main__':
     #      an example of non-contiguous set of hour ranges     v v                  vv vv
     # ./main.py -s 121f03 -d 2016-01-01 -e 2016-03-31 -t sleep,0,4  wake,8,16 sleep,23,24 -vv
 
-    ###############################################################
-    # EX/ Sum/combine otorunhist pickle files to produce boxplot(s)
+    ################################################################
+    # EX#3 Sum/combine otorunhist pickle files to produce boxplot(s)
     # ./main.py -s SENSOR -d STARTDATE  -e STOPDATE -t sleep --plot
     # ./main.py -s 121f03 -d 2017-01-01 -e 2017-03-30 -t sleep --plot
 
     args = argparser.parse_inputs()
 
-    # print args
-    # raise SystemExit
+    if args.verbosity > 2:
+        print "args", args
 
-    # handle the case when we get ad hoc dates from file (not typical date range)
-    if False:  # args.fromfile is not None:
+    # handle the case when we get random dates from file (not a typical date range)
+    if args.fromfile is not None:
         
         raise Exception('FIXME: in a hurry for gateway, so skipping "fromfile" processing type [NEEDS WORK], for now')
         
@@ -996,8 +989,15 @@ if __name__ == '__main__':
     else:
 
         if args.plot:
-            raise Exception('FIXME: in a hurry for gateway, so skipping "plot" [NEEDS WORK], for now')        
-            plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, verbosity=args.verbosity)
+            # plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, verbosity=args.verbosity)
+
+            pickle_files = [
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl']
+
+            tags = ['sleep', 'wake']
+            axs = 'xyzv'
+            generate_perctile_boxplots(pickle_files, tags, axs)
 
         else:
             # iterate over each day, then iterate over day's files & finally by taghours to build/sum results
