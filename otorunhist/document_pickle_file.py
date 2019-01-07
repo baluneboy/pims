@@ -21,4 +21,42 @@ stop                date        2016-01-07
 
 """
 
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2016-01-01 -e 2016-01-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2016-02-01 -e 2016-02-29 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2016-03-01 -e 2016-03-31 -t sleep,0,4 wake,8,16
+#
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2018-01-18 -e 2018-01-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2018-02-01 -e 2018-02-28 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2018-03-01 -e 2018-03-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f03 -d 2018-04-01 -e 2018-04-17 -t sleep,0,4 wake,8,16
+#
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f05 -d 2018-01-18 -e 2018-01-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f05 -d 2018-02-01 -e 2018-02-28 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f05 -d 2018-03-01 -e 2018-03-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f05 -d 2018-04-01 -e 2018-04-17 -t sleep,0,4 wake,8,16
+#
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f08 -d 2018-01-18 -e 2018-01-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f08 -d 2018-02-01 -e 2018-02-28 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f08 -d 2018-03-01 -e 2018-03-31 -t sleep,0,4 wake,8,16
+# /home/pims/dev/programs/python/pims/otorunhist/main.py -s 121f08 -d 2018-04-01 -e 2018-04-17 -t sleep,0,4 wake,8,16
+#
+# '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-31_121f03_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2016/month02/2016-02-01_2016-02-29_121f03_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2016/month03/2016-03-01_2016-03-31_121f03_sleep_all_wake_otorunhist.pkl'
+# '
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f03_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f03_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f03_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f03_sleep_all_wake_otorunhist.pkl'
+# '
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f05_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f05_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f05_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f05_sleep_all_wake_otorunhist.pkl'
+# '
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f08_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f08_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f08_sleep_all_wake_otorunhist.pkl'
+# '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f08_sleep_all_wake_otorunhist.pkl'
+
 

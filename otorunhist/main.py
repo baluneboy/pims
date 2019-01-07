@@ -304,13 +304,17 @@ def save_otorunhist_pickle_file(start, stop, sensor='121f03', taghours=None, ver
         pth = datetime_to_dailyhist_oto_path(d, sensor_subdir=sensor2subdir(sensor))
 
         # dive down to process files in YMD/sensor path
+        print 'looking for files under %s' % pth,
         if os.path.exists(pth):
             unfiltered_files = [os.path.join(pth, f) for f in os.listdir(pth)]
             files += get_oto_day_sensor_files_taghours(unfiltered_files, day, sensor)
+            print 'file sub-total is now %d files' % len(files)
+        else:
+            print 'path does not exist so skip it'
 
     out_pth = os.path.dirname(os.path.dirname(pth))
 
-    print 'found %d files to work with' % len(files)
+    print 'total of %d files were found' % len(files)
 
     # load frequency-grms array (and some parameters) from very first file
     oto_mat1 = OtoMatFile(files[0])
@@ -687,7 +691,7 @@ def get_percentile(log10rms_bin_centers, csum_pct, pctile, axs='xyzv'):
     return ugrms_pctile, actual_pctile, idxs_pctile
 
 
-def create_ptile_boxplot_for_ax(a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True):
+def create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True):
 
     num_freqs = len(freq_bin_ctrs)
 
@@ -720,7 +724,9 @@ def create_ptile_boxplot_for_ax(a, arf_pctiles_for_ax, sensor, start, stop, tag,
 
     fig, ax = plt.subplots(figsize=(10, 7.5))
 
-    ax.bxp(stats, showfliers=False)
+    medianprops = dict(linewidth=1.5, color='blue')
+
+    ax.bxp(stats, showfliers=False, medianprops=medianprops)
 
     title_str = 'One-Third Octave Band RMS Acceleration Summary'
     title_str += '\nSensor: %s, Tag: %s' % (sensor, tag.upper())
@@ -751,7 +757,14 @@ def create_ptile_boxplot_for_ax(a, arf_pctiles_for_ax, sensor, start, stop, tag,
         ax.set_xticklabels(['{:0g}'.format(i) for i in freq_bin_ctrs.ravel()])
         plt.xticks(rotation=90)
 
-    plt.show()
+    plt.grid(b=True, which='both', color='gray', linestyle=':', linewidth=1, alpha=0.4)
+
+    ymin, ymax = -8.0, -1.0
+    ax.set_ylim([ymin, ymax])
+
+    # plt.show()
+    fig.savefig(out_file, pad_inches=(1.0, 1.0))
+    print 'wrote %s' % out_file
 
 
 def OLDdo_manual_boxplot(bin_centers):
@@ -922,6 +935,15 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
 
     # TODO verify the rest of pickle files match: freqs, taghours and sensor
 
+    # TODO accounting of time (steps, temporal resolution refactoring???)
+
+    # FIXME kludge just use stop from last pickle file for now
+    # use first pickle file to gather needed info
+    with open(pickle_files[-1], 'rb') as handle:
+        my_dict2 = pkl.load(handle)
+    final_stop = my_dict2['stop']  # ........date  ex/ datetime 2016-03-31
+
+
     # get log10(rms) bin centers
     log10rms_bin_edges, log10rms_bin_centers, log10rms_bin_width, num_log10rms_bins = get_log10rms_bins()
 
@@ -939,7 +961,9 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
             arf_pctiles_for_ax = arf_pctiles[ax]
 
             # Do manual boxplot with percentile results array
-            create_ptile_boxplot_for_ax(a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True)
+            out_base = '%s-%s_%s_%saxis_%s.pdf' %(start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor, a, tag)
+            out_file = os.path.join(os.path.dirname(pickle_files[0]), out_base)
+            create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, final_stop, tag, freq_bin_ctrs, nice_freqs=True)
 
 
 if __name__ == '__main__':
@@ -989,13 +1013,30 @@ if __name__ == '__main__':
     else:
 
         if args.plot:
-            # plotnsave_daterange_histoto(args.start, args.stop, sensor=args.sensor, taghours=args.taghours, verbosity=args.verbosity)
+
+            # TODO make this a smart search for files instead of manually-created list  [re-purpose input args?]
 
             pickle_files = [
                 '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',
-                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl']
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl'
+                # '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-31_121f03_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2016/month02/2016-02-01_2016-02-29_121f03_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2016/month03/2016-03-01_2016-03-31_121f03_sleep_all_wake_otorunhist.pkl'
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f03_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f03_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f03_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f03_sleep_all_wake_otorunhist.pkl'
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f05_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f05_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f05_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f05_sleep_all_wake_otorunhist.pkl'
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f08_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f08_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f08_sleep_all_wake_otorunhist.pkl',
+                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f08_sleep_all_wake_otorunhist.pkl'
+            ]
 
-            tags = ['sleep', 'wake']
+            tags = ['sleep', 'wake', 'all']
             axs = 'xyzv'
             generate_perctile_boxplots(pickle_files, tags, axs)
 
