@@ -695,6 +695,10 @@ def create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, 
 
     num_freqs = len(freq_bin_ctrs)
 
+    moto = get_oto_iss_req_steps()
+
+    oto_band_widths = moto[:, 2] - moto[:, 0]
+
     # fake data to get stats as placeholder
     np.random.seed(19841211)
     data = np.random.lognormal(size=(4, num_freqs), mean=123, sigma=4.56)
@@ -724,9 +728,11 @@ def create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, 
 
     fig, ax = plt.subplots(figsize=(10, 7.5))
 
-    medianprops = dict(linewidth=1.5, color='blue')
+    medianprops = dict(linewidth=1.25, color='firebrick')
 
-    ax.bxp(stats, showfliers=False, medianprops=medianprops)
+    ax.bxp(stats, positions=moto[:, 1], widths=oto_band_widths, showfliers=False, medianprops=medianprops)
+
+    ax.set_xscale('log')
 
     title_str = 'One-Third Octave Band RMS Acceleration Summary'
     title_str += '\nSensor: %s, Tag: %s' % (sensor, tag.upper())
@@ -762,9 +768,25 @@ def create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, 
     ymin, ymax = -8.0, -1.0
     ax.set_ylim([ymin, ymax])
 
+    plt.step(moto[:, 0], np.log10(moto[:, 3]), where='post', label='post', alpha=0.65, color='b')
+
     # plt.show()
-    fig.savefig(out_file, pad_inches=(1.0, 1.0))
+    fig.savefig(out_file, pad_inches=(1.0, 1.0))  # 1-inch pad since figsize was chopped 1-inch all-around
     print 'wrote %s' % out_file
+
+
+def create_ptile_spreadsheet_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs):
+
+    print a, tag
+
+    num_freqs = len(freq_bin_ctrs)
+
+    moto = get_oto_iss_req_steps()
+
+    # get percentiles [1, 25, 50, 75, 99] at each OTO freq. band
+    for n in range(len(freq_bin_ctrs)):
+        pcts = np.float64(arf_pctiles_for_ax[:, n])
+        print freq_bin_ctrs[n][0], np.power(10.0, pcts)
 
 
 def OLDdo_manual_boxplot(bin_centers):
@@ -916,8 +938,61 @@ def get_grand_percentiles_from_pickle_files(pickle_files, log10rms_bin_centers, 
     return arf
 
 
+def get_oto_iss_req_steps():
+
+    moto = np.array([
+        [0.0088, 0.0098, 0.0110, 1.8000e-006],
+        [0.0110, 0.0124, 0.0139, 1.8000e-006],
+        [0.0139, 0.0156, 0.0175, 1.8000e-006],
+        [0.0175, 0.0197, 0.0221, 1.8000e-006],
+        [0.0221, 0.0248, 0.0278, 1.8000e-006],
+        [0.0278, 0.0313, 0.0351, 1.8000e-006],
+        [0.0351, 0.0394, 0.0442, 1.8000e-006],
+        [0.0442, 0.0496, 0.0557, 1.8000e-006],
+        [0.0557, 0.0625, 0.0702, 1.8000e-006],
+        [0.0702, 0.0787, 0.0891, 1.8000e-006],
+        [0.0891, 0.1000, 0.1122, 1.8000e-006],
+        [0.1122, 0.1250, 0.1413, 2.2500e-006],
+        [0.1413, 0.1600, 0.1778, 2.8800e-006],
+        [0.1778, 0.2000, 0.2239, 3.6000e-006],
+        [0.2239, 0.2500, 0.2818, 4.5000e-006],
+        [0.2818, 0.3150, 0.3548, 5.6700e-006],
+        [0.3548, 0.4000, 0.4467, 7.2000e-006],
+        [0.4467, 0.5000, 0.5623, 9.0000e-006],
+        [0.5623, 0.6300, 0.7079, 1.1340e-005],
+        [0.7079, 0.8000, 0.8913, 1.4400e-005],
+        [0.8913, 1.0000, 1.1220, 1.8000e-005],
+        [1.1220, 1.2500, 1.4130, 2.2500e-005],
+        [1.4130, 1.6000, 1.7780, 2.8800e-005],
+        [1.7780, 2.0000, 2.2390, 3.6000e-005],
+        [2.2390, 2.5000, 2.8180, 4.5000e-005],
+        [2.8180, 3.1500, 3.5480, 5.6700e-005],
+        [3.5480, 4.0000, 4.4670, 7.2000e-005],
+        [4.4670, 5.0000, 5.6230, 9.0000e-005],
+        [5.6230, 6.3000, 7.0790, 1.1340e-004],
+        [7.0790, 8.0000, 8.9130, 1.4400e-004],
+        [8.9130, 10.0000, 11.2200, 1.8000e-004],
+        [11.2200, 12.5000, 14.1300, 2.2500e-004],
+        [14.1300, 16.0000, 17.7800, 2.8800e-004],
+        [17.7800, 20.0000, 22.3900, 3.6000e-004],
+        [22.3900, 25.0000, 28.1800, 4.5000e-004],
+        [28.1800, 31.5000, 35.4800, 5.6700e-004],
+        [35.4800, 40.0000, 44.6700, 7.2000e-004],
+        [44.6700, 50.0000, 56.2300, 9.0000e-004],
+        [56.2300, 64.0000, 71.8380, 1.1520e-003],
+        [71.8380, 80.6350, 90.5100, 1.4514e-003],
+        [90.5100, 101.5900, 114.0400, 1.8000e-003],
+        [114.0400, 128.0000, 143.6800, 1.8000e-003],
+        [143.6800, 161.2700, 181.0200, 1.8000e-003],
+        [181.0200, 203.1900, 228.0700, 1.8000e-003],
+        [228.0700, 256.0000, 287.3500, 1.8000e-003],
+        [287.3500, 322.5400, 362.0400, 1.8000e-003]])
+
+    return moto
+
+
 def generate_perctile_boxplots(pickle_files, tags, axs):
-    """produce boxplot(s) one for each tag/axs combo"""
+    """produce tufte boxplot(s) one for each tag/axs combo"""
 
     # use first pickle file to gather needed info
     with open(pickle_files[0], 'rb') as handle:
@@ -943,7 +1018,6 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
         my_dict2 = pkl.load(handle)
     final_stop = my_dict2['stop']  # ........date  ex/ datetime 2016-03-31
 
-
     # get log10(rms) bin centers
     log10rms_bin_edges, log10rms_bin_centers, log10rms_bin_width, num_log10rms_bins = get_log10rms_bins()
 
@@ -951,9 +1025,9 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
         # Get array of percentile results for just this tag
         # A x R x F
         # |   |   |
-        # |   |   \-- number of Frequency bands, OTO bands (46)
-        # |   \-------- number of RMS percentile values    (5) [1, 25, 50, 75, 99]
-        # \-------------- number of Axes                   (4) 'xyzv'
+        # |   |   \-- number of Frequency bands, OTO bands = 46
+        # |   \-------- number of RMS percentile values    =  5  [1, 25, 50, 75, 99]
+        # \-------------- number of Axes                   =  4  'xyzv'
         arf_pctiles = get_grand_percentiles_from_pickle_files(pickle_files, log10rms_bin_centers, tag, axs)
 
         for a in axs:
@@ -961,9 +1035,15 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
             arf_pctiles_for_ax = arf_pctiles[ax]
 
             # Do manual boxplot with percentile results array
-            out_base = '%s-%s_%s_%saxis_%s.pdf' %(start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), sensor, a, tag)
+            out_base = '%s-%s_%s_%saxis_%s.pdf' %(start.strftime('%Y-%m-%d'),
+                                                  final_stop.strftime('%Y-%m-%d'), sensor, a, tag)
             out_file = os.path.join(os.path.dirname(pickle_files[0]), out_base)
-            create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, final_stop, tag, freq_bin_ctrs, nice_freqs=True)
+
+            # create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, final_stop, tag,
+            #                             freq_bin_ctrs, nice_freqs=True)
+
+            create_ptile_spreadsheet_for_ax(out_file.replace('.pdf', '.csv'), a, arf_pctiles_for_ax, sensor, start,
+                                            final_stop, tag, freq_bin_ctrs)
 
 
 if __name__ == '__main__':
