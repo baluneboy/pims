@@ -75,6 +75,29 @@ def demo_iss_req_steps():
     plt.xscale('log')
     plt.yscale('log')
 
+    # this is an inset axes over the main axes to use as a legend
+    ax_leg = plt.axes([0.2, 0.6, 0.2, 0.2], facecolor='white')
+    plt.plot([], [])
+    plt.title('Legend')
+
+    plt.vlines(x=[10.0], ymin=[75.0], ymax=[99.0], linewidth=1.5, alpha=0.75, color='black')
+    plt.hlines(y=[50.0], xmin=[ 5.0], xmax=[15.0], linewidth=2.5, alpha=0.85, color='red')
+    plt.vlines(x=[10.0], ymin=[ 1.0], ymax=[25.0], linewidth=1.5, alpha=0.75, color='black')
+
+    plt.hlines(y=[1, 25, 50, 75, 99], xmin=[10, 10, 16, 10, 10], xmax=[30, 30, 30, 30, 30], linewidth=1, color='gray', linestyle=':')
+
+    plt.text(31, 99, '99th percentile', verticalalignment='center')
+    plt.text(31, 75, '75th percentile', verticalalignment='center')
+    plt.text(31, 50, 'median', verticalalignment='center')
+    plt.text(31, 25, '25th percentile', verticalalignment='center')
+    plt.text(31,  1, '1st percentile', verticalalignment='center')
+
+    plt.xlim(-10, 110)
+    plt.ylim(-10, 110)
+
+    plt.xticks([])
+    plt.yticks([])
+
     plt.show()
 
     # fig.savefig(out_file, pad_inches=(1.0, 1.0))  # 1-inch pad since figsize was chopped 1-inch all-around

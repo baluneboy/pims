@@ -692,87 +692,125 @@ def get_percentile(log10rms_bin_centers, csum_pct, pctile, axs='xyzv'):
 
 
 def create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs, nice_freqs=True):
+    """create percentile boxplot for given axis"""
 
-    num_freqs = len(freq_bin_ctrs)
-
-    moto = get_oto_iss_req_steps()
-
-    oto_band_widths = moto[:, 2] - moto[:, 0]
-
-    # fake data to get stats as placeholder
-    np.random.seed(19841211)
-    data = np.random.lognormal(size=(4, num_freqs), mean=123, sigma=4.56)
-    labels = 'A' * num_freqs
-
-    # compute the boxplot stats to secure placeholder stats for now
-    stats = cbook.boxplot_stats(data, labels=labels)
-
-    # change stats at each OTO freq. band; len(stats) = len(freq_bin_ctrs)
-    for n in range(len(stats)):
-        stats[n]['whishi'] = np.float64(arf_pctiles_for_ax[4, n])
-        stats[n]['q3'] = np.float64(arf_pctiles_for_ax[3, n])
-        stats[n]['med'] = np.float64(arf_pctiles_for_ax[2, n])
-        stats[n]['q1'] = np.float64(arf_pctiles_for_ax[1, n])
-        stats[n]['whislo'] = np.float64(arf_pctiles_for_ax[0, n])
-        # -----------------------------------
-        stats[n]['label'] = 'A'
-        stats[n]['mean'] = np.nan
-        stats[n]['cilo'] = -np.inf
-        stats[n]['cihi'] = np.inf
-        stats[n]['fliers'] = np.array([np.nan, ])
-        stats[n]['iqr'] = np.nan
-
-    # print list(stats[0])  # ['label', 'mean', 'iqr', 'cilo', 'cihi', 'whishi', 'whislo', 'fliers', 'q1', 'med', 'q3']
-
-    font_size = 12  # fontsize
+    m = np.array([
+        [0.0088, 0.0098, 0.0110, 1.8000e-006],
+        [0.0110, 0.0124, 0.0139, 1.8000e-006],
+        [0.0139, 0.0156, 0.0175, 1.8000e-006],
+        [0.0175, 0.0197, 0.0221, 1.8000e-006],
+        [0.0221, 0.0248, 0.0278, 1.8000e-006],
+        [0.0278, 0.0313, 0.0351, 1.8000e-006],
+        [0.0351, 0.0394, 0.0442, 1.8000e-006],
+        [0.0442, 0.0496, 0.0557, 1.8000e-006],
+        [0.0557, 0.0625, 0.0702, 1.8000e-006],
+        [0.0702, 0.0787, 0.0891, 1.8000e-006],
+        [0.0891, 0.1000, 0.1122, 1.8000e-006],
+        [0.1122, 0.1250, 0.1413, 2.2500e-006],
+        [0.1413, 0.1600, 0.1778, 2.8800e-006],
+        [0.1778, 0.2000, 0.2239, 3.6000e-006],
+        [0.2239, 0.2500, 0.2818, 4.5000e-006],
+        [0.2818, 0.3150, 0.3548, 5.6700e-006],
+        [0.3548, 0.4000, 0.4467, 7.2000e-006],
+        [0.4467, 0.5000, 0.5623, 9.0000e-006],
+        [0.5623, 0.6300, 0.7079, 1.1340e-005],
+        [0.7079, 0.8000, 0.8913, 1.4400e-005],
+        [0.8913, 1.0000, 1.1220, 1.8000e-005],
+        [1.1220, 1.2500, 1.4130, 2.2500e-005],
+        [1.4130, 1.6000, 1.7780, 2.8800e-005],
+        [1.7780, 2.0000, 2.2390, 3.6000e-005],
+        [2.2390, 2.5000, 2.8180, 4.5000e-005],
+        [2.8180, 3.1500, 3.5480, 5.6700e-005],
+        [3.5480, 4.0000, 4.4670, 7.2000e-005],
+        [4.4670, 5.0000, 5.6230, 9.0000e-005],
+        [5.6230, 6.3000, 7.0790, 1.1340e-004],
+        [7.0790, 8.0000, 8.9130, 1.4400e-004],
+        [8.9130, 10.0000, 11.2200, 1.8000e-004],
+        [11.2200, 12.5000, 14.1300, 2.2500e-004],
+        [14.1300, 16.0000, 17.7800, 2.8800e-004],
+        [17.7800, 20.0000, 22.3900, 3.6000e-004],
+        [22.3900, 25.0000, 28.1800, 4.5000e-004],
+        [28.1800, 31.5000, 35.4800, 5.6700e-004],
+        [35.4800, 40.0000, 44.6700, 7.2000e-004],
+        [44.6700, 50.0000, 56.2300, 9.0000e-004],
+        [56.2300, 64.0000, 71.8380, 1.1520e-003],
+        [71.8380, 80.6350, 90.5100, 1.4514e-003],
+        [90.5100, 101.5900, 114.0400, 1.8000e-003],
+        [114.0400, 128.0000, 143.6800, 1.8000e-003],
+        [143.6800, 161.2700, 181.0200, 1.8000e-003],
+        [181.0200, 203.1900, 228.0700, 1.8000e-003],
+        [228.0700, 256.0000, 287.3500, 1.8000e-003],
+        [287.3500, 322.5400, 362.0400, 1.8000e-003]])
 
     fig, ax = plt.subplots(figsize=(10, 7.5))
 
-    medianprops = dict(linewidth=1.25, color='firebrick')
+    # draw steps for ISS requirement in light, transparent blue
+    plt.step(m[:, 0], m[:, 3], where='post', label='post', alpha=0.3, color='blue')
 
-    ax.bxp(stats, positions=moto[:, 1], widths=oto_band_widths, showfliers=False, medianprops=medianprops)
+    p = np.power(10, np.float64(arf_pctiles_for_ax))
 
-    ax.set_xscale('log')
+    # draw horizontal lines at median value of grms in red
+    plt.hlines(y=[p[2, :]], xmin=m[:, 0], xmax=m[:, 2], linewidth=1.5, alpha=0.85, color='red')
 
-    title_str = 'One-Third Octave Band RMS Acceleration Summary'
-    title_str += '\nSensor: %s, Tag: %s' % (sensor, tag.upper())
-    title_str += '\nGMT %s through %s' % (start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'))
-    ax.set_title(title_str, fontsize=font_size)
+    # draw lower, vertical (whisker) lines from 1st to 25th percentiles in black
+    plt.vlines(x=m[:, 1], ymin=p[0, :], ymax=p[1, :], linewidth=1.5, alpha=0.75, color='black')
 
-    plt.xlabel('Frequency (Hz)')
+    # draw upper, vertical (whisker) lines from 75th to 99th percentiles in black
+    plt.vlines(x=m[:, 1], ymin=p[3, :], ymax=p[4, :], linewidth=1.5, alpha=0.75, color='black')
 
+    plt.xscale('log')
+    plt.yscale('log')
+
+    # title
     if a == 'v':
-        stub = ''
+        ax_str = 'RSS(X,Y,Z)'
     else:
-        stub = '%s-Axis ' % a.upper()
-    plt.ylabel('%sRMS Acceleration  $log_{10}(g)$' % stub)
+        ax_str = '%s-Axis' % a.upper()
+    title_str = 'ISS RMS Acceleration vs. One-Third Octave Band\n'
+    title_str += 'GMT {0} through {1}, Condition:{2}\nSAMS Sensor:{3}, {4}'.\
+        format(start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), tag.upper(), sensor.upper(), ax_str)
+    plt.title(title_str)
 
-    # Set the ticks to indexes of freqs
-    ax.set_xticks(range(1, num_freqs + 1))
+    # labels and grid
+    plt.xlabel('Frequency (Hz)')
+    plt.ylabel('Acceleration  $(g_{rms})$')
+    plt.grid(True)
 
-    # Set xticklabels
-    if nice_freqs:
-        # custom xticklabels interpolated to "nice" frequencies
-        locs, labels = plt.xticks()
-        freq_ticks = [0.01, 0.1, 1, 10.0, 100.0]
-        locs_new = np.interp(freq_ticks, np.concatenate(freq_bin_ctrs).ravel(), locs)
-        plt.xticks(locs_new, freq_ticks)
+    plt.ylim([1e-8, 1e-2])
 
-    else:
-        # set the xticklabels to freq_bin_ctrs with rotated text
-        ax.set_xticklabels(['{:0g}'.format(i) for i in freq_bin_ctrs.ravel()])
-        plt.xticks(rotation=90)
+    # annotate ISS requirements curve
+    plt.text(0.75*m[0, 1], 1.25*m[0, -1], 'ISS Microgravity\nControl Plan', alpha=0.65, color='blue', fontsize=9)
 
-    plt.grid(b=True, which='both', color='gray', linestyle=':', linewidth=1, alpha=0.4)
+    ################################################################
+    # this is an inset axes over the main axes to use as a legend
+    ax_leg = plt.axes([0.16, 0.64, 0.2, 0.2], facecolor='ivory')
+    plt.plot([], [])
+    # plt.title('Legend')
 
-    ymin, ymax = -8.0, -1.0
-    ax.set_ylim([ymin, ymax])
+    plt.vlines(x=[10.0], ymin=[75.0], ymax=[99.0], linewidth=1.5, alpha=0.75, color='black')
+    plt.hlines(y=[50.0], xmin=[5.0], xmax=[15.0], linewidth=2.5, alpha=0.85, color='red')
+    plt.vlines(x=[10.0], ymin=[1.0], ymax=[25.0], linewidth=1.5, alpha=0.75, color='black')
 
-    plt.step(moto[:, 0], np.log10(moto[:, 3]), where='post', label='post', alpha=0.65, color='b')
+    plt.hlines(y=[1, 25, 50, 75, 99], xmin=[10, 10, 16, 10, 10], xmax=[30, 30, 30, 30, 30], linewidth=1, color='gray',
+               linestyle=':')
+
+    plt.text(31, 99, '99th percentile', verticalalignment='center')
+    plt.text(31, 75, '75th percentile', verticalalignment='center')
+    plt.text(31, 50, 'median', verticalalignment='center')
+    plt.text(31, 25, '25th percentile', verticalalignment='center')
+    plt.text(31, 1, '1st percentile', verticalalignment='center')
+
+    plt.xlim(-10, 110)
+    plt.ylim(-10, 110)
+
+    plt.xticks([])
+    plt.yticks([])
 
     # plt.show()
+
     fig.savefig(out_file, pad_inches=(1.0, 1.0))  # 1-inch pad since figsize was chopped 1-inch all-around
-    print 'wrote %s' % out_file
+
+    print 'saved %s' % out_file
 
 
 def create_ptile_spreadsheet_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, stop, tag, freq_bin_ctrs):
@@ -785,8 +823,12 @@ def create_ptile_spreadsheet_for_ax(out_file, a, arf_pctiles_for_ax, sensor, sta
 
     # get percentiles [1, 25, 50, 75, 99] at each OTO freq. band
     for n in range(len(freq_bin_ctrs)):
-        pcts = np.float64(arf_pctiles_for_ax[:, n])
-        print freq_bin_ctrs[n][0], np.power(10.0, pcts)
+        p = np.power(10, np.float64(arf_pctiles_for_ax[:, n])) / 1e-6
+        if all(np.isnan(p)):
+            pass
+        else:
+            print 'cf = {:8.4f}, P01 = {:9.4f}, P25 = {:9.4f}, P50 = {:9.4f}, P75 = {:9.4f}, P99 = {:9.4f} ugrms'.\
+                format(freq_bin_ctrs[n][0], *p)
 
 
 def OLDdo_manual_boxplot(bin_centers):
@@ -1039,11 +1081,11 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
                                                   final_stop.strftime('%Y-%m-%d'), sensor, a, tag)
             out_file = os.path.join(os.path.dirname(pickle_files[0]), out_base)
 
-            # create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, final_stop, tag,
-            #                             freq_bin_ctrs, nice_freqs=True)
+            create_ptile_boxplot_for_ax(out_file, a, arf_pctiles_for_ax, sensor, start, final_stop, tag,
+                                        freq_bin_ctrs, nice_freqs=True)
 
-            create_ptile_spreadsheet_for_ax(out_file.replace('.pdf', '.csv'), a, arf_pctiles_for_ax, sensor, start,
-                                            final_stop, tag, freq_bin_ctrs)
+            # create_ptile_spreadsheet_for_ax(out_file.replace('.pdf', '.csv'), a, arf_pctiles_for_ax, sensor, start,
+            #                                 final_stop, tag, freq_bin_ctrs)
 
 
 if __name__ == '__main__':
@@ -1098,27 +1140,30 @@ if __name__ == '__main__':
 
             pickle_files = [
                 '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-07_121f03_sleep_all_wake_otorunhist.pkl',
-                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl'
-                # '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-31_121f03_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2016/month02/2016-02-01_2016-02-29_121f03_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2016/month03/2016-03-01_2016-03-31_121f03_sleep_all_wake_otorunhist.pkl'
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f03_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f03_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f03_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f03_sleep_all_wake_otorunhist.pkl'
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f05_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f05_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f05_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f05_sleep_all_wake_otorunhist.pkl'
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f08_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f08_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f08_sleep_all_wake_otorunhist.pkl',
-                # '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f08_sleep_all_wake_otorunhist.pkl'
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-08_2016-01-14_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/2016-01-01_2016-01-31_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month02/2016-02-01_2016-02-29_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2016/month03/2016-03-01_2016-03-31_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f03_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f05_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f05_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f05_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f05_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month01/2018-01-18_2018-01-31_121f08_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month02/2018-02-01_2018-02-28_121f08_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month03/2018-03-01_2018-03-31_121f08_sleep_all_wake_otorunhist.pkl',
+                '/misc/yoda/www/plots/batch/results/onethird/year2018/month04/2018-04-01_2018-04-17_121f08_sleep_all_wake_otorunhist.pkl',
             ]
 
             tags = ['sleep', 'wake', 'all']
             axs = 'xyzv'
-            generate_perctile_boxplots(pickle_files, tags, axs)
+            generate_perctile_boxplots(pickle_files[2:5], tags, axs)
+            generate_perctile_boxplots(pickle_files[5:9], tags, axs)
+            generate_perctile_boxplots(pickle_files[9:13], tags, axs)
+            generate_perctile_boxplots(pickle_files[13:], tags, axs)
 
         else:
             # iterate over each day, then iterate over day's files & finally by taghours to build/sum results
