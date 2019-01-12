@@ -589,6 +589,7 @@ def demo_look_jury_rig_pickle_file():
     print fat_array.shape
     print fidx.keys()
 
+
 def demo_step_plot():
 
     x = np.arange(1, 7, 0.4)
@@ -614,10 +615,27 @@ def demo_step_plot():
     plt.show()
 
 
+def demo_boxplot_width_setter():
+    np.random.seed(42)
+    a = np.cumsum(np.random.rayleigh(150, size=(50, 8)), axis = 1)
+    fig, ax = plt.subplots()
+
+    positions = np.logspace(-0.1, 2.6, 8)
+
+    w = 0.1
+    width = lambda p, w: 10**(np.log10(p) + w/2.0) - 10**(np.log10(p) - w/2.0)
+
+    ax.boxplot(a, positions=positions, widths=width(positions, w))
+    ax.set_xscale('log')
+    plt.show()
+
+
 if __name__ == '__main__':
 
-    demo_step_plot()
+    demo_iss_req_steps()
+    # demo_boxplot_width_setter()
     raise SystemExit
+
 
     # demo_jury_rig_pickle_file()
     # demo_look_jury_rig_pickle_file()
