@@ -25,6 +25,8 @@
 \usepackage{bm}
 \usepackage{amsmath}
 
+\usepackage[shortlabels]{enumitem}
+
 \usepackage{hyperref}
 \hypersetup{
     colorlinks=true,
@@ -106,6 +108,27 @@ Figure \ref{fig:graysquare} does not really show a photograph of anything worth 
 \lipsum[1]
 
 For further references see \href{http://www.sharelatex.com}{Something Linky} or go to the next url: \url{http://www.sharelatex.com}.
+
+List are really easy to create...
+ 
+\begin{itemize}
+  \item One entry in the list.
+  \item Another entry in the list.
+\end{itemize}
+
+Here is an ordered list:
+
+\begin{enumerate}[(1)] % (1), (2), (3), ...
+\item Apple
+\item Banana
+\end{enumerate}
+
+Here is an ordered list:
+
+\begin{enumerate}[(a)]
+  \item The labels consists of sequential numbers.
+  \item The numbers starts at 1 with every call to the enumerate environment.
+\end{enumerate}
 
 \lipsum[1]
 
