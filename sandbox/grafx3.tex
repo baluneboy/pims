@@ -1,0 +1,98 @@
+\documentclass[journal,comsoc]{IEEEtran}
+
+\usepackage[
+  letterpaper,
+  landscape,
+  top=0.5in,
+  bottom=0.5in,
+  left=0.5in,
+  right=0.3in,
+  headheight=17pt, % as per the warning by fancyhdr
+  includehead,includefoot,
+  heightrounded, % to avoid spurious underfull messages
+]{geometry}
+
+\usepackage{graphicx}
+\usepackage{lipsum}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{fix-cm}
+
+\usepackage{caption}
+\usepackage{mathptmx}
+\usepackage[per-mode=symbol]{siunitx}
+\usepackage{bm}
+\usepackage{amsmath}
+
+\captionsetup[table]{position=bottom}
+
+\fancyhf{}
+\pagestyle{fancy}
+
+% Header
+\fancyhead[L]{What Goes Here}
+\fancyhead[C]{\textbf{\fontsize{14}{12} \selectfont Title Goes Here}}
+\fancyhead[R]{page \thepage/\pageref{LastPage}}
+
+% Footer
+\fancyfoot[C]{\fontsize{6}{4} \selectfont modified \today}
+
+\begin{document}
+
+\renewcommand{\thetable}{\arabic{table}}
+\renewcommand \thesection{\arabic{section}} % change from Roman numerals to Arabic
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Intro
+\section{Introduction}
+
+\lipsum[2]
+
+\begin{figure}[thb]
+	\centering  
+	\includegraphics[width=\columnwidth]{example-image}
+	\caption{A most awesome specimen.}
+	\label{fig:graysquare}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Qualify (Features)
+\section{Qualify/Features}
+
+\lipsum[1]
+
+%\vspace{\baselineskip}
+
+\begin{table}
+	\centering
+	\begin{tabular}{|c|l|l|}
+	\hline
+	\textbf{$\text{Pitch Angle } (\alpha)$}&\multicolumn{2}{c|}{$\mathbf{V_w=9.6\,m/s}$}\\
+	\hline
+	$\SI{-10}{\degree}$&$c_DA=0.0143$&$c_LA=0.0054$\\
+	\hline
+	$\SI{0}{\degree}$&$c_DA=0.0142$&$c_LA=0.0017$\\
+	\hline
+	$\SI{10}{\degree}$&$c_DA=0.0119$&$c_LA=-0.0028$\\
+	\hline
+	$\SI{20}{\degree}$&$c_DA=0.0139$&$c_LA=0.0018$\\
+	\hline
+	$\SI{30}{\degree}$&$c_DA=0.0119$&$c_LA=0.0033$\\
+	\hline
+	\end{tabular}
+	\caption{At wind speed of \SI{9.6}{\meter\per\second} and different pitch angles ($\beta=\SI{0}{\degree}$.}
+	\label{table:draglift1}
+\end{table}
+
+Some text
+
+\begin{figure}[thb]
+	\centering  
+	\includegraphics[width=\columnwidth]{myspectrogram.pdf}
+	\caption{Another interesting y-axis feature.}
+	\label{fig:specgram}
+\end{figure}
+
+Figure \ref{fig:graysquare} does not really show a photograph of anything worth noting.  \lipsum
+
+\end{document}

@@ -1,0 +1,83 @@
+\documentclass[journal,comsoc]{IEEEtran}
+
+\usepackage[
+  letterpaper,
+  landscape,
+  top=0.5in,
+  bottom=0.5in,
+  left=0.5in,
+  right=0.3in,
+  headheight=17pt, % as per the warning by fancyhdr
+  includehead,includefoot,
+  heightrounded, % to avoid spurious underfull messages
+]{geometry}
+
+\usepackage{graphicx}
+\usepackage{lipsum}
+\usepackage{fancyhdr}
+\usepackage{lastpage}
+\usepackage{fix-cm}
+
+\fancyhf{}
+\pagestyle{fancy}
+
+% Header
+\fancyhead[L]{What Goes Here}
+\fancyhead[C]{\textbf{\fontsize{14}{12} \selectfont Title Goes Here}}
+\fancyhead[R]{page \thepage/\pageref{LastPage}}
+
+% Footer
+\fancyfoot[C]{\fontsize{6}{4} \selectfont modified \today}
+
+\begin{document}
+
+\renewcommand \thesection{\arabic{section}} % change from Roman numerals to Arabic
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Intro
+\section{Introduction}
+
+\lipsum[2]
+
+\begin{figure}[thb]
+	\centering  
+	\includegraphics[width=\columnwidth]{example-image}
+	\caption{A most awesome specimen.}
+	\label{fig:graysquare}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Qualify (Features)
+\section{Qualify/Features}
+
+\lipsum[1]
+
+\vspace{\baselineskip}
+
+With width specified:
+\begin{center}
+    \begin{tabular}{ | l | l | l | p{5cm} |}
+    \hline
+    Day & Min Temp & Max Temp & Summary \\ \hline
+    Monday & 11C & 22C & A clear day with lots of sunshine.  
+    However, the strong breeze will bring down the temperatures. \\ \hline
+    Tuesday & 9C & 19C & Cloudy with rain, across many northern regions. Clear spells 
+    across most of Scotland and Northern Ireland, 
+    but rain reaching the far northwest. \\ \hline
+    Wednesday & 10C & 21C & Rain will still linger for the morning. 
+    Conditions will improve by early afternoon and continue 
+    throughout the evening. \\
+    \hline
+    \end{tabular}
+\end{center}
+
+\begin{figure}[thb]
+	\centering  
+	\includegraphics[width=\columnwidth]{myspectrogram.pdf}
+	\caption{Another interesting y-axis feature.}
+	\label{fig:specgram}
+\end{figure}
+
+Figure \ref{fig:graysquare} does not really show a photograph of anything worth noting.  \lipsum
+
+\end{document}
