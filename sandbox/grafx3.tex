@@ -17,25 +17,41 @@
 \usepackage{fancyhdr}
 \usepackage{lastpage}
 \usepackage{fix-cm}
-
-\usepackage{caption}
-\usepackage{mathptmx}
 \usepackage[per-mode=symbol]{siunitx}
+\usepackage{textcase}
+\usepackage[tablename=Table]{caption}
+
+\usepackage{mathptmx}
 \usepackage{bm}
 \usepackage{amsmath}
 
-\captionsetup[table]{position=bottom}
+\usepackage{hyperref}
+\hypersetup{
+    colorlinks=true,
+    linkcolor=blue,
+    filecolor=magenta,      
+    urlcolor=cyan,
+}
+\urlstyle{same}
+
+\captionsetup[table]{
+    labelsep=period,
+    justification=centering,
+    position=bottom,
+}
 
 \fancyhf{}
 \pagestyle{fancy}
 
 % Header
-\fancyhead[L]{What Goes Here}
-\fancyhead[C]{\textbf{\fontsize{14}{12} \selectfont Title Goes Here}}
-\fancyhead[R]{page \thepage/\pageref{LastPage}}
+\fancyhead[L]{\fontsize{8}{6} \selectfont \textsc{Vehicle}}
+\fancyhead[C]{\textbf{\fontsize{12}{10} \selectfont Russian Segment (RS) Optimized Propellant Maneuver (OPM) to -XVV on GMT 2019-12-28}}
+\fancyhead[R]{\textsc{\fontsize{8}{6} \selectfont page \thepage/\pageref{LastPage}}}
 
 % Footer
+\fancyfoot[L]{\fontsize{8}{6} \selectfont \textsc{Quasi-Steady}}
 \fancyfoot[C]{\fontsize{6}{4} \selectfont modified \today}
+\fancyfoot[R]{\fontsize{8}{6} \selectfont \textsc{Placeholder}}
 
 \begin{document}
 
@@ -51,13 +67,16 @@
 \begin{figure}[thb]
 	\centering  
 	\includegraphics[width=\columnwidth]{example-image}
-	\caption{A most awesome specimen.}
+	\caption{Perhaps a photo or graphic of a visiting vehicle.}
 	\label{fig:graysquare}
 \end{figure}
 
+Figure \ref{fig:graysquare} does not really show a photograph of anything worth noting.  \lipsum[1]
+
+
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% Qualify (Features)
-\section{Qualify/Features}
+% Qualify
+\section{Qualify}
 
 \lipsum[1]
 
@@ -80,11 +99,15 @@
 	$\SI{30}{\degree}$&$c_DA=0.0119$&$c_LA=0.0033$\\
 	\hline
 	\end{tabular}
-	\caption{At wind speed of \SI{9.6}{\meter\per\second} and different pitch angles ($\beta=\SI{0}{\degree}$.}
+	\caption{Information from ISS as-flown timeline showing wind speed of \SI{9.6}{\meter\per\second} and, while we are discussing this, different pitch angles ($\beta=\SI{0}{\degree}$).}
 	\label{table:draglift1}
 \end{table}
 
-Some text
+\lipsum[1]
+
+For further references see \href{http://www.sharelatex.com}{Something Linky} or go to the next url: \url{http://www.sharelatex.com}.
+
+\lipsum[1]
 
 \begin{figure}[thb]
 	\centering  
@@ -93,6 +116,6 @@ Some text
 	\label{fig:specgram}
 \end{figure}
 
-Figure \ref{fig:graysquare} does not really show a photograph of anything worth noting.  \lipsum
+Figure \ref{fig:specgram} on page \pageref{fig:specgram} does not really show a photograph of anything worth noting.  \lipsum
 
 \end{document}
