@@ -12,6 +12,7 @@ import matplotlib.cbook as cbook
 import pandas as pd
 import cPickle as pkl
 from main import get_log10rms_bins, get_log10_data_and_extrema
+from pims.signal.rounding import roundup100, roundup_int
 
 AXMAP = {'x': 0, 'y': 1, 'z': 2, 'v': 3}
 
@@ -630,9 +631,43 @@ def demo_boxplot_width_setter():
     plt.show()
 
 
+def demo_block_wall():
+
+    # this is how many time steps we want to integrate over (how many delta t's)
+    nr = 4  # this will be number of rows in the deep array
+
+    r = 13  # FIXME rows we will end up reading from PAD file
+
+    # read from PAD file some block(s) of data
+    block = np.arange(r*3).reshape(-1, 3)
+    block += 1
+
+    # get depth dimension for deep array, which is to be filled in with PAD block(s)
+    nd = roundup_int(block.shape[0], nr) / nr
+
+    total_rows = nd * nr
+    num_blank_rows = total_rows - block.shape[0]
+
+    print 'nd', nd
+    print 'total_rows', total_rows
+    print 'num_blank_rows', num_blank_rows
+
+    deep_array = np.vstack((block, np.nan*np.ones((num_blank_rows, 3))))
+    deep_array = deep_array.reshape((nd, -1, 3))
+
+    # if we needed to add blank (NaN) rows, then let's delete the last, incomplete element
+    if num_blank_rows != 0:
+        deep_array = np.delete(deep_array, -1, axis=0)
+
+    print deep_array
+
+    print np.trapz(deep_array, dx=1, axis=0)
+
+
 if __name__ == '__main__':
 
-    demo_iss_req_steps()
+    demo_block_wall()
+    # demo_iss_req_steps()
     # demo_boxplot_width_setter()
     raise SystemExit
 
