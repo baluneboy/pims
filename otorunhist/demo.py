@@ -14,6 +14,9 @@ import cPickle as pkl
 from main import get_log10rms_bins, get_log10_data_and_extrema
 from pims.signal.rounding import roundup100, roundup_int
 
+from ugaudio.load import padread
+
+
 AXMAP = {'x': 0, 'y': 1, 'z': 2, 'v': 3}
 
 
@@ -631,42 +634,54 @@ def demo_boxplot_width_setter():
     plt.show()
 
 
-def demo_block_wall():
+def file_trapz(pad_file, fs, sec=100.0):
 
-    # this is how many time steps we want to integrate over (how many delta t's)
-    nr = 4  # this will be number of rows in the deep array
+    # read data from PAD file into Tx4 array
+    a = padread(pad_file)
 
-    r = 13  # FIXME rows we will end up reading from PAD file
+    # toss out time column
+    a = np.delete(a, 0, axis=1)
 
-    # read from PAD file some block(s) of data
-    block = np.arange(r*3).reshape(-1, 3)
-    block += 1
+    # demean signal
+    b = a - a.mean(axis=0)
 
-    # get depth dimension for deep array, which is to be filled in with PAD block(s)
-    nd = roundup_int(block.shape[0], nr) / nr
+    # determine how many time steps (dt) we will integrate over (how many delta t's)
+    dt = 1.0 / fs
+    nt = int(np.ceil(sec / dt))
 
-    total_rows = nd * nr
-    num_blank_rows = total_rows - block.shape[0]
+    # print b.shape
+    # print 'nt', nt
 
-    print 'nd', nd
-    print 'total_rows', total_rows
-    print 'num_blank_rows', num_blank_rows
+    # fabricate a depth dimension for deep array, which is to be filled in with PAD block(s)
+    nd = roundup_int(b.shape[0], nt) / nt
 
-    deep_array = np.vstack((block, np.nan*np.ones((num_blank_rows, 3))))
+    # build a slightly bigger array than we need by appending to what we read from file just a bit
+    total_rows = nd * nt
+    num_blank_rows = total_rows - b.shape[0]
+    deep_array = np.vstack((b, np.nan*np.ones((num_blank_rows, 3))))
+
+    # the above vstack of NaNs allows us to reshape nicely for integration along the proper dimension
     deep_array = deep_array.reshape((nd, -1, 3))
 
-    # if we needed to add blank (NaN) rows, then let's delete the last, incomplete element
+    # TODO for part (A) of Gateway, we would not delete deep_array's last element [ we would for part (B) though ]
+
+    # if we had to add blank (NaN) rows, then let's delete deep_array's last, INCOMPLETE element now
     if num_blank_rows != 0:
         deep_array = np.delete(deep_array, -1, axis=0)
 
-    print deep_array
-
-    print np.trapz(deep_array, dx=1, axis=0)
+    # return trapezoidal integration over time (nominally, 100sec)
+    return np.trapz(deep_array, dx=dt, axis=1)
 
 
 if __name__ == '__main__':
 
-    demo_block_wall()
+    fs = 142.0
+    pad_file = '/misc/yoda/pub/pad/year2019/month01/day01/sams2_accel_121f03006/2019_01_01_00_06_20.862-2019_01_01_00_37_06.939.121f03006'
+    pad_file = '/misc/yoda/pub/pad/year2019/month01/day01/sams2_accel_121f03006/2019_01_01_03_10_57.369+2019_01_01_03_14_56.306.121f03006'
+    fsum = file_trapz(pad_file, fs)
+    print fsum
+    print fsum.shape
+
     # demo_iss_req_steps()
     # demo_boxplot_width_setter()
     raise SystemExit
