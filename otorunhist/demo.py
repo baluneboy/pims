@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import datetime
 import decimal
 import numpy as np
@@ -13,8 +14,13 @@ import pandas as pd
 import cPickle as pkl
 from main import get_log10rms_bins, get_log10_data_and_extrema
 from pims.signal.rounding import roundup100, roundup_int
+from pims.utils.pimsdateutil import datetime_to_ymd_path
 
 from ugaudio.load import padread
+from pims.files.filter_pipeline import FileFilterPipeline, BigFile, PadDaySensorHours, HeaderMatchesSensorRateCutoffPad
+
+import glob
+import pandas as pd
 
 
 AXMAP = {'x': 0, 'y': 1, 'z': 2, 'v': 3}
@@ -634,7 +640,7 @@ def demo_boxplot_width_setter():
     plt.show()
 
 
-def file_trapz(pad_file, fs, sec=100.0):
+def file_trapz(pad_file, fs, sec=10.0):
 
     # read data from PAD file into Tx4 array
     a = padread(pad_file)
@@ -673,14 +679,51 @@ def file_trapz(pad_file, fs, sec=100.0):
     return np.trapz(deep_array, dx=dt, axis=1)
 
 
+def file_trapz_some_pad_files(start, end, sensor, fs, fc, hours):
+
+    fsums = list()
+    for d in pd.date_range(start, end):
+        print d.date(), sensor, " > ",
+        day_dir = datetime_to_ymd_path(d)
+
+        # initialize processing pipeline (no file list as input yet)
+        ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad(sensor, fs, fc),
+                                 PadDaySensorHours(d.strftime('%Y-%m-%d'), sensor, hours),
+                                 BigFile(min_bytes=2*1024*1024))
+
+        # apply processing pipeline (now ffp is callable)
+        glob_pat = os.path.join(day_dir, '*_*_%s/*.%s' % (sensor, sensor))
+        day_files = glob.glob(glob_pat)
+        if len(day_files) == 0:
+            print 'MISSING---',
+        else:
+            c = 0
+            # work with files we want to keep
+            for pad_file in ffp(day_files):
+                fsums.append(file_trapz(pad_file, fs, sec=10.0))
+                c += 1
+            print 'processed %d files' % c,
+        print ''
+
+    return np.concatenate(fsums, axis=0)
+
+
 if __name__ == '__main__':
 
-    fs = 142.0
-    pad_file = '/misc/yoda/pub/pad/year2019/month01/day01/sams2_accel_121f03006/2019_01_01_00_06_20.862-2019_01_01_00_37_06.939.121f03006'
-    pad_file = '/misc/yoda/pub/pad/year2019/month01/day01/sams2_accel_121f03006/2019_01_01_03_10_57.369+2019_01_01_03_14_56.306.121f03006'
-    fsum = file_trapz(pad_file, fs)
-    print fsum
-    print fsum.shape
+    # SLEEP FILES ONLY
+    start, end = '2016-03-01', '2016-03-31'
+    sensor = '121f03006'
+    fs, fc = 142.0, 6.0
+    hours = [(0, 4)]
+    fsums = file_trapz_some_pad_files(start, end, sensor, fs, fc, hours)
+    print fsums.shape
+    print fsums
+
+    # pad_file = '/misc/yoda/pub/pad/year2019/month01/day01/sams2_accel_121f03006/2019_01_01_00_06_20.862-2019_01_01_00_37_06.939.121f03006'
+    # pad_file = '/misc/yoda/pub/pad/year2019/month01/day01/sams2_accel_121f03006/2019_01_01_03_10_57.369+2019_01_01_03_14_56.306.121f03006'
+    # fsum = file_trapz(pad_file, fs)
+    # print fsum
+    # print fsum.shape
 
     # demo_iss_req_steps()
     # demo_boxplot_width_setter()

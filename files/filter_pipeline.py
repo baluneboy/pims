@@ -11,7 +11,7 @@ from mutagen.mp3 import MP3
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_ESTIMATE_PDF_PATTERN
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, otomat_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
-from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
+from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub, datetime_to_ymd_path
 from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa, get_hdr_dict_fs_fc_sensor
 
 
@@ -63,7 +63,7 @@ class FileExists(object):
 # Operator #2 is a big-file callable class
 class BigFile(object):
     
-    def __init__(self, min_bytes=1024*1024):
+    def __init__(self, min_bytes=1024*1024):  # default min is 1 MB
         self.min_bytes = min_bytes
         
     def __call__(self, file_list):
@@ -396,6 +396,7 @@ class DateRangePadFile(object):
 
 
 class OtoDaySensorHours(object):
+    """return generator for OTO mat files whose names match given sensor, start/stop hour range(s)"""
 
     def __init__(self, day, sensor, hours):
         self.sensor = sensor
@@ -415,7 +416,31 @@ class OtoDaySensorHours(object):
                     yield f
                 
     def __str__(self):
-        return 'is an OTO file with fname start/stop hour in given list of hour ranges'
+        return 'is an OTO file for sensor with fname start/stop hour in given list of hour ranges'
+
+
+class PadDaySensorHours(object):
+    """return generator for PAD files whose names match given sensor, start/stop hour range(s)"""
+
+    def __init__(self, day, sensor, hours):  # e.g. hours = [(0,4), (22,23)]
+        self.sensor = sensor
+        self.day = parse(day)
+        self.hours = hours
+
+    def __call__(self, file_list):
+        for f in file_list:
+            sensor = f.split('.')[-1]
+            if not self.sensor == sensor:
+                return
+            fstart, fstop = pad_fullfilestr_to_start_stop(f)
+            for h1, h2 in self.hours:
+                start = self.day + relativedelta(hours=h1)
+                stop = self.day + relativedelta(hours=h2)
+                if fstart > start and fstop < stop:
+                    yield f
+
+    def __str__(self):
+        return 'is PAD file for sensor with fname start/stop hour in given list of hour ranges'
 
 
 #class DateRangeStateFoscamFile(object):
@@ -560,12 +585,46 @@ def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path=
                 hh = f.split('_')[3]
                 print hh,
         print ''
-        
-    
+
+
+def demo_fetch_big_pad_files(start, end, sensor, fs, fc, hours):
+    import glob
+    import pandas as pd
+
+    print start, end
+    print sensor, fs, fc
+    print hours
+
+    for d in pd.date_range(start, end):
+        print d.date(), sensor, " > ",
+        day_dir = datetime_to_ymd_path(d)
+
+        # initialize processing pipeline (no file list as input yet)
+        ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad(sensor, fs, fc),
+                                 PadDaySensorHours(d.strftime('%Y-%m-%d'), sensor, hours),
+                                 BigFile(min_bytes=2*1024*1024))
+
+        # apply processing pipeline (now ffp is callable)
+        glob_pat = os.path.join(day_dir, '*_*_%s/*.%s' % (sensor, sensor))
+        day_files = glob.glob(glob_pat)
+        if len(day_files) == 0:
+            print 'MISSING---',
+        else:
+            # for f in ffp(day_files):
+            #     hh = f.split('_')[3]
+            #     print hh,
+            keep_files = list(ffp(day_files))
+            print len(keep_files), 'files', keep_files,
+        print ''
+
 
 if __name__ == "__main__":
+
     #sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
     #for sensor in sensors:
     #    show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)
-    demo_gateway2()
-    
+
+    # demo_gateway2()
+
+    # SLEEP FILES ONLY
+    demo_fetch_big_pad_files('2016-01-01', '2016-01-31', '121f03006', 142.0, 6.0, [(0, 4)])
