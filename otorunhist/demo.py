@@ -710,8 +710,27 @@ def file_trapz_some_pad_files(start, end, sensor, fs, fc, hours):
 
 if __name__ == '__main__':
 
+    # monthly results go here:
+    # /misc/yoda/www/plots/batch/results/transient/year2020/month11/2020-11-01_2020-11-30_121f03006_sleep_transient.pkl
+    #
+    # # pickle save file sums (fsums) array
+    # out_name = get_transient_pickle_filename(start, stop, sensor, taghours)
+    # pickle_file = os.path.join(out_pth, out_name)
+    #
+    # my_dict = dict()
+    # my_dict['fsums'] = fsums
+    # my_dict['start'] = start
+    # my_dict['stop'] = stop
+    # my_dict['sensor'] = sensor
+    # my_dict['taghours'] = taghours
+    #
+    # with open(pickle_file, 'wb') as handle:
+    #     pkl.dump(my_dict, handle, protocol=pkl.HIGHEST_PROTOCOL)
+    #
+    # print 'saved %s' % pickle_file
+
     # SLEEP FILES ONLY
-    start, end = '2016-03-01', '2016-03-31'
+    start, end = '2016-01-01', '2016-02-29'
     sensor = '121f03006'
     fs, fc = 142.0, 6.0
     hours = [(0, 4)]
