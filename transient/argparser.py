@@ -13,9 +13,13 @@ from dateutil.relativedelta import relativedelta
 from pims.utils.pimsdateutil import relative_start_stop
 
 
-START_OFFSET = relativedelta(months=1, days=6)
-STOP_OFFSET = relativedelta(months=1)
-DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
+TODAY = datetime.date.today()
+TWO_MONTHS_AGO = TODAY - relativedelta(months=2)
+DEFAULT_START = datetime.date(TWO_MONTHS_AGO.year, TWO_MONTHS_AGO.month, 1)
+DEFAULT_STOP = DEFAULT_START + relativedelta(months=1)
+# START_OFFSET = relativedelta(months=1, days=6)
+# STOP_OFFSET = relativedelta(months=1)
+# DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
 DEFAULT_SENSOR = '121f03006'
 DEFAULT_INDIR = '/misc/yoda/pub/pad'
 DEFAULT_OUTDIR = '/misc/yoda/www/plots/batch/results/transient'
@@ -85,13 +89,13 @@ def parse_inputs():
                         help=help_sensor)
 
     # start date
-    help_start = "start date; default is None (for 1 month and 6 days ago)"
+    help_start = "start date; default is None (for start day of month 2 months prior to today's month)"
     parser.add_argument('-d', '--start', default=None,
                         type=day_str,
                         help=help_start)
 
     # stop date
-    help_stop = "stop date; default is None (for 6 days after start)"
+    help_stop = "stop date; default is None (for end of start date's month)"
     parser.add_argument('-e', '--stop', default=None,
                         type=day_str,
                         help=help_stop)
@@ -143,15 +147,15 @@ def parse_inputs():
         # finalize start and stop dates
         if args.start is None and args.stop is None:
             args.start = DEFAULT_START
-            args.stop = args.start + relativedelta(days=6)
+            args.stop = DEFAULT_STOP
         elif args.stop is None:
-            args.stop = args.start + relativedelta(days=6)
+            args.stop = args.start + relativedelta(months=1) - relativedelta(days=1)
         elif args.start is None:
-            args.start = args.stop - relativedelta(days=6)
+            args.start = args.stop - relativedelta(months=1)
     
         # check start/stop
         if args.stop < args.start:
-            raise Exception('stop less than start')
+            raise Exception('stop is less than start')
 
     # combine tagged hour ranges that share common tag
     tagged_hours = dict()
@@ -164,6 +168,9 @@ def parse_inputs():
 
     # FIXME we hard-code since in a hurry for Gateway here
     args.fs, args.fc = 142.0, 6.0
+
+    # # now that we have convenient-to-use stop date (for monthly deal), back off the stop date by one to get end of month
+    # args.stop -= relativedelta(days=1)
 
     return args
 
