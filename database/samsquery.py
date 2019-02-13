@@ -18,6 +18,7 @@ from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
 import mysql.connector
 from sqlalchemy import create_engine
 
+
 # Get sensitive authentication credentials for internal MySQL db query
 _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
 _HOST_SAMS = 'yoda'
@@ -210,6 +211,76 @@ class GseStatusQuery(EeStatusQuery):
         fivemin_agostr = (datetime.datetime.now() - relativedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
         query = "SELECT ku_timestamp, sams_cu_hs_counter FROM samsnew.gse_packet WHERE ku_timestamp >= '%s' ORDER BY ku_timestamp DESC LIMIT 5;" % fivemin_agostr
         return query
+
+
+class RtsDrawerQuery(EeStatusQuery):
+    """RTS Drawer query: (d1|d2) and (current|temperature)"""
+
+    def __init__(self, host, schema, uname, pword, field, begin_date=None, end_date=None):
+        self.host = host
+        self.schema = schema
+        self.uname = uname
+        self.pword = pword
+        self.field = field
+        self.begin_date = begin_date
+        self.end_date = end_date
+        self.query = self._get_query()
+
+    def _get_query(self):
+        if self.begin_date is None:
+            if self.end_date is None:
+                d1 = (datetime.datetime.now() - relativedelta(days=9)).strftime('%Y-%m-%d')
+                d2 = (datetime.datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                d2 = self.end_date
+                d1 = (d2 - relativedelta(days=7)).strftime('%Y-%m-%d')
+        else:
+            if self.end_date is None:
+                d1 = self.begin_date
+                d2 = (d1 + relativedelta(days=7)).strftime('%Y-%m-%d')
+            else:
+                d1 = self.begin_date
+                d2 = self.end_date
+        # twoweeksagostr = (datetime.datetime.now() - relativedelta(weeks=2)).strftime('%Y-%m-%d')
+        # oneweeksagostr = (datetime.datetime.now() - relativedelta(weeks=1)).strftime('%Y-%m-%d')
+        query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s';" % (self.field, d1, d2)
+        return query
+
+    def dataframe_from_query(self):
+        constr = 'mysql://%s:%s@%s/%s' % (self.uname, self.pword, self.host, self.schema)
+        engine = create_engine(constr, echo=False)
+        df = pd.read_sql_query(self.query, con=engine)
+        df = df.rename(index=str, columns={'ku_timestamp': 'gmt'})
+        df = df.set_index('gmt')
+        # insert bookends for "full span" at (begin_date - zero) and at (end_date + zero)
+        df = self.add_bookend_time_placeholders(df)
+        return df
+
+    def add_bookend_time_placeholders(self, dfin):
+        '''return dataframe that has been reindexed to get full start/stop range'''
+        date_index_new = pd.date_range(start=self.begin_date, end=self.end_date, freq='S')
+        dfin = dfin.reindex(date_index_new)
+        return dfin
+
+
+class InsertToDeviceTracker(object):
+    """insert db entry for device tracker"""
+
+    def __init__(self, host, schema, table, uname, pword):
+        self.host = host
+        self.schema = schema
+        self.table = table
+        self.uname = uname
+        self.pword = pword
+
+    def insert(self, device, parameter, units, start, stop, variable, value):
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        query = "INSERT INTO %s.%s (entered, device, parameter, units, start, stop, variable, value) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %f);" % \
+                (self.schema, self.table, now_str, device, parameter, units, start, stop, variable, value)
+        cmd_query = 'mysql -h %s -u %s -p%s --execute="%s"' % (self.host, self.uname, self.pword, query)
+        # print cmd_query
+        p = subprocess.Popen([cmd_query], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        results, err = p.communicate()
 
 
 class SimpleQueryAOS(object):
