@@ -51,16 +51,31 @@ def OLDdemo_openpyxl_pandas():
     print df.columns
 
 
-def update_zin_spreadsheet():
+def update_zin_spreadsheet(filename):
     """update zin spreadsheet"""
 
-    # load workbook
-    wb = load_workbook(filename='/Users/ken/Documents/20190204_sample.xlsx')
+    # load workbook and get reference to worksheet
+    wb = load_workbook(filename=filename)
     ws = wb['Sheet1']
     # sheet_ranges = wb['Sheet1']
 
-    # fill first blank A1
+    # TODO verify first 2 rows are identical (an artifact from copying web page)
+
+    # delete row 1
+    ws.delete_rows(1, 1)
+
+    # fill cell A1
     ws['A1'] = 'Category'
+
+    # reformat A1 and B1 like C1
+    from_to = [('C1', 'A1'), ('C1', 'B1')]
+    for c1, c2 in from_to:
+        ws[c2].font = copy(ws[c1].font)
+        ws[c2].border = copy(ws[c1].border)
+        ws[c2].fill = copy(ws[c1].fill)
+        ws[c2].number_format = copy(ws[c1].number_format)
+        ws[c2].protection = copy(ws[c1].protection)
+        ws[c2].alignment = copy(ws[c1].alignment)
 
     # get dataframe values
     data = ws.values
@@ -72,10 +87,13 @@ def update_zin_spreadsheet():
     # print df
     # print df.columns
 
+    # rename Current Investment Mix to Pct and reformat values
+    df = df.rename(index=str, columns={"Current Investment Mix": "Current Investment Pct"})
+
     # verify header row matches
     expected_columns = [u'Category',
                         u'Inv Manager or Sub-Advisor\nInvestment Option',
-                        u'Current Investment Mix',
+                        u'Current Investment Pct',
                         u'Units/Shares',
                         u'Unit Value/Share Price',
                         u'Total Balance']
@@ -85,18 +103,36 @@ def update_zin_spreadsheet():
         print 'hey wait, our column names do not match'
 
     # verify current investment mix totals 100%
-    df['Current Investment Mix'] = df['Current Investment Mix'].apply(lambda x: float(x[:-1])/100.0)
-    cim = df['Current Investment Mix'].sum()
+    df['Current Investment Pct'] = df['Current Investment Pct'].apply(lambda x: float(x[:-1])/100.0)
+    cim = df['Current Investment Pct'].sum()
     if cim == 1.0:
-        print 'Current Investment Mix adds up to {:,.2f}%'.format(cim * 100.0)
+        print 'Current Investment Pct adds up to {:,.2f}%'.format(cim * 100.0)
     else:
-        print 'not so fast, our current investment mix does not total to 100%'
-    ws['C11'] = cim * 100.0
+        print 'not so fast, our current investment pct does not total to 100%'
+    ws['C11'].value = '=sum(C2:C10)'
+    ws['C11'].number_format = '#.00'
+
+    # write pct values as floats (not strings)
+    for idx, row in enumerate(df['Current Investment Pct']):
+        cell = 'C%d' % (idx + 2)
+        # print idx, row, ws[cell]
+        ws[cell] = row * 100.0
+        ws[cell].number_format = '#.00'
+
+    # rewrite dollar amounts
+    df['Total Balance'] = df['Total Balance'].apply(lambda x: float(x.replace('$', '').replace(',', '')))
+
+    # write dollar values as currency (not strings)
+    for idx, row in enumerate(df['Total Balance']):
+        cell = 'F%d' % (idx + 2)
+        # print idx, float(row.replace('$', '').replace(',', ''))
+        ws[cell] = row
+        ws[cell].number_format = '$#,##0.00'
 
     # insert grand total balance at bottom
     total = df['Total Balance'].sum()
     print 'Grand Total Balance is ${:,.2f}'.format(total)
-    ws['F11'] = total
+    ws['F11'].value = '=sum(F2:F10)'
 
     # copy format to newly inserted cim & grand total balance
     from_to = [('F10', 'F11'), ('C10', 'C11')]
@@ -113,7 +149,8 @@ def update_zin_spreadsheet():
     rd.height = 25  # value in points, there is no "auto"
 
     # save new file
-    wb.save("/Users/ken/Documents/20190204_sample_NEW.xlsx")
+    out_file = filename.replace('.xlsx', '_NEW.xlsx')
+    wb.save(out_file)
 
 
 def demo_openpyxl():
@@ -132,9 +169,9 @@ def demo_openpyxl():
     ws['A2'] = datetime.datetime.now()
 
     # Save the file
-    wb.save("/Users/ken/Documents/20190204_sample.xlsx")
+    wb.save("/Users/ken/Documents/20190207_sample_out.xlsx")
 
 
 if __name__ == '__main__':
-    update_zin_spreadsheet()
+    update_zin_spreadsheet('/Users/ken/Documents/20190207_zin.xlsx')
     # demo()
