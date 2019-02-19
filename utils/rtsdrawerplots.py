@@ -196,10 +196,10 @@ def main(argv):
     print_usage()
 
 
-def play_catchup():
+def play_catchup(startstr, stopstr):
     """run some catch-up code to get us up-to-date"""
     # for d in pd.date_range(start='2018-01-01', end='2018-08-09', freq='7D'):
-    for d in pd.date_range(start='2018-04-01', end='2018-05-01', freq='1D'):
+    for d in pd.date_range(start=startstr, end=stopstr, freq='1D'):
         start = d
         stop = d + datetime.timedelta(days=7)
         run(start, stop, '/misc/yoda/www/plots/user/sams/status/rtsdrawers')
