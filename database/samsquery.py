@@ -263,6 +263,40 @@ class RtsDrawerQuery(EeStatusQuery):
         return dfin
 
 
+class RtsDrawerCurrentQuery(EeStatusQuery):
+    """RTS Drawer query: (d1|d2) current"""
+
+    def __init__(self, host, schema, uname, pword, field, start, stop):
+        self.host = host
+        self.schema = schema
+        self.uname = uname
+        self.pword = pword
+        self.field = field
+        self.start = start
+        self.stop = stop
+        self.query = self._get_query()
+
+    def _get_query(self):
+        query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s';" % (self.field, self.start, self.stop)
+        return query
+
+    def dataframe_from_query(self):
+        constr = 'mysql://%s:%s@%s/%s' % (self.uname, self.pword, self.host, self.schema)
+        engine = create_engine(constr, echo=False)
+        df = pd.read_sql_query(self.query, con=engine)
+        df = df.rename(index=str, columns={'ku_timestamp': 'gmt'})
+        df = df.set_index('gmt')
+        # insert bookends for "full span" at (begin_date - zero) and at (end_date + zero)
+        # df = self.add_bookend_time_placeholders(df)
+        return df
+
+    # def add_bookend_time_placeholders(self, dfin):
+    #     '''return dataframe that has been reindexed to get full start/stop range'''
+    #     date_index_new = pd.date_range(start=self.start, end=self.stop, freq='S')
+    #     dfin = dfin.reindex(date_index_new)
+    #     return dfin
+
+
 class InsertToDeviceTracker(object):
     """insert db entry for device tracker"""
 

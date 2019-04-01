@@ -328,7 +328,8 @@ def pims_dbgaps():
             df_merged = pd.merge(df_merged, df_gaps, how='outer')
             msg = '%s %02d hourly recs' % (msg_preamble, len(df_merged))
         except Exception as e:
-            msg = '%s Exception %s' % (msg_preamble, e[1])
+            #msg = '%s Exception %s' % (msg_preamble, e[1])
+            msg = '%s Exception %s' % (msg_preamble, e[0])
 
         #print msg or 'done'
         print msg

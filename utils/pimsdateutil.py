@@ -56,6 +56,18 @@ def floor_minute(t):
                                     seconds=t.second,
                                     microseconds=t.microsecond)
 
+
+def floor_five_minutes(t):
+    """Return datetime rounded down (floored) to nearest 5-minute mark.
+
+    >>> floor_five_minutes( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 35)
+    """
+    return t - datetime.timedelta(minutes=t.minute % 5,
+                                  seconds=t.second,
+                                  microseconds=t.microsecond)
+
+
 def floor_ten_minutes(t):
     """Return datetime rounded down (floored) to nearest 10-minute mark.
     
@@ -79,6 +91,36 @@ def floor_hour(t):
     return t - datetime.timedelta( minutes=t.minute,
                                     seconds=t.second,
                                     microseconds=t.microsecond)
+
+def floor_day(t):
+    """Return datetime rounded down (floored) to nearest day mark.
+    
+    >>> floor_day( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> floor_day( datetime.datetime(2012,12,31,23,00,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> floor_day( datetime.datetime(2012,12,31,23,00,00,000000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    """
+    return t - datetime.timedelta(hours=t.hour,
+                                  minutes=t.minute,
+                                  seconds=t.second,
+                                  microseconds=t.microsecond)
+
+def ceil_day(t):
+    """Return datetime rounded up (ceiled) to nearest day mark.
+    
+    >>> ceil_day( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> ceil_day( datetime.datetime(2012,12,31,23,00,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> ceil_day( datetime.datetime(2012,12,31,23,00,00,000000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    """
+    return t - datetime.timedelta(hours=t.hour,
+                                  minutes=t.minute,
+                                  seconds=t.second,
+                                  microseconds=t.microsecond) + datetime.timedelta(days=1)
 
 def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     """

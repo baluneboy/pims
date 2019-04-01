@@ -19,7 +19,7 @@ _IGNORE_SENSORS = ['121f08badtime', '121f08goodtime', 'Abias',
             'cmg', 'finalbias_combine', 'gse', 'hirap_bogus', 'housek',
             'mcor_121f03', 'mcor_hirap', 'mcor_oss', 'pbesttmf', 'poss',
             'powerup', 'radgse', 'sec_hirap', 'sec_oss', 'soss', 'soss',
-            'textm', 'emptytable'
+            'textm', 'emptytable',
             ] 
 
 
@@ -73,9 +73,9 @@ def doy_fmt(x):
     delta = datetime.datetime.now() - d
     deltasec = delta.total_seconds()
     if deltasec <= _MAX_AGE_SEC:
-        s = '%s' % d.strftime('%j/%H:%M:%S ')
+        s = '%s' % d.strftime('%Y-%m-%d, %j/%H:%M:%S ')
     else:
-        s = '<span style="color: red">%s' % d.strftime('%j/%H:%M:%S ')
+        s = '<span style="color: red">%s' % d.strftime('%Y-%m-%d, %j/%H:%M:%S ')
     return s
 
 
@@ -210,9 +210,9 @@ def drop_MAMS(df):
 
 
 def drop_EE(df):
-    """drop rows that have EE designations (122f0*); ALREADY SORTED BY LastPkt GMT"""
+    """drop rows that have EE designations (122-f0*); ALREADY SORTED BY LastPkt GMT"""
     
-    df_not_ee = df[~df['Sensor'].str.contains('^122f0')]
+    df_not_ee = df[~df['Sensor'].str.contains('^122-f0')]
     df_sams = drop_MAMS(df_not_ee)
 
     # sort by sensor (not by GMT LastPkt)
@@ -234,16 +234,22 @@ if __name__ == "__main__":
     
     # convert stdin to dataframe
     df = stdin_to_dataframe()
+    #print df
 
     # filter out for "Active Sensors" page
     df_filt = filter_active_sensors(df)
+    #print df_filt
     
     # drop some columns that we do not want
     df = drop_unwanted_columns(df_filt)
+    #print df
+    
+    # drop rows that have NaN in any column
+    df = df.dropna(axis=0, how='any')
     
     # top table will be EE "Unit" (not "Sensor")
-    df_EE = keep_only(df, '^122f0')
-    df_EE = df_EE.rename(columns = {'Location': 'SAMS EE Location', 'Sensor': 'Unit'})    
+    df_EE = keep_only(df, '^122-f0')
+    df_EE = df_EE.rename(columns = {'Location': 'SAMS EE Location', 'Sensor': 'Unit'})
     
     # bottom table will be remainder, which should be SE "Sensor"
     df_sams, df_mams = drop_EE(df)

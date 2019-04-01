@@ -186,8 +186,9 @@ def digest_file(txt_file='/misc/yoda/www/plots/user/sams/status/sensortimes.txt'
     row = "\n%s,%s,%.1f,%.1f" % ("digester", datetime_to_doytimestr(host_now)[:-7], delta_host, delta_ku)
     
     # FIXME kludge for jimmy to mimsy transition
-    delta_dict.pop('hirap')
-    delta_dict.pop('oss')
+    #print delta_dict
+    #delta_dict.pop('hirap')
+    #delta_dict.pop('oss')
     
     # now iterate to get other delta_ku's
     any_bad_delta_ku = False
