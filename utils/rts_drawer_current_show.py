@@ -22,7 +22,7 @@ from pims.files.utils import mkdir_p
 # define some useful values
 _ENDTIME = floor_five_minutes(datetime.datetime.now())
 _NOW = _ENDTIME.strftime('%Y-%m-%d %H:%M:%S')
-_THIRTYHOURSAGO = floor_five_minutes((_ENDTIME - relativedelta(hours=30))).strftime('%Y-%m-%d %H:%M:%S')
+_TWELVEHOURSAGO = floor_five_minutes((_ENDTIME - relativedelta(hours=12))).strftime('%Y-%m-%d %H:%M:%S')
 
 DRAWER_PARAMS = {
 # abbrev    device    variable1              variable2
@@ -32,7 +32,7 @@ DRAWER_PARAMS = {
 
 # input parameters
 defaults = {
-    'start': _THIRTYHOURSAGO,  # string for start datetime
+    'start': _TWELVEHOURSAGO,  # string for start datetime
     'stop':  _NOW,             # string for stop datetime
     'output_dir': '/misc/yoda/www/plots/user/sams/status/drawer_current',  # string for output directory
 }
@@ -75,8 +75,8 @@ def run(start, stop, out_dir):
     """create plots and gather data from start to stop date (results into output_dir)"""
 
     # date axis locators and formatter
-    even_hours = mdates.HourLocator(byhour=range(0, 24, 4))
-    odd_hours = mdates.HourLocator(byhour=range(0, 24, 2))
+    even_hours = mdates.HourLocator(byhour=range(0, 24, 2))
+    odd_hours = mdates.HourLocator(byhour=range(1, 24, 2))
     dtFmt = mdates.DateFormatter('%Y-%m-%d\n%H:%M')
 
     # iterate over 2 RTS Drawers (aka here as d1 and d2)
@@ -123,10 +123,18 @@ def run(start, stop, out_dir):
             y = dfv_new[variable].rolling(window=900).apply(lambda x: trim_mean(x, 0.25), raw=True)
             t = pd.to_datetime(dfv_new.index)
 
+            #if 'd1' == d:
+            #    df2 = pd.DataFrame({'y':y})
+            #    df2.to_csv('/tmp/outfiley.csv')
+
             # create plot
             fig, ax = plt.subplots(figsize=(16, 9), dpi=120)
             ax.plot(t, y)
-
+            
+            #difft = np.diff(t)
+            #print np.min(difft)
+            #print np.max(difft)
+            
             # format the ticks
             ax.xaxis.set_major_locator(even_hours)
             ax.xaxis.set_minor_locator(odd_hours)
@@ -170,19 +178,19 @@ def run(start, stop, out_dir):
             fig.set_size_inches(11, 8.5)
 
             # save without timestamp
-            plt.savefig(os.path.join(out_dir, 'rts%s' % d) + '.pdf', dpi=120)
-            plt.savefig(os.path.join(out_dir, 'rts%s' % d) + '.png', dpi=120)
+            #plt.savefig(os.path.join(out_dir, 'rts%s' % d) + '.pdf', dpi=120)
+            #plt.savefig(os.path.join(out_dir, 'rts%s' % d) + '.png', dpi=120)
 
-            # if mid-day, then archive the pdf too
-            if stop.hour == 10 and stop.minute == 15:
-                #subdir = os.path.join('year%4d' % start.year, 'month%02d' % start.month, 'day%02d' % start.day)
-                subdir = os.path.join('year%4d' % start.year, 'month%02d' % start.month)
-                pth = os.path.join(out_dir, subdir)
-                mkdir_p(pth)
-                pdf_file = os.path.join(pth, output_bname + '.pdf')
-                plt.savefig(pdf_file, dpi=120)
+            # if top- or mid-day, then archive the pdf too
+            #if (start.hour == 0 or start.hour == 12) and start.minute == 0:
+            #    subdir = os.path.join('year%4d' % start.year, 'month%02d' % start.month, 'day%02d' % start.day)
+            #    pth = os.path.join(out_dir, subdir)
+            #    mkdir_p(pth)
+            #    pdf_file = os.path.join(pth, output_bname + '.pdf')
+            #    plt.savefig(pdf_file, dpi=120)
 
-            plt.close(fig)
+            #plt.close(fig)
+            plt.show()
 
 
 def paste_images():

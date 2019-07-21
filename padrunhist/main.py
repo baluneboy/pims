@@ -10,6 +10,7 @@ import os
 import sys
 import glob
 import datetime
+from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas as pd
 import scipy.io as sio
@@ -23,8 +24,9 @@ import argparser
 from plumb_line import plumblines
 from pims.mathbase.basics import round_up
 from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_path, year_month_to_dtm_start_stop, ymd_pathstr_to_date
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
-from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir
+from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir, PadDataDaySensorWhereMinDur
 from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
 from ugaudio.explore import padread, pad_file_percentiles
 
@@ -93,6 +95,20 @@ def get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=2*1024*1024)
     # initialize processing pipeline with callable classes, but not using file list as input yet
     ffp = FileFilterPipeline(file_filter1, file_filter2)
     #print ffp
+
+    # now apply processing pipeline to file list; at this point, ffp is callable
+    return list( ffp(files) )
+
+
+def get_pad_day_sensor_rate_mindur_files(files, day, sensor, mindur=5):
+
+    # FIXME rate implied at 500.0 (needs attention in PadDataDaySensorWhereMinDur)
+
+    # initialize callable classes that act as filters for our pipeline
+    file_filter1 = PadDataDaySensorWhereMinDur(day, sensor, mindur=mindur)
+
+    # initialize processing pipeline with callable classes, but not using file list as input yet
+    ffp = FileFilterPipeline(file_filter1)
 
     # now apply processing pipeline to file list; at this point, ffp is callable
     return list( ffp(files) )

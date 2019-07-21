@@ -277,7 +277,9 @@ class RtsDrawerCurrentQuery(EeStatusQuery):
         self.query = self._get_query()
 
     def _get_query(self):
-        query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s';" % (self.field, self.start, self.stop)
+        query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s' order by ku_timestamp asc;" % (self.field, self.start, self.stop)
+        #print query
+        #print self.schema
         return query
 
     def dataframe_from_query(self):
