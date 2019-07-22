@@ -1,0 +1,12 @@
+# The following are sample rotations for testing algorithms.
+
+# yaw, pitch, roll = 90, 0, 0
+ 0 -1  0
+ 1  0  0
+ 0  0  1
+
+# yaw, pitch, roll = -90, 0, 0
+ 0  1  0
+-1  0  0
+ 0  0  1
+ 

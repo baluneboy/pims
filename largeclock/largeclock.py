@@ -4,6 +4,7 @@
 
 # 8/20/2015 Hrovat modified to allow for input arguments
 # 9/1/2015  Hrovat modified for white bg when yoda db problem
+# 4/27/2018 Hrovat modified for new colors when MSFC telemetry went wonky
 
 import os
 import sys
@@ -98,9 +99,7 @@ def tick():
                 clock.config(bg='white')
             root.title( 'ku_timestamp = %s' %  ku_time)
 
-    # now call itself every 200 milliseconds
-    # to update the time display as needed
-    # could use >200 ms, but display gets jerky
+    # now call tick every 200 milliseconds to update display
     clock.after(200, tick)
 
 # menu callback for copying time to clipboard

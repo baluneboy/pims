@@ -87,7 +87,7 @@ def parse_inputs():
                         type=day_str,
                         help=help_stop)
 
-    # batch dir
+    # PAD dir
     help_paddir = "PAD dir; default is %s" % DEFAULT_PADDIR
     parser.add_argument('-p', '--paddir', default=DEFAULT_PADDIR,
                         type=folder_str,

@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys, os
+import sys, os, re
+from pims.pad.create_header_dict import parse_header  # FIXME old [but trusted] code
 from argparse import ArgumentParser, FileType
 #------------------------------------------------------------------------------
 
@@ -70,7 +71,7 @@ def grep_file(filename, pattern, color, ignore_case, print_headers,
         if len(result) > 0:
             print_result(print_headers, filename, print_lineno, lineno,
                             print_lines, result)
-            if print_headers and not print_lines: # files-with-matches option
+            if print_headers and not print_lines:  # files-with-matches option
                 break
         line = text.readline()
         lineno += 1

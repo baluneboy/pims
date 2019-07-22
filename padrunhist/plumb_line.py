@@ -64,9 +64,9 @@ def plumblines(hLine, yvals, **kwargs):
         horlines.append(plt.hlines(y, xmin, x, colors='r', linestyles='--', label='', hold=None, **kwargs))
         reddots.append(plt.plot(x, y, 'ro'))
         if x_units == 'mg':
-            fmtstr = '(%0.2f%s, %d%%)'
+            fmtstr = '(%0.2f%s, %.1f%%)'
         else:
-            fmtstr = '(%0.1f%s, %d%%)'
+            fmtstr = '(%0.1f%s, %.1f%%)'
         anns.append(ax.annotate(fmtstr % (x, x_units, y), xy=(x + 0.3, y - 5), textcoords='data',
                     horizontalalignment='left', verticalalignment='middle',
                     weight='bold', color='r'))

@@ -128,6 +128,7 @@ class PadHeaderDict(TransformedDict):
         header_pattern = '.*\.%s\.header' % self['_sensor']
         return listdir_filename_pattern(sensor_dir, header_pattern)        
 
+
 def demo():
     #dtm = datetime(2012, 12, 31, 11, 59, 59, 999000)
     #sensors = ['121f03006', 'hirap', '121f02']

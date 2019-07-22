@@ -3,6 +3,8 @@
 <project id="9f7c0f6e-e422-46eb-a479-128aa220308c" kpf_version="5" name="amp_kpi.komodoproject">
 <file id="10919cd4-4020-4b46-8080-3eff849d3706" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="drawers.py" url="pad/drawers.py">
 </file>
+<file id="31a342e5-7376-4fc2-b178-bbbab42fd763" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="polar.py" url="pad/polar.py">
+</file>
 <file id="49c8e1ed-b0e0-4172-b4ad-473d76e112bf" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="modification.py" url="excel/modification.py">
 </file>
 <file id="7abcc6f9-5929-4d7c-9c01-f1cd8e53ca73" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="process_sto_file.py" url="pad/process_sto_file.py">
@@ -13,4 +15,7 @@
 </file>
 <file id="ed95dadc-92be-42fd-b3e5-0adc524b3a42" idref="9f7c0f6e-e422-46eb-a479-128aa220308c" name="samsquery.py" url="database/samsquery.py">
 </file>
+<preference-set idref="9f7c0f6e-e422-46eb-a479-128aa220308c" id="project" preftype="project">
+  <long id="prefs_version">1</long>
+</preference-set>
 </project>

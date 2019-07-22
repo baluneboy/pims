@@ -5,12 +5,15 @@ import re
 import time
 import datetime
 from dateutil.parser import parse
+from dateutil.relativedelta import relativedelta
 from mutagen.mp3 import MP3
 
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_ESTIMATE_PDF_PATTERN
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
-from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
-from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, otomat_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
+from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub, datetime_to_ymd_path
+from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa, get_hdr_dict_fs_fc_sensor
+
 
 class FileFilterPipeline(object):
 
@@ -60,7 +63,7 @@ class FileExists(object):
 # Operator #2 is a big-file callable class
 class BigFile(object):
     
-    def __init__(self, min_bytes=1024*1024):
+    def __init__(self, min_bytes=1024*1024):  # default min is 1 MB
         self.min_bytes = min_bytes
         
     def __call__(self, file_list):
@@ -71,6 +74,22 @@ class BigFile(object):
 
     def __str__(self):
         return 'is a file with at least %d bytes' % self.min_bytes
+
+#---------------------------------------------------
+# Operator is a too-small-file callable class
+class TooSmallFile(object):
+    
+    def __init__(self, max_bytes=1024*500):
+        self.max_bytes = max_bytes
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            file_bytes = os.path.getsize(f) 
+            if file_bytes <= self.max_bytes:
+                yield f
+
+    def __str__(self):
+        return 'is a file with at most %d bytes' % self.max_bytes
 
 #---------------------------------------------------    
 # old Operator #3 is an extension-checking function
@@ -255,6 +274,110 @@ class MatchSensorPad(object):
         else:
             return False
 
+# for PAD to match sample rate, cutoff freq and SSA coordinates
+class HeaderMatchesRateCutoffLocSsaPad(object):
+# <?xml version="1.0" encoding="US-ASCII"?>
+# <sams2_accel>
+# 	<SensorID>121f04</SensorID>
+# 	<TimeZero>2018_06_13_23_56_43.640</TimeZero>
+# 	<Gain>10.0</Gain>
+# 	<SampleRate>500.0</SampleRate>
+# 	<CutoffFreq>200.0</CutoffFreq>
+# 	<GData format="binary 32 bit IEEE float little endian" file="2018_06_13_23_56_43.640+2018_06_14_00_01_37.643.121f04"/>
+# 	<BiasCoeff x="1.23" y="4.46" z="7.89"/>
+# 	<SensorCoordinateSystem name="121f04" r="180.0" p="0.0" w="-90.0" x="156.6" y="-46.08" z="207.32" comment="LAB1P2, ER7, Cold Atom Lab Front Panel" time="2018_05_31_00_00_00.000"/>
+# 	<DataCoordinateSystem name="SSAnalysis" r="0.0" p="0.0" w="0.0" x="0.0" y="0.0" z="0.0" comment="S0, Geom. Ctr. ITA" time="2001_05_01_00_00_00.000"/>
+# 	<DataQualityMeasure>temperature+gain+axial-mis-alignment, No temperature compensation</DataQualityMeasure>
+# 	<ISSConfiguration>Increment:  28, Flight: ULF7</ISSConfiguration>
+# 	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
+# </sams2_accel>
+    
+    def __init__(self, fs, fc, loc, coord_name='SSAnalysis'):
+        self.template = {
+            'DataCoordinateSystem_name': coord_name,
+            'SensorCoordinateSystem_comment': loc,  # note that the 'comment' field contains location info
+            'SampleRate': fs,
+            'CutoffFreq': fc
+            }
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if not f.endswith('.header'):
+                hdr_file = f + '.header'
+            else:
+                hdr_file = f
+            header_values = get_hdr_dict_fs_fc_loc_ssa(hdr_file)
+            if header_values == self.template:
+                    yield f
+                
+    def __str__(self):
+        return 'is a PAD file with fs = %.3f, fc = %.3f, coord_sys = %s, loc = %s' % (self.template['SampleRate'],
+                                                                                  self.template['CutoffFreq'],
+                                                                                  self.template['DataCoordinateSystem_name'],
+                                                                                  self.template['SensorCoordinateSystem_comment'],
+                                                                                  )
+
+# for PAD to match SensorID, SampleRate and CutoffFreq
+class HeaderMatchesSensorRateCutoffPad(object):
+# <?xml version="1.0" encoding="US-ASCII"?>
+# <sams2_accel>
+# 	<SensorID>121f04</SensorID>
+# 	<TimeZero>2018_06_13_23_56_43.640</TimeZero>
+# 	<Gain>10.0</Gain>
+# 	<SampleRate>500.0</SampleRate>
+# 	<CutoffFreq>200.0</CutoffFreq>
+# 	<GData format="binary 32 bit IEEE float little endian" file="2018_06_13_23_56_43.640+2018_06_14_00_01_37.643.121f04"/>
+# 	<BiasCoeff x="1.23" y="4.46" z="7.89"/>
+# 	<SensorCoordinateSystem name="121f04" r="180.0" p="0.0" w="-90.0" x="156.6" y="-46.08" z="207.32" comment="LAB1P2, ER7, Cold Atom Lab Front Panel" time="2018_05_31_00_00_00.000"/>
+# 	<DataCoordinateSystem name="SSAnalysis" r="0.0" p="0.0" w="0.0" x="0.0" y="0.0" z="0.0" comment="S0, Geom. Ctr. ITA" time="2001_05_01_00_00_00.000"/>
+# 	<DataQualityMeasure>temperature+gain+axial-mis-alignment, No temperature compensation</DataQualityMeasure>
+# 	<ISSConfiguration>Increment:  28, Flight: ULF7</ISSConfiguration>
+# 	<ScaleFactor x="1.0" y="1.0" z="1.0"/>
+# </sams2_accel>
+    
+    def __init__(self, sensor, fs, fc):
+        self.template = {
+            'SensorID': sensor,
+            'SampleRate': fs,
+            'CutoffFreq': fc
+            }
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            if not f.endswith('.header'):
+                hdr_file = f + '.header'
+            else:
+                hdr_file = f
+            header_values = get_hdr_dict_fs_fc_sensor(hdr_file)
+            if header_values == self.template:
+                    yield f
+                
+    def __str__(self):
+        return 'is a PAD file with fs = %.3f, fc = %.3f, sensor = %s' % (self.template['SampleRate'],
+                                                                                  self.template['CutoffFreq'],
+                                                                                  self.template['SensorID'],
+                                                                                  )
+
+# FIXME this is sloppy way to get true file duration in minutes (crude but what we go with for now)
+class MinDurMinutesPad(object):
+    
+    def __init__(self, min_minutes=5.0):
+        self.min_minutes = min_minutes
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            fstart, fstop = pad_fullfilestr_to_start_stop(f)
+            num_minutes = (fstop - fstart).total_seconds() / 60.0
+            if num_minutes >= self.min_minutes:
+                # print 'ok', f, num_minutes
+                yield f
+            # else:
+            #     print 'no', f, num_minutes
+                
+    def __str__(self):
+        return 'is a PAD file longer in duration than %.f minutes' % (self.min_minutes)
+
+
 # for example, used to quarantine PAD files with filename's GMT stop time greater than start & GMT start time less than stop
 class DateRangePadFile(object):
     
@@ -270,6 +393,55 @@ class DateRangePadFile(object):
                 
     def __str__(self):
         return 'is a PAD file with fname stop > %s and fname start < %s' % (self.start, self.stop)
+
+
+class OtoDaySensorHours(object):
+    """return generator for OTO mat files whose names match given sensor, start/stop hour range(s)"""
+
+    def __init__(self, day, sensor, hours):
+        self.sensor = sensor
+        self.day = parse(day)
+        self.hours = hours
+        
+    def __call__(self, file_list):
+        for f in file_list:
+            sensor = f.split('.')[-2]
+            if not self.sensor == sensor:
+                return
+            fstart, fstop = otomat_fullfilestr_to_start_stop(f)
+            for h1, h2 in self.hours:
+                start = self.day + relativedelta(hours=h1)
+                stop = self.day + relativedelta(hours=h2)
+                if fstart > start and fstop < stop:
+                    yield f
+                
+    def __str__(self):
+        return 'is an OTO file for sensor with fname start/stop hour in given list of hour ranges'
+
+
+class PadDaySensorHours(object):
+    """return generator for PAD files whose names match given sensor, start/stop hour range(s)"""
+
+    def __init__(self, day, sensor, hours):  # e.g. hours = [(0,4), (22,23)]
+        self.sensor = sensor
+        self.day = parse(day)
+        self.hours = hours
+
+    def __call__(self, file_list):
+        for f in file_list:
+            sensor = f.split('.')[-1]
+            if not self.sensor == sensor:
+                return
+            fstart, fstop = pad_fullfilestr_to_start_stop(f)
+            for h1, h2 in self.hours:
+                start = self.day + relativedelta(hours=h1)
+                stop = self.day + relativedelta(hours=h2)
+                if fstart > start and fstop < stop:
+                    yield f
+
+    def __str__(self):
+        return 'is PAD file for sensor with fname start/stop hour in given list of hour ranges'
+
 
 #class DateRangeStateFoscamFile(object):
 #    
@@ -339,7 +511,8 @@ def demo3():
             '/misc/yoda/www/plots/user/sheep/ee_stats_2017-02-01.pkl']
     for f in ffp(inp1):
         print f
-        
+
+    
 def demo2():
     
     # Initialize processing pipeline (no file list as input yet)
@@ -353,7 +526,41 @@ def demo2():
         ]
     inp2 = [ os.path.join('/tmp/x/', f) for f in fnames ]
     for f in ffp(inp2):
-        print f  
+        print f
+    
+    
+def demo_gateway2():
+    
+    import glob
+    
+    # Initialize processing pipeline (no file list as input yet)
+    day = datetime.datetime(2016,1,22)
+    hours = [(0,4), (22,23)]
+    ffp = FileFilterPipeline(OtoDaySensorHours(day, hours))
+    print ffp
+    
+    # Apply processing pipeline input #1 (now ffp is callable)
+    wild_path = '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/day22/sams2_accel_121f03/*mat'
+    filenames = glob.glob(wild_path)
+    for f in ffp(filenames):
+        print f 
+   
+   
+def demo_gateway():
+    
+    import glob
+    
+    # Initialize processing pipeline (no file list as input yet)
+    ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad('121f03', 500, 200), MinDurMinutesPad(min_minutes=5.0))
+    print ffp
+    
+    # Apply processing pipeline input #1 (now ffp is callable)
+    #wild_path = '/misc/yoda/pub/pad/year2018/month01/day02/sams2_accel_121f03/*header'
+    wild_path = '/tmp/trashpad/year2018/month01/day02/sams2_accel_121f03/*header'
+    filenames = glob.glob(wild_path)
+    for f in ffp(filenames):
+        print f    
+    
 
 def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path='/misc/yoda/www/plots/batch'):
     import glob
@@ -378,10 +585,46 @@ def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path=
                 hh = f.split('_')[3]
                 print hh,
         print ''
-        
-    
+
+
+def demo_fetch_big_pad_files(start, end, sensor, fs, fc, hours):
+    import glob
+    import pandas as pd
+
+    print start, end
+    print sensor, fs, fc
+    print hours
+
+    for d in pd.date_range(start, end):
+        print d.date(), sensor, " > ",
+        day_dir = datetime_to_ymd_path(d)
+
+        # initialize processing pipeline (no file list as input yet)
+        ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad(sensor, fs, fc),
+                                 PadDaySensorHours(d.strftime('%Y-%m-%d'), sensor, hours),
+                                 BigFile(min_bytes=2*1024*1024))
+
+        # apply processing pipeline (now ffp is callable)
+        glob_pat = os.path.join(day_dir, '*_*_%s/*.%s' % (sensor, sensor))
+        day_files = glob.glob(glob_pat)
+        if len(day_files) == 0:
+            print 'MISSING---',
+        else:
+            # for f in ffp(day_files):
+            #     hh = f.split('_')[3]
+            #     print hh,
+            keep_files = list(ffp(day_files))
+            print len(keep_files), 'files', keep_files,
+        print ''
+
 
 if __name__ == "__main__":
-    sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
-    for sensor in sensors:
-        show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)
+
+    #sensors = [ '121f0%s' % str(s) for s in [2, 3, 4, 5, 8]]
+    #for sensor in sensors:
+    #    show_missing_roadmaps('2018-01-25', start='2018-01-20', sensor=sensor)
+
+    # demo_gateway2()
+
+    # SLEEP FILES ONLY
+    demo_fetch_big_pad_files('2016-01-01', '2016-01-31', '121f03006', 142.0, 6.0, [(0, 4)])

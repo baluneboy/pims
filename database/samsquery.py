@@ -18,6 +18,7 @@ from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN
 import mysql.connector
 from sqlalchemy import create_engine
 
+
 # Get sensitive authentication credentials for internal MySQL db query
 _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
 _HOST_SAMS = 'yoda'
@@ -158,6 +159,15 @@ def compare_samsops_bak(pword, d1, d2):
 #raise SystemExit
 
 
+class CuTempsQuery(EeStatusQuery):
+    """every 5 minute query for temperatures"""
+    
+    def _get_query(self):
+        #SELECT timestamp, cpu_temp0, cpu_temp1, case_temp0, case_temp1, case_temp2, case_temp3, case_temp4, case_temp5, case_temp6, case_temp7, case_temp8, gpu_temp FROM samsnew.cu_packet order by timestamp desc limit 300;
+        query = 'SELECT timestamp, cpu_temp0, cpu_temp1, case_temp0, case_temp1, case_temp2, case_temp3, case_temp4, case_temp5, case_temp6, case_temp7, case_temp8, gpu_temp FROM samsnew.cu_packet order by timestamp desc limit 300;'
+        return query
+
+
 class CuStatusQuery(EeStatusQuery):
     """workaround query for updating web page with CU status"""
 
@@ -201,6 +211,112 @@ class GseStatusQuery(EeStatusQuery):
         fivemin_agostr = (datetime.datetime.now() - relativedelta(minutes=5)).strftime('%Y-%m-%d %H:%M:%S')
         query = "SELECT ku_timestamp, sams_cu_hs_counter FROM samsnew.gse_packet WHERE ku_timestamp >= '%s' ORDER BY ku_timestamp DESC LIMIT 5;" % fivemin_agostr
         return query
+
+
+class RtsDrawerQuery(EeStatusQuery):
+    """RTS Drawer query: (d1|d2) and (current|temperature)"""
+
+    def __init__(self, host, schema, uname, pword, field, begin_date=None, end_date=None):
+        self.host = host
+        self.schema = schema
+        self.uname = uname
+        self.pword = pword
+        self.field = field
+        self.begin_date = begin_date
+        self.end_date = end_date
+        self.query = self._get_query()
+
+    def _get_query(self):
+        if self.begin_date is None:
+            if self.end_date is None:
+                d1 = (datetime.datetime.now() - relativedelta(days=9)).strftime('%Y-%m-%d')
+                d2 = (datetime.datetime.now() - relativedelta(days=1)).strftime('%Y-%m-%d')
+            else:
+                d2 = self.end_date
+                d1 = (d2 - relativedelta(days=7)).strftime('%Y-%m-%d')
+        else:
+            if self.end_date is None:
+                d1 = self.begin_date
+                d2 = (d1 + relativedelta(days=7)).strftime('%Y-%m-%d')
+            else:
+                d1 = self.begin_date
+                d2 = self.end_date
+        # twoweeksagostr = (datetime.datetime.now() - relativedelta(weeks=2)).strftime('%Y-%m-%d')
+        # oneweeksagostr = (datetime.datetime.now() - relativedelta(weeks=1)).strftime('%Y-%m-%d')
+        query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s';" % (self.field, d1, d2)
+        return query
+
+    def dataframe_from_query(self):
+        constr = 'mysql://%s:%s@%s/%s' % (self.uname, self.pword, self.host, self.schema)
+        engine = create_engine(constr, echo=False)
+        df = pd.read_sql_query(self.query, con=engine)
+        df = df.rename(index=str, columns={'ku_timestamp': 'gmt'})
+        df = df.set_index('gmt')
+        # insert bookends for "full span" at (begin_date - zero) and at (end_date + zero)
+        df = self.add_bookend_time_placeholders(df)
+        return df
+
+    def add_bookend_time_placeholders(self, dfin):
+        '''return dataframe that has been reindexed to get full start/stop range'''
+        date_index_new = pd.date_range(start=self.begin_date, end=self.end_date, freq='S')
+        dfin = dfin.reindex(date_index_new)
+        return dfin
+
+
+class RtsDrawerCurrentQuery(EeStatusQuery):
+    """RTS Drawer query: (d1|d2) current"""
+
+    def __init__(self, host, schema, uname, pword, field, start, stop):
+        self.host = host
+        self.schema = schema
+        self.uname = uname
+        self.pword = pword
+        self.field = field
+        self.start = start
+        self.stop = stop
+        self.query = self._get_query()
+
+    def _get_query(self):
+        query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s' order by ku_timestamp asc;" % (self.field, self.start, self.stop)
+        #print query
+        #print self.schema
+        return query
+
+    def dataframe_from_query(self):
+        constr = 'mysql://%s:%s@%s/%s' % (self.uname, self.pword, self.host, self.schema)
+        engine = create_engine(constr, echo=False)
+        df = pd.read_sql_query(self.query, con=engine)
+        df = df.rename(index=str, columns={'ku_timestamp': 'gmt'})
+        df = df.set_index('gmt')
+        # insert bookends for "full span" at (begin_date - zero) and at (end_date + zero)
+        # df = self.add_bookend_time_placeholders(df)
+        return df
+
+    # def add_bookend_time_placeholders(self, dfin):
+    #     '''return dataframe that has been reindexed to get full start/stop range'''
+    #     date_index_new = pd.date_range(start=self.start, end=self.stop, freq='S')
+    #     dfin = dfin.reindex(date_index_new)
+    #     return dfin
+
+
+class InsertToDeviceTracker(object):
+    """insert db entry for device tracker"""
+
+    def __init__(self, host, schema, table, uname, pword):
+        self.host = host
+        self.schema = schema
+        self.table = table
+        self.uname = uname
+        self.pword = pword
+
+    def insert(self, device, parameter, units, start, stop, variable, value):
+        now_str = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        query = "INSERT INTO %s.%s (entered, device, parameter, units, start, stop, variable, value) VALUES ('%s', '%s', '%s', '%s', '%s', '%s', '%s', %f);" % \
+                (self.schema, self.table, now_str, device, parameter, units, start, stop, variable, value)
+        cmd_query = 'mysql -h %s -u %s -p%s --execute="%s"' % (self.host, self.uname, self.pword, query)
+        # print cmd_query
+        p = subprocess.Popen([cmd_query], stdout=subprocess.PIPE, stderr=subprocess.PIPE, shell=True)
+        results, err = p.communicate()
 
 
 class SimpleQueryAOS(object):
@@ -415,12 +531,12 @@ def workaroundRTtable(htmlFile='/misc/yoda/www/plots/user/sams/eetemp.html'):
     fo.close()    
 
 
-def demo():
+def demo2():
     #right_now = (datetime.datetime.now()).strftime('%Y-%m-%d %H:%M:%S')
     #print '%s is GMT now' % right_now
-    aos = SimpleQueryAOS(_HOST, _SCHEMA, _UNAME, _PASSWD)
+    aos = SimpleQueryAOS(_HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS)
     print aos
-    gse = GseStatusQuery(_HOST, _SCHEMA, _UNAME, _PASSWD)
+    gse = GseStatusQuery(_HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS)
     gse_results = gse.run_query()
     if len(gse_results) == 0:
         print '\nNO RESULTS from following query:'
@@ -429,8 +545,8 @@ def demo():
         print '\nFive recent GSE packet records'
         print  '------------------------------'
         print gse_results
-
-
+        
+        
 def demo3():
     df = pd.DataFrame({'correlation':[0.5, 0.1,0.9], 'p_value':[0.1,0.8,0.01]})
     df.to_html('/tmp/trash3.html',
@@ -438,7 +554,6 @@ def demo3():
                 'p_value':lambda x: "*%f*" % x if x<0.05 else str(x),
                 'correlation':lambda x: "%3.1f" % x
                 })
-
 
 
 def percentage_fmt(x):
@@ -527,6 +642,74 @@ def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
     result = cursor.fetchall()
     cursor.close()
     con.close()
+
+
+def query_cu_packet_temps(d1, d2, table='cu_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    #SELECT timestamp, cpu_temp0, cpu_temp1, case_temp0, case_temp1, case_temp2, case_temp3, case_temp4, case_temp5, case_temp6, case_temp7, case_temp8, gpu_temp FROM samsnew.cu_packet
+    query = "select timestamp, cpu_temp0, cpu_temp1, case_temp0, case_temp1, case_temp2, case_temp3, case_temp4, case_temp5, case_temp6, case_temp7, case_temp8, gpu_temp from %s.%s where timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, t1, t2)
+    #print query
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
+def query_tsh_packet_temps(tsh, d1, d2, table='tshes_house_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get tsh temperature records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    query = "select timestamp, tempX, tempY, tempZ from %s.%s where tshes_id = '%s' and timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, tsh, t1, t2)
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
+def query_gse_packet_current(d1, d2, table='gse_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    #SELECT ku_timestamp, er6_locker_3_current FROM samsnew.gse_packet order by ku_timestamp desc limit 11;
+    query = "select ku_timestamp, er6_locker_3_current from %s.%s where ku_timestamp >= '%s' and ku_timestamp < '%s' order by ku_timestamp asc;" % (schema, table, t1, t2)
+    #print query
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
+def query_gse_packet_current(d1, d2, table='gse_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get ER6 Locker 3 current values from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    #SELECT ku_timestamp, er6_locker_3_current FROM samsnew.gse_packet order by ku_timestamp desc limit 11;
+    query = "select ku_timestamp, er6_locker_3_current from %s.%s where ku_timestamp >= '%s' and ku_timestamp < '%s' order by ku_timestamp asc;" % (schema, table, t1, t2)
+    #print query
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
+def query_drawer_info(d1, d2, table='gse_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get ER6 Locker 3 current values from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    #SELECT ku_timestamp, er6_locker_3_current FROM samsnew.gse_packet order by ku_timestamp desc limit 11;
+    query = "select ku_timestamp, er6_locker_3_current from %s.%s where ku_timestamp >= '%s' and ku_timestamp < '%s' order by ku_timestamp asc;" % (schema, table, t1, t2)
+    #print query
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
 
 
 def query_ee_packet_hs(d1, d2, table='ee_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
