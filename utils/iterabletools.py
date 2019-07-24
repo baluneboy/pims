@@ -3,6 +3,7 @@
 import operator
 from itertools import *
 
+
 def ilen(it):
     """Return the length of an iterable.
     
@@ -16,7 +17,27 @@ def ilen(it):
     7
     """   
     return sum(1 for _ in it)
-    
+
+
+def intlist2ranges(i):
+    """Return range from a list of monotonically-increasing integers.
+
+    The result is a tuple for each range.
+
+    >>> rr = intlist2ranges([1, 2, 3, 4, 7, 8, 9])
+    >>> list(rr)
+    [(1, 4), (7, 9)]
+    >>> ss = intlist2ranges([1, 2, 3, 4, 7, 8, 9])
+    >>> next(ss)
+    (1, 4)
+    >>> next(ss)
+    (7, 9)
+    """
+    for a, b in groupby(enumerate(i), lambda (x, y): y - x):
+        b = list(b)
+        yield b[0][1], b[-1][1]
+
+
 def runlength_enc(xs):
     """Return a run-length encoded version of the stream, xs.
     
@@ -29,6 +50,7 @@ def runlength_enc(xs):
     [(2, 'B'), (3, 'C')]
     """
     return ((ilen(gp),x) for x,gp in groupby(xs))
+
 
 def runlength_dec(xs):
     """Expand a run-length encoded stream.
@@ -45,6 +67,7 @@ def runlength_dec(xs):
     """
     return chain.from_iterable(repeat(x,n) for n,x in xs)
 
+
 def runlength_consumer(a, mask):
     """Apply run-length with consumer feature."""
     RLE = runlength_enc(mask)
@@ -56,6 +79,7 @@ def runlength_consumer(a, mask):
             consume(mask,n)
         else:
             print "no consume"    
+
 
 def runlength_blocks(data):
     """Return run-length encoded blocks of input data.
@@ -69,6 +93,7 @@ def runlength_blocks(data):
     blocks = [map(itemgetter(0), itemgetter(0, -1)(list(g))) + [k] for k, g in groupby(enumerate(data), itemgetter(1))]
     return blocks
 
+
 def dedupe_adjacent(alist):
     """Return list with adjacent duplicates removed.
     
@@ -76,6 +101,7 @@ def dedupe_adjacent(alist):
     [0, 1, 5]
     """
     return [k for k,g in groupby(alist)]
+
 
 def take(n, iterable):
     """Return first n items of the iterable as a list.
@@ -86,9 +112,11 @@ def take(n, iterable):
     """
     return list(islice(iterable, n))
 
+
 def tabulate(function, start=0):
     "Return function(0), function(1), ..."
     return imap(function, count(start))
+
 
 def consume(iterator, n):
     "Advance the iterator n-steps ahead. If n is none, consume entirely."
@@ -100,6 +128,7 @@ def consume(iterator, n):
         # advance to the empty slice starting at position n
         next(islice(iterator, n, n), None)
 
+
 def nth(iterable, n, default=None):
     """Returns the nth item or a default value.
     
@@ -110,6 +139,7 @@ def nth(iterable, n, default=None):
     'B'
     """
     return next(islice(iterable, n, None), default)
+
 
 def quantify(iterable, pred=bool):
     """Count how many times the predicate is true.
@@ -131,12 +161,14 @@ def quantify(iterable, pred=bool):
     """
     return sum(imap(pred, iterable))
 
+
 def padnone(iterable):
     """Returns the sequence elements and then returns None indefinitely.
 
     Useful for emulating the behavior of the built-in map() function.
     """
     return chain(iterable, repeat(None))
+
 
 def ncycles(iterable, n):
     """Returns the sequence elements n times.
@@ -149,13 +181,16 @@ def ncycles(iterable, n):
     """
     return chain.from_iterable(repeat(tuple(iterable), n))
 
+
 def prod(iterable):
     "Multiply elements of iterable."
     return reduce(operator.mul, iterable, 1)
 
+
 def dotproduct(vec1, vec2):
     "Dot product."
     return sum(imap(operator.mul, vec1, vec2))
+
 
 def flatten(listOfLists):
     """Flatten one level of nesting.
@@ -166,6 +201,7 @@ def flatten(listOfLists):
     """
     return chain.from_iterable(listOfLists)
 
+
 def repeatfunc(func, times=None, *args):
     """Repeat calls to func with specified arguments.
        or does it? can you have kwargs before args??
@@ -174,11 +210,13 @@ def repeatfunc(func, times=None, *args):
         return starmap(func, repeat(args))
     return starmap(func, repeat(args, times))
 
+
 def pairwise(iterable):
     "s -> (s0,s1), (s1,s2), (s2, s3), ..."
     a, b = tee(iterable)
     next(b, None)
     return izip(a, b)
+
 
 def grouper(n, iterable, fillvalue=None):
     """grouper(3, 'ABCDEFG', 'x') --> ABC DEF Gxx
@@ -189,6 +227,7 @@ def grouper(n, iterable, fillvalue=None):
     """
     args = [iter(iterable)] * n
     return izip_longest(fillvalue=fillvalue, *args)
+
 
 def roundrobin(*iterables):
     "roundrobin('ABC', 'D', 'EF') --> A D E B F C"
@@ -203,6 +242,7 @@ def roundrobin(*iterables):
             pending -= 1
             nexts = cycle(islice(nexts, pending))
 
+
 def powerset(iterable):
     """powerset([1,2,3]) --> () (1,) (2,) (3,) (1,2) (1,3) (2,3) (1,2,3)
     
@@ -211,6 +251,7 @@ def powerset(iterable):
     """
     s = list(iterable)
     return chain.from_iterable(combinations(s, r) for r in range(len(s)+1))
+
 
 def unique_everseen(iterable, key=None):
     """List unique elements, preserving order. Remember all elements ever seen.
@@ -233,6 +274,7 @@ def unique_everseen(iterable, key=None):
                 seen_add(k)
                 yield element
 
+
 def unique_justseen(iterable, key=None):
     """List unique elements, preserving order. Remember only the element just seen.
     
@@ -242,6 +284,7 @@ def unique_justseen(iterable, key=None):
     ['A', 'B', 'C', 'A', 'D']
     """
     return imap(next, imap(operator.itemgetter(1), groupby(iterable, key)))
+
 
 def iter_except(func, exception, first=None):
     """ Call a function repeatedly until an exception is raised.
@@ -267,16 +310,19 @@ def iter_except(func, exception, first=None):
     except exception:
         pass
 
+
 def random_product(*args, **kwds):
     "Random selection from itertools.product(*args, **kwds)."
     pools = map(tuple, args) * kwds.get('repeat', 1)
     return tuple(random.choice(pool) for pool in pools)
+
 
 def random_permutation(iterable, r=None):
     "Random selection from itertools.permutations(iterable, r)."
     pool = tuple(iterable)
     r = len(pool) if r is None else r
     return tuple(random.sample(pool, r))
+
 
 def random_combination(iterable, r):
     "Random selection from itertools.combinations(iterable, r)."
@@ -285,6 +331,7 @@ def random_combination(iterable, r):
     indices = sorted(random.sample(xrange(n), r))
     return tuple(pool[i] for i in indices)
 
+
 def random_combination_with_replacement(iterable, r):
     "Random selection from itertools.combinations_with_replacement(iterable, r)."
     pool = tuple(iterable)
@@ -292,12 +339,14 @@ def random_combination_with_replacement(iterable, r):
     indices = sorted(random.randrange(n) for i in xrange(r))
     return tuple(pool[i] for i in indices)
 
+
 def demo_runlength_dec( counts=[2, 3, 1], vals=[0, 1, 5] ):
     """Demonstrate run_length functions."""
     # default values: get two zeros, three ones, and then one five
     ys = runlength_dec( ( zip(counts,vals) ) )
     # iterable ready to roll...gets consumed by iteration though!
     for y in ys: print y,
+
 
 def demo_grouper():
     import numpy as np
@@ -333,11 +382,13 @@ def group_iterable_by_predicate(iterable, is_start):
         for _ in gen:
             pass
 
+
 def demo_group_iterable_by_predicate():
     for gen in group_iterable_by_predicate(xrange(4, 16), lambda x: x % 5 == 0):
         print 'grp:',
         for n in gen:
             print '%02d,' % n,
+
 
 if __name__ == '__main__':
     import doctest

@@ -25,7 +25,8 @@ DAYSTEP = 86400.0  # seconds in a day
 DRAWER_PARAMS = {
 # abbrev    device    variable1               variable2
     'd1': ('RTS/D1', 'er1_drawer_1_current', 'sams_rts_d1_baseplate_temp'),
-    'd2': ('RTS/D2', 'er5_drawer_2_current', 'sams_rts_d2_baseplate_temp'),
+    #'d2': ('RTS/D2', 'er5_drawer_2_current', 'sams_rts_d2_baseplate_temp'),
+    'd2': ('RTS/D2', 'er4_drawer_2_current', 'sams_rts_d2_baseplate_temp'),
     }
 
 # input parameters
@@ -185,7 +186,8 @@ def get_dataframe(start, stop, variable, field_name):
     """get dataframe for start/stop range"""
     
     # init and run query
-    dq = RtsDrawerQuery(_HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS, field_name, begin_date=start, end_date=stop)
+    #dq = RtsDrawerQuery(_HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS, field_name, begin_date=start, end_date=stop)
+    dq = RtsDrawerQuery(_HOST_SAMS, 'samstoo', _UNAME_SAMS, _PASSWD_SAMS, field_name, begin_date=start, end_date=stop)
     df = dq.dataframe_from_query()
     
     # rename from db table column naming to local variable name here
@@ -233,18 +235,26 @@ def subplot_dataframe(df2, start, stop, variable, ylabel, ymin, ymax, yticks, la
         i1, i2 = -3, -1
     elif 'BEFORE Power Cycle' == sup_title:
         fromstr = xticks[0].strftime('%Y-%m-%d')
-        tostr = xticks[2].strftime('%Y-%m-%d')
-        i1, i2 = 0, 2
+        #tostr = xticks[2].strftime('%Y-%m-%d')  # FIXME put this back the way it was
+        tostr = xticks[3].strftime('%Y-%m-%d')
+        #i1, i2 = 0, 2  # FIXME put this back the way it was
+        i1, i2 = 0, 3
     else:
         raise Exception('unhandled condition %s' % sup_title)
         
     df2_tmp = df2_new[(df2_new['gmt'] > fromstr) & (df2_new['gmt'] < tostr)]
     median_value = df2_tmp[variable].median(skipna=True)
     
+    fromstr2 = xticks[-4].strftime('%Y-%m-%d')
+    tostr2 = xticks[-1].strftime('%Y-%m-%d')
+    i12, i22 = -4, -1
+    df2_tmp2 = df2_new[(df2_new['gmt'] > fromstr2) & (df2_new['gmt'] < tostr2)]
+    median_value2 = df2_tmp2[variable].median(skipna=True)
+    
     long_title = '%s, From %s To %s' % (label, start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'))
     plt.title(long_title)
     
-    out_dir = '/misc/yoda/www/plots/user/sams/status/rtsdrawers/powercycles'
+    out_dir = '/misc/yoda/www/plots/user/sams/status/rtsdrawers/powercyclesA'
     bname = label + '_' + variable.title()
     pdf = os.path.join(out_dir, bname.replace('/', '_') + '.pdf')
     fig = plt.gcf()
@@ -259,10 +269,10 @@ def subplot_dataframe(df2, start, stop, variable, ylabel, ymin, ymax, yticks, la
     plt.minorticks_on()
     
     xlocs = ax.get_xticks()
-    xtxt_loc =(xlocs[i1] + xlocs[i2]) / 2.0
+    xtxt_loc = (xlocs[i1] + xlocs[i2]) / 2.0
     xarrow1, xarrow2 = xlocs[i1], xlocs[i2]
     if 'current' == variable:
-        ytxt_loc = 1.0
+        ytxt_loc = 1.02
     elif 'temperature' == variable:
         ytxt_loc = 31.0
     else:
@@ -270,6 +280,9 @@ def subplot_dataframe(df2, start, stop, variable, ylabel, ymin, ymax, yticks, la
 
     plt.annotate(s='', xytext=(xarrow1, ytxt_loc), xy=(xarrow2, ytxt_loc), arrowprops=dict(arrowstyle='<->', color='r'))
     plt.text(xtxt_loc, ytxt_loc, 'median=%.3f A' % median_value, color='red', fontsize=12, horizontalalignment='center')
+    
+    plt.annotate(s='', xytext=(xlocs[i12], ytxt_loc), xy=(xlocs[i22], ytxt_loc), arrowprops=dict(arrowstyle='<->', color='r'))
+    plt.text((xlocs[i12] + xlocs[i22]) / 2.0, ytxt_loc, 'median=%.3f A' % median_value2, color='red', fontsize=12, horizontalalignment='center')    
     
     bname = '_'.join([start.strftime('%Y-%m-%d'), stop.strftime('%Y-%m-%d'), label, variable.title(), sup_title.replace(' ', '_')])
     pdf = os.path.join(out_dir, bname.replace('/', '_') + '.pdf')
@@ -368,18 +381,23 @@ def plot_power_cycles():
     #2018-08-01 213/08:26:23 RTS/D2 OFF SCREEN CLEAN
     #2018-08-01 213/10:19:30 RTS/D2 ON  SCREEN CLEAN
     
+    #pwr_cycs = [
+    #  # drawer                   power OFF GMT                                power ON GMT
+    #    ('d1', datetime.datetime(2019,  2, 12, 15, 34, 26), datetime.datetime(2019,  2, 12, 16, 38, 31)),
+    #    ('d1', datetime.datetime(2018, 11, 23, 23, 19, 14), datetime.datetime(2018, 11, 24, 14, 37, 12)),
+    #    ('d1', datetime.datetime(2018,  9, 14, 12, 22, 35), datetime.datetime(2018,  9, 14, 13, 58, 46)),
+    #    ('d1', datetime.datetime(2018,  8,  1,  8, 26, 15), datetime.datetime(2018,  8,  1, 10, 12, 57)),
+    #    ('d2', datetime.datetime(2019,  2, 25,  1,  3, 58), datetime.datetime(2019,  2, 25,  1, 10, 55)),
+    #    ('d2', datetime.datetime(2019,  2, 12, 15, 34, 53), datetime.datetime(2019,  2, 12, 16, 42, 46)),
+    #    ('d2', datetime.datetime(2019,  2, 11,  3, 58, 30), datetime.datetime(2019,  2, 11,  4,  5, 00)),
+    #    ('d2', datetime.datetime(2018,  8,  1,  8, 26, 23), datetime.datetime(2018,  8,  1, 10, 19, 30)),
+    #    ]
+
     pwr_cycs = [
       # drawer                   power OFF GMT                                power ON GMT
-        ('d1', datetime.datetime(2019,  2, 12, 15, 34, 26), datetime.datetime(2019,  2, 12, 16, 38, 31)),
-        ('d1', datetime.datetime(2018, 11, 23, 23, 19, 14), datetime.datetime(2018, 11, 24, 14, 37, 12)),
-        ('d1', datetime.datetime(2018,  9, 14, 12, 22, 35), datetime.datetime(2018,  9, 14, 13, 58, 46)),
-        ('d1', datetime.datetime(2018,  8,  1,  8, 26, 15), datetime.datetime(2018,  8,  1, 10, 12, 57)),
-        ('d2', datetime.datetime(2019,  2, 25,  1,  3, 58), datetime.datetime(2019,  2, 25,  1, 10, 55)),
-        ('d2', datetime.datetime(2019,  2, 12, 15, 34, 53), datetime.datetime(2019,  2, 12, 16, 42, 46)),
-        ('d2', datetime.datetime(2019,  2, 11,  3, 58, 30), datetime.datetime(2019,  2, 11,  4,  5, 00)),
-        ('d2', datetime.datetime(2018,  8,  1,  8, 26, 23), datetime.datetime(2018,  8,  1, 10, 19, 30)),
+        ('d2', datetime.datetime(2018,  1,  11,  0, 0, 0), datetime.datetime(2018,  1,  12,  0, 0, 0)),  # DUMMY VALUES, NOT TRUE PWR CYCLE
         ]
-  
+
     tdelta_span = datetime.timedelta(days=7)
     variables = ['current', 'temperature']
     for variable in variables:
@@ -389,4 +407,5 @@ def plot_power_cycles():
     
 
 if __name__ == '__main__':
-    sys.exit(main(sys.argv))
+    #sys.exit(main(sys.argv))
+    plot_power_cycles()

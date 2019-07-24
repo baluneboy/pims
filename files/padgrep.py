@@ -16,6 +16,11 @@ def find_pad_keys(pad_hdr, float_keys):
     return {k: float(pad_hdr[k]) for k in float_keys}
 
 
+def find_pad_sensorid(pad_hdr):
+    """return pad field that matches SensorID"""
+    return {'SensorID': pad_hdr['SensorID']}
+    
+
 def find_pad_subfields(pad_hdr, field, subfield):
     """return pad subfield that match key; e.g. SampleRate or CutoffFreq"""
     new_field = '_'.join([field, subfield])
@@ -31,12 +36,21 @@ def get_hdr_dict_fs_fc_loc_ssa(hdr_file):
     loc = find_pad_subfields(ph, 'SensorCoordinateSystem', 'comment')
     merge1 = merge_two_dicts(fs_fc, ssa)
     return merge_two_dicts(merge1, loc)
+    
+    
+def get_hdr_dict_fs_fc_sensor(hdr_file):
+    """return dict with header file SensorID, SampleRate, CutoffFreq"""
+    ph = parse_header(hdr_file)
+    fs_fc = find_pad_keys(ph, ['SampleRate', 'CutoffFreq'])
+    se = find_pad_sensorid(ph)
+    return merge_two_dicts(fs_fc, se)
 
 
 def demo_grep():
     hdr_file = '/Users/ken/Downloads/pad/2018_06_13_15_06_10.361-2018_06_13_15_06_24.359.121f04.header'
     hdr_file = '/misc/yoda/pub/pad/year2018/month06/day13/sams2_accel_121f04/2018_06_13_15_06_10.361-2018_06_13_15_06_24.359.121f04.header'
     print get_hdr_dict_fs_fc_loc_ssa(hdr_file)
+    print get_hdr_dict_fs_fc_sensor(hdr_file)
 
 
 if __name__ == '__main__':

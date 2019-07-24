@@ -1,8 +1,7 @@
-#!/usr/bin/env pythonimp
+#!/usr/bin/env python
 
 import datetime
 import decimal
-import argparser
 from main import plotnsave_daterange_histpad, plotnsave_monthrange_histpad, save_range_of_months
 
 
@@ -38,6 +37,6 @@ def demo_plotnsave_daterange_histpad():
 
 
 if __name__ == '__main__':
-    #demo_eng_units()
+    demo_eng_units()
     #demo_save_range_of_months()
-    demo_plotnsave_daterange_histpad()
+    #demo_plotnsave_daterange_histpad()

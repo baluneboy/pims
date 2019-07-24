@@ -13,13 +13,17 @@ from dateutil.relativedelta import relativedelta
 from pims.utils.pimsdateutil import relative_start_stop
 
 
-START_OFFSET = relativedelta(months=1, days=6)
-STOP_OFFSET = relativedelta(months=1)
-DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
-DEFAULT_SENSOR = '121f03'
-DEFAULT_PADDIR = '/misc/yoda/pub/pad'
-DEFAULT_HISTDIR = '/misc/yoda/www/plots/batch/results/dailyhistpad'
-DEFAULT_FROMFILE = '/tmp/padrunhistlist.txt'
+TODAY = datetime.date.today()
+TWO_MONTHS_AGO = TODAY - relativedelta(months=2)
+DEFAULT_START = datetime.date(TWO_MONTHS_AGO.year, TWO_MONTHS_AGO.month, 1)
+DEFAULT_STOP = DEFAULT_START + relativedelta(months=1)
+# START_OFFSET = relativedelta(months=1, days=6)
+# STOP_OFFSET = relativedelta(months=1)
+# DEFAULT_START, DEFAULT_STOP = relative_start_stop(datetime.date.today(), START_OFFSET, STOP_OFFSET)
+DEFAULT_SENSOR = '121f03006'
+DEFAULT_INDIR = '/misc/yoda/pub/pad'
+DEFAULT_OUTDIR = '/misc/yoda/www/plots/batch/results/transient'
+DEFAULT_FROMFILE = '/tmp/padtransientlist.txt'
 
 
 def folder_str(fname):
@@ -51,6 +55,15 @@ def str2bool(v):
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
 
+def taghours(s):
+    try:
+        tag, s1, s2 = s.split(',')
+        h1, h2 = map(int, (s1, s2))
+        return tag, h1, h2
+    except Exception:
+        raise argparse.ArgumentTypeError("Tagged hour ranges must be tag,start,stop triplets of string & 2 ints.")
+
+
 def show_args(args):
     """print arguments"""
 
@@ -67,37 +80,37 @@ def show_args(args):
 
 def parse_inputs():
     """parse input arguments using argparse from standard library"""
-    parser = argparse.ArgumentParser(description='Running tally for PAD histograms.')
+    parser = argparse.ArgumentParser(description='ISS Transient Acceleration Analysis, Lunar Gateway Support.')
 
     # sensor of interest
-    help_sensor = "a 200 Hz sensor (e.g. 121f03, 121f02); default is %s" % DEFAULT_SENSOR
+    help_sensor = "a 6 Hz sensor (e.g. 121f03006, 121f02006); default is %s" % DEFAULT_SENSOR
     parser.add_argument('-s', '--sensor', default=DEFAULT_SENSOR,
                         type=str,
                         help=help_sensor)
 
     # start date
-    help_start = "start date; default is None (for 1 month and 6 days ago)"
+    help_start = "start date; default is None (for start day of month 2 months prior to today's month)"
     parser.add_argument('-d', '--start', default=None,
                         type=day_str,
                         help=help_start)
 
     # stop date
-    help_stop = "stop date; default is None (for 6 days after start)"
+    help_stop = "stop date; default is None (for end of start date's month)"
     parser.add_argument('-e', '--stop', default=None,
                         type=day_str,
                         help=help_stop)
 
-    # PAD dir
-    help_paddir = "PAD dir; default is %s" % DEFAULT_PADDIR
-    parser.add_argument('-p', '--paddir', default=DEFAULT_PADDIR,
+    # pad top dir
+    help_indir = "input (top) dir of pad files; default is %s" % DEFAULT_INDIR
+    parser.add_argument('-i', '--indir', default=DEFAULT_INDIR,
                         type=folder_str,
-                        help=help_paddir)
+                        help=help_indir)
 
     # output dir
-    help_histdir = "histogram dir; default is %s" % DEFAULT_HISTDIR
-    parser.add_argument('-g', '--histdir', default=DEFAULT_HISTDIR,
+    help_outdir = "output (top) dir of hist results; default is %s" % DEFAULT_OUTDIR
+    parser.add_argument('-o', '--outdir', default=DEFAULT_OUTDIR,
                         type=folder_str,
-                        help=help_histdir)
+                        help=help_outdir)
 
     # get list of days from file
     help_fromfile = "from file; default is None"
@@ -105,18 +118,26 @@ def parse_inputs():
                         type=file_str,
                         help=help_fromfile)
 
+    # get tagged hour range triplets
+    help_taghours = 'tag,h1,h2; default is None (for all hours)'
+    parser.add_argument('-t', '--taghours', help=help_taghours, dest='taghours', type=taghours, nargs=1)
+
     # plot (or not)
     plot_parser = parser.add_mutually_exclusive_group(required=False)    
     plot_parser.add_argument('--plot', dest='plot', action='store_true')
     plot_parser.add_argument('--no-plot', dest='plot', action='store_false')
     parser.set_defaults(plot=False)
-    
+
     # verbosity
     parser.add_argument("-v", action="count", dest='verbosity',
                         help="increase output verbosity (max of 3)")
 
     # get parsed args
     args = parser.parse_args()
+
+    # handle verbosity
+    if args.verbosity is None:
+        args.verbosity = 0
 
     # handle the case when fromfile option is used (and we ignore start/stop)
     if args.fromfile is not None:
@@ -126,15 +147,30 @@ def parse_inputs():
         # finalize start and stop dates
         if args.start is None and args.stop is None:
             args.start = DEFAULT_START
-            args.stop = args.start + relativedelta(days=6)
+            args.stop = DEFAULT_STOP
         elif args.stop is None:
-            args.stop = args.start + relativedelta(days=6)
+            args.stop = args.start + relativedelta(months=1) - relativedelta(days=1)
         elif args.start is None:
-            args.start = args.stop - relativedelta(days=6)
+            args.start = args.stop - relativedelta(months=1)
     
         # check start/stop
         if args.stop < args.start:
-            raise Exception('stop less than start')
+            raise Exception('stop is less than start')
+
+    # combine tagged hour ranges that share common tag
+    tagged_hours = dict()
+    if args.taghours:
+        tag_set = set([tup[0] for tup in args.taghours])
+        for tag in tag_set:
+            hour_ranges = [(tup[1], tup[2]) for tup in args.taghours if tup[0] == tag]
+            tagged_hours[tag] = hour_ranges
+    args.taghours = tagged_hours
+
+    # FIXME we hard-code since in a hurry for Gateway here
+    args.fs, args.fc = 142.0, 6.0
+
+    # # now that we have convenient-to-use stop date (for monthly deal), back off the stop date by one to get end of month
+    # args.stop -= relativedelta(days=1)
 
     return args
 
@@ -142,7 +178,6 @@ def parse_inputs():
 if __name__ == '__main__':
 
     ARGS = parse_inputs()
-
     DARGS = vars(ARGS)
     for k, v in DARGS.iteritems():
         print k, 'is', v

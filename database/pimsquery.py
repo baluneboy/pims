@@ -24,6 +24,9 @@ else:
 # TODO class this up (c'mon man)
 _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
 
+# FIXME this was quick fix for jimmy dying
+_SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
+
 
 # FIXME did this sqlalchemy quick test wrt obspy
 def quick_test(host, schema):
@@ -225,6 +228,9 @@ def db_connect(command, host='localhost', user=_UNAME, passwd=_PASSWD, db=_SCHEM
 def get_sensor_location_from_craig(sensor, dtm):
     # select from_unixtime(time), location_name from pad.coord_system_db where coord_name = "121f08" and time < unix_timestamp('2011-01-02') order by time desc limit 1;
     timestr = dtm.strftime('%Y-%m-%d %H:%M:%S')
+    # FIXME kludge for when jimmy died
+    if sensor.startswith('122-'):
+        sensor = sensor.replace('-', '')
     loc = db_connect('select location_name from pad.coord_system_db where coord_name = "%s" and time < unix_timestamp("%s") order by time desc limit 1' % (sensor, timestr), 'craig')
     return loc[0][0]
 
@@ -265,18 +271,24 @@ def prune_by_time(host, table, dtm_min):
     return 'there are now %d records in %s on %s where time < %s' % (res2, table, host, dtm_min.strftime('%Y-%m-%d %H:%M:%S'))
 
 
-# get list of ee tables off jimmy
+# get list of ee tables off yoda (used to get from jimmy)
 def get_ee_table_list():
     # delete from pims.122f02 where time not in ( select time from ( select time from pims.122f02 order by time desc limit 3600 -- Keep this many records. ) foo );
-    query_str = 'show tables like "122f%";'
+    #query_str = 'show tables like "122f%";'
+    query_str = 'select ee_id from ee_packet_rt;'
     #print query_str
-    res = db_connect(query_str, host='jimmy', db='pims')
+    #res = db_connect(query_str, host='jimmy', db='pims')
+    res = db_connect(query_str, host='yoda', db='samsmon', user=_UNAME_SAMS, passwd=_PASSWD_SAMS)
     # have to flatten nested tuple here
+    #print res
     tab_list = [ tup[0] for tup in res ]
     return tab_list
 
+#for t in get_ee_table_list(): print t
+#raise SystemExit
+
 # return tuple of count, min(time), and max(time) from ee table
-def get_dbstatusish_details_for_ee(table, host='jimmy'):
+def OLD_get_dbstatusish_details_for_ee(table, host='jimmy'):
     # select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from 122f04;
     query_str = 'select count(*), from_unixtime(min(time)), from_unixtime(max(time)) from %s;' % table
     #print query_str
@@ -284,7 +296,19 @@ def get_dbstatusish_details_for_ee(table, host='jimmy'):
     count, tmin, tmax = res[0]
     return count, tmin, tmax
 
-#res = get_dbstatusish_details_for_ee('122f04')
+
+# return tuple of count, min(time), and max(time) from ee table << OLD JIMMY METHOD
+# new method goes to yoda (different table, different columns) and not jimmy CCSDS capture anymore
+def get_dbstatusish_details_for_ee(table, host='yoda'):
+    ee_id = table  # this is a kludge when jimmy died
+    # select count(*), max(timestamp) from ee_packet_rt where ee_id = "122-f02";
+    query_str = 'select count(*), min(timestamp), max(timestamp) from ee_packet_rt where ee_id = "%s";' % ee_id
+    #print query_str
+    res = db_connect(query_str, host=host, db='samsmon', user=_UNAME_SAMS, passwd=_PASSWD_SAMS, retry=False)   
+    count, tmin, tmax = res[0]
+    return count, tmin, tmax
+
+#res = get_dbstatusish_details_for_ee('122-f04')
 #print res
 #raise SystemExit
 

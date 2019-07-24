@@ -10,6 +10,7 @@ import os
 import sys
 import glob
 import datetime
+from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas as pd
 import scipy.io as sio
@@ -23,8 +24,9 @@ import argparser
 from plumb_line import plumblines
 from pims.mathbase.basics import round_up
 from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_path, year_month_to_dtm_start_stop, ymd_pathstr_to_date
+from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
-from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir
+from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir, PadDataDaySensorWhereMinDur
 from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
 from ugaudio.explore import padread, pad_file_percentiles
 
@@ -93,6 +95,20 @@ def get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=2*1024*1024)
     # initialize processing pipeline with callable classes, but not using file list as input yet
     ffp = FileFilterPipeline(file_filter1, file_filter2)
     #print ffp
+
+    # now apply processing pipeline to file list; at this point, ffp is callable
+    return list( ffp(files) )
+
+
+def get_pad_day_sensor_rate_mindur_files(files, day, sensor, mindur=5):
+
+    # FIXME rate implied at 500.0 (needs attention in PadDataDaySensorWhereMinDur)
+
+    # initialize callable classes that act as filters for our pipeline
+    file_filter1 = PadDataDaySensorWhereMinDur(day, sensor, mindur=mindur)
+
+    # initialize processing pipeline with callable classes, but not using file list as input yet
+    ffp = FileFilterPipeline(file_filter1)
 
     # now apply processing pipeline to file list; at this point, ffp is callable
     return list( ffp(files) )
@@ -200,7 +216,7 @@ def save_monthlyhistpad(year, month, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
@@ -244,9 +260,12 @@ def get_axis_settings(xvals):
     xMinorLoc = MultipleLocator(0.5)
     print 'xvals_max', xvals_max
     if xvals_max > 40:
-        mult = 220
+        #mult = 220
+        #xMajorLoc = MultipleLocator(20)
+        #xMinorLoc = MultipleLocator(10)
+        mult = 120
         xMajorLoc = MultipleLocator(20)
-        xMinorLoc = MultipleLocator(10)
+        xMinorLoc = MultipleLocator(10)        
     elif xvals_max > 30:
         mult = 60
         xMajorLoc = MultipleLocator(5)
@@ -255,7 +274,8 @@ def get_axis_settings(xvals):
         mult = 24
         xMajorLoc = MultipleLocator(2)
         xMinorLoc = MultipleLocator(1)
-    xmax = round_up(max(xvals), mult)
+    #xmax = round_up(max(xvals), mult)
+    xmax = round_up(xvals_max, mult)
     axlims = [-1, xmax, -5, 105]
     yticks = np.arange(0, 104, 5)
     xticks = np.arange(xmax)
@@ -282,7 +302,7 @@ def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
@@ -390,7 +410,7 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     # load bins and vecmag_bins
     name_bins_mat = 'dailyhistpad_bins_%d.mat' % fc
-    # a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
+    # a = sio.loadmat(os.path.join(DEFAULT_OUTDIR, 'dailyhistpad_bins.mat'))  # DELETEME
     a = sio.loadmat(os.path.join(DEFAULT_HISTDIR, name_bins_mat))
     vecmag_bins = a['vecmag_bins'][0]
     bins = a['bins'][0]
@@ -470,7 +490,8 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
     plt.ylabel(ylabstr)
 
     # draw typical plumb lines with annotation
-    yvals = [50, 95, ]  # one set of annotations for each of these values
+    #yvals = [50, 95, ]  # one set of annotations for each of these values
+    yvals = [50, 99.9, ]  # one set of annotations for each of these values
     reddots, horlines, verlines, anns, xvals = plumblines(hLine, yvals)
 
     # get axis settings based on data

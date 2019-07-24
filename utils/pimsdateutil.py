@@ -56,6 +56,18 @@ def floor_minute(t):
                                     seconds=t.second,
                                     microseconds=t.microsecond)
 
+
+def floor_five_minutes(t):
+    """Return datetime rounded down (floored) to nearest 5-minute mark.
+
+    >>> floor_five_minutes( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 35)
+    """
+    return t - datetime.timedelta(minutes=t.minute % 5,
+                                  seconds=t.second,
+                                  microseconds=t.microsecond)
+
+
 def floor_ten_minutes(t):
     """Return datetime rounded down (floored) to nearest 10-minute mark.
     
@@ -79,6 +91,36 @@ def floor_hour(t):
     return t - datetime.timedelta( minutes=t.minute,
                                     seconds=t.second,
                                     microseconds=t.microsecond)
+
+def floor_day(t):
+    """Return datetime rounded down (floored) to nearest day mark.
+    
+    >>> floor_day( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> floor_day( datetime.datetime(2012,12,31,23,00,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> floor_day( datetime.datetime(2012,12,31,23,00,00,000000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    """
+    return t - datetime.timedelta(hours=t.hour,
+                                  minutes=t.minute,
+                                  seconds=t.second,
+                                  microseconds=t.microsecond)
+
+def ceil_day(t):
+    """Return datetime rounded up (ceiled) to nearest day mark.
+    
+    >>> ceil_day( datetime.datetime(2012,12,31,23,39,59,999000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> ceil_day( datetime.datetime(2012,12,31,23,00,00,000001) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    >>> ceil_day( datetime.datetime(2012,12,31,23,00,00,000000) )
+    datetime.datetime(2012, 12, 31, 23, 0)
+    """
+    return t - datetime.timedelta(hours=t.hour,
+                                  minutes=t.minute,
+                                  seconds=t.second,
+                                  microseconds=t.microsecond) + datetime.timedelta(days=1)
 
 def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     """
@@ -126,7 +168,23 @@ def datetime_to_dailyhist_path(d, sensor_subdir='sams2_accel_121f03'):
         
     """
     return os.path.join( datetime_to_ymd_path(d, base_dir='/misc/yoda/www/plots/batch/results/dailyhistpad'), sensor_subdir )
+
+
+# FIXME refactor so that datetime_to_dailyhist_path and datetime_to_dailyhist_oto_path use common code
+
+def datetime_to_dailyhist_oto_path(d, sensor_subdir='sams2_accel_121f03'):
+    """
+    Return dailyhistoto.mat path for datetime, d, like /misc/yoda/www/plots/batch/results/onethird/year2017/month01/day03/sams2_accel_121f03
     
+    Examples
+    --------
+    
+    >>> datetime_to_dailyhist_oto_path(datetime.date(2017, 1, 1), sensor_subdir='sams2_accel_121f03')
+    '/misc/yoda/www/plots/batch/results/onethird/year2017/month01/day01/sams2_accel_121f03'
+        
+    """
+    return os.path.join( datetime_to_ymd_path(d, base_dir='/misc/yoda/www/plots/batch/results/onethird'), sensor_subdir )
+
 
 def datetime_to_roadmap_fullstub(dtm):
     """
@@ -275,6 +333,7 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         raise ValueError('basename str %s does not match expected pattern' % fstr)
     [startstr, bigstr] = fstr.split(fstr[23])
     stopstr = '.'.join(bigstr.split('.')[:-1])
+    # print 'stopstr', stopstr
     try:
         d1 = timestr_to_datetime(startstr)
     except ValueError, e:
@@ -284,6 +343,28 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         d2 = timestr_to_datetime(stopstr)
     except ValueError, e:
         warn( 'stopstr %s did not nicely convert to datetime in timestr_to_datetime' % stopstr )
+        d2 = None
+    return d1, d2
+
+
+# convert string like YODA_YMD_PATH/.../2014_05_31_20_49_60.000-2014_05_31_21_00_00.001.SENSOR to datetime object
+def otomat_fullfilestr_to_start_stop(fullfilestr):
+    """convert oto mat fullfile string to datetime object"""
+    # work with basename
+    fstr = os.path.basename(fullfilestr)
+    if not re.match('^\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}\..*$', fstr):
+        raise ValueError('basename str %s does not match expected pattern' % fstr)
+    [startstr, bigstr] = fstr.split(fstr[23])
+    stopstr = '.'.join(bigstr.split('.')[:-2])
+    try:
+        d1 = timestr_to_datetime(startstr)
+    except ValueError, e:
+        warn( 'startstr %s did not nicely convert to datetime' % startstr )
+        d1 = None
+    try:
+        d2 = timestr_to_datetime(stopstr)
+    except ValueError, e:
+        warn( 'stopstr %s did not nicely convert to datetime' % stopstr )
         d2 = None
     return d1, d2
 
