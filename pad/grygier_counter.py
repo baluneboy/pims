@@ -1,5 +1,7 @@
 #!/usr/bin/env python
 
+import os
+import sys
 import glob
 import pandas as pd
 import numpy as np
@@ -11,6 +13,19 @@ from collections import deque
 from ugaudio.load import padread
 from pims.padrunhist.main import get_pad_day_sensor_rate_mindur_files
 from pims.utils.pimsdateutil import datetime_to_ymd_path, pad_fullfilestr_to_start_stop
+from pims.pad.pad_buffer import PadBottomBuffer
+from ugaudio.load import padread_hourpart
+
+# input parameters
+defaults = {
+'start_str': '1983-12-01',       # string start day
+'stop_str':          None,       # string stop day; None for start of next month after start_str's month
+'sensor':        '121f03',       # string for sensor (e.g. 121f03 or 121f08006)
+'fs':             '500.0',       # samples/second for data to be analyzed
+'sec':           '3600.0',       # seconds of TSH data (v,x,y,z acceleration values) to summarize
+'min_dur':          '5.0',       # minutes -- PAD file has at least this amount; otherwise skip file
+}
+parameters = defaults.copy()
 
 
 def filespan_relativeto_dayhour(fullfilestr, dh):
@@ -103,17 +118,13 @@ def old_demo():
     #     print p, fname
 
 
-def simple_demo_rev():
+def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
 
-    # inputs
-    fs = 500.0
-    sensor = '121f08'
-    min_dur = 5  # minutes
-    start_str, stop_str = '2019-02-01', '2019-02-03'
+    # print sensor, fs, start_str, stop_str, sec, min_dur
+    # raise SystemExit
 
-    # get empty one-hour bucket to fill (bigger than we need)
-    a = np.empty((0, 5), dtype=np.float32)    # float32 matches what we read from PAD file
-
+    # create stub string for csv_file
+    csv_dir = '/misc/yoda/www/plots/batch/results/monthly_minmaxrms'
 
     # get files for all of stop_str's day
     stop_day = parser.parse(stop_str).replace(hour=0, minute=0, second=0, microsecond=0)
@@ -134,6 +145,9 @@ def simple_demo_rev():
     dhr = pd.date_range(start_str, stop_str, freq='1H')[:-1]
     for dh in dhr[::-1]:  # fancy indexing gets us the reversed chronological ordering
 
+        # create data buffer -- at some pt in code before we need mean(counts), probably just after GSS min/max found
+        buffer = PadBottomBuffer(fs, sec)
+
         # if it's high noon, then get list of matching files for prior day and extend deque
         if dh.hour == 12:
             prior_day = dh.replace(hour=0) - relativedelta(days=1)
@@ -150,21 +164,121 @@ def simple_demo_rev():
             fspan_relative = filespan_relativeto_dayhour(f, dh)
 
             if fspan_relative == 0:
-                print 'extract', dh, 'part of', f
+                a = padread_hourpart(f, fs, dh)
+                buffer.add(a)
+                print 'extract', dh, 'part of', f, 'count =', np.count_nonzero(~np.isnan(buffer.vxyz[:, 0]))
                 last_file = f
 
             elif fspan_relative < 0:
-                print 'before', dh, 'is', f
                 dfiles.appendleft(f)
                 if last_file is not None:
                     # print 'prepending', last_file
                     dfiles.appendleft(last_file)
+                #ex /misc/yoda/www/plots/batch/results/monthly_minmaxrms/year1983/month12/1983-12_121f00_minmaxrms.csv
+                ym_subdir = dh.strftime('year%Y/month%m')
+                csv_name = '_'.join([dh.strftime('%Y-%m'), sensor, 'minmaxrms.csv'])
+                csv_file = os.path.join(csv_dir, ym_subdir, csv_name)
+                if not os.path.exists(os.path.dirname(csv_file)):
+                    os.makedirs(os.path.dirname(csv_file))
+                if not os.path.exists(csv_file):
+                    labels = 'date,hour,'
+                    labels += 'vmin(g),xmin(g),ymin(g),zmin(g),'
+                    labels += 'vmax(g),xmax(g),ymax(g),zmax(g),'
+                    labels += 'vrms(g),xrms(g),yrms(g),zrms(g)\n'
+                    # labels += 'xmag(g),ymag(g),zmag(g)\n'
+                    with open(csv_file, 'w') as fd:
+                        fd.write(labels)
+                buffer.append_to_csv(csv_file, dh)
+                print 'before', dh, 'is', f, csv_file
                 break
 
             elif fspan_relative > 0:
                 print 'after', dh, 'is', f
 
 
+def parameters_ok():
+    """check for reasonableness of parameters"""
+
+    # # verify base path
+    # if not os.path.exists(parameters['dir_name']):
+    #     print 'base path (%s) does not exist' % parameters['dir_name']
+    #     return False
+
+    # convert start day to date object
+    try:
+        start = parser.parse(parameters['start_str'])
+        parameters['start_str'] = str(start.date())
+    except Exception, e:
+        print 'could not get start_str input as date object: %s' % e.message
+        return False
+
+    # convert stop day to date object
+    if parameters['stop_str'] is None:
+        stop = start + relativedelta(months=1)
+        parameters['stop_str'] = str(stop.date())
+    else:
+        try:
+            parameters['stop_str'] = str(parser.parse(parameters['stop_str']).date())
+        except Exception, e:
+            print 'could not get stop_str input as date object: %s' % e.message
+            return False
+
+    # convert fs to float
+    try:
+        parameters['fs'] = float(parameters['fs'])
+    except Exception, e:
+        print 'could not convert fs to float: %s' % e.message
+        return False
+
+    # convert sec to float
+    try:
+        parameters['sec'] = float(parameters['sec'])
+    except Exception, e:
+        print 'could not convert sec to float: %s' % e.message
+        return False
+
+    # convert min_dur to float
+    try:
+        parameters['min_dur'] = float(parameters['min_dur'])
+    except Exception, e:
+        print 'could not convert min_dur to float: %s' % e.message
+        return False
+
+    return True  # params are OK; otherwise, we returned False above
+
+
+# print short description of how to run the program
+def print_usage():
+    """print short description of how to run the program"""
+    print 'USAGE:    %s [options]' % os.path.abspath(__file__)
+    print 'EXAMPLE1: %s # FOR DEFAULTS' % os.path.abspath(__file__)
+    print 'EXAMPLE2: %s 121f03=tweek hirap=towelie details=False # TWO SMALL SETS' % os.path.abspath(__file__)
+    print 'EXAMPLE3: %s 121f03=tweek details=True # ONE DETAILED SET' % os.path.abspath(__file__)
+    print 'EXAMPLE4: %s details=True # SHOWS MAX INFO' % os.path.abspath(__file__)
+
+
+def main(argv):
+    """iterate over db query results to show pertinent packet details (and header info when details=True)"""
+
+    # parse command line
+    for p in sys.argv[1:]:
+        pair = p.split('=')
+        if 2 != len(pair):
+            print 'bad parameter: %s' % p
+            break
+        else:
+            parameters[pair[0]] = pair[1]
+    else:
+        if parameters_ok():
+            run_reverse(parameters['sensor'], parameters['fs'], parameters['start_str'],
+                        parameters['stop_str'], sec=parameters['sec'], min_dur=parameters['min_dur'])
+            return 0
+
+    print_usage()
+
+
+# ----------------------------------------------------------------------
+# EXAMPLES:
+# put example(s) here
 if __name__ == '__main__':
-    # old_demo()
-    simple_demo_rev()
+    sys.exit(main(sys.argv))

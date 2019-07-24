@@ -333,6 +333,7 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
         raise ValueError('basename str %s does not match expected pattern' % fstr)
     [startstr, bigstr] = fstr.split(fstr[23])
     stopstr = '.'.join(bigstr.split('.')[:-1])
+    # print 'stopstr', stopstr
     try:
         d1 = timestr_to_datetime(startstr)
     except ValueError, e:
