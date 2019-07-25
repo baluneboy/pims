@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import os
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
@@ -21,20 +22,91 @@ def p99(a):
     return np.nanpercentile(a, 99)
 
 
-def get_files():
-    files = [
-        'G:/data/2019-05_121f03006_minmaxrms.csv',
-        'G:/data/2019-06_121f03006_minmaxrms.csv',
-    ]
-    df = pd.read_csv(files[0])
-    for f in files[1:]:
+def box_plotter(vstr, df, pdf_out):
+    """boxplot (Tufte style) for min/max/rms hourly percentile summary"""
+
+    fig, ax = plt.subplots(figsize=(11, 8.5))
+
+    # draw horizontal lines at median values in red
+    hour_mins = np.arange(-0.25, 23.75, 1.0)
+    hour_maxs = np.arange(0.25, 23.75, 1.0)
+    meds = df.xs('median', level=1, axis=1)
+    plt.hlines(y=meds, xmin=hour_mins, xmax=hour_maxs, linewidth=3.5, alpha=0.75, color='red')
+
+    # draw lower, vertical (whisker) lines from 1st to 25th percentiles in black
+    bot = df.xs('p1', level=1, axis=1)[vstr].values
+    top = df.xs('p25', level=1, axis=1)[vstr].values
+    plt.vlines(x=np.arange(0, 24, 1), ymin=bot, ymax=top, linewidth=3.5, alpha=0.75, color='blue')
+
+    # draw upper, vertical (whisker) lines from 75th to 99th percentiles in black
+    bot = df.xs('p75', level=1, axis=1)[vstr].values
+    top = df.xs('p99', level=1, axis=1)[vstr].values
+    plt.vlines(x=np.arange(0, 24, 1), ymin=bot, ymax=top, linewidth=3.5, alpha=0.75, color='blue')
+
+    plt.yscale('log')
+
+    plt.xlim(-1, 24)
+    plt.ylim(5e-6, 1e-2)
+
+    plt.xticks(np.arange(0, 24, 1))
+    plt.grid(True, which='both', axis='both', alpha=0.25)
+
+    plt.xlabel('GMT Hour')
+    plt.ylabel('Acceleration (g)')
+
+    pdf_file = pdf_out.replace('minmaxrms_summary.pdf', vstr + '_pctile_summary.pdf').replace('(g)', '')
+
+    k = os.path.basename(pdf_file).replace('.pdf', '').split('_')
+    title_str = 'GMT Span from {0} to {1}, Sensor {2}, Var = {3}'.format(*k[0:4])
+    plt.title(title_str)
+    fig.savefig(pdf_file, pad_inches=(1.0, 1.0))
+
+    print('wrote %s' % pdf_file)
+
+
+def get_files(start_month_str, stop_month_str, sensor, base_dir='G:\data\monthly_minmaxrms'):
+    """return list of monthly files that match sensor in range from start:stop"""
+    csv_files = []
+    ymr = pd.date_range(start_month_str, stop_month_str, freq='1M')
+    for ym in ymr:
+        fname = '_'.join(['%d-%02d' % (ym.year, ym.month), sensor, 'minmaxrms.csv'])
+        csv_file = os.path.join(base_dir, 'year%d' % ym.year, 'month%02d' % ym.month, fname)
+        if os.path.exists(csv_file):
+            csv_files.append(csv_file)
+        else:
+            print('does NOT exist', csv_file)
+    return csv_files
+
+
+def grygier_summary_stdout(start_month_str, stop_month_str, sensor, base_dir='G:\data\monthly_minmaxrms'):
+    """write stdout summary of hourly min/max/rms stats presumably over a long time span"""
+
+    # set pandas display options
+    pd.options.display.float_format = ' {:,.4e}'.format
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+
+    # build output filename
+    csv_fname_out = '_'.join([start_month_str, stop_month_str, sensor, 'minmaxrms', 'summary.csv'])
+    csv_file_out = os.path.join(base_dir, csv_fname_out)
+
+    # get source csv files that were produced by grygier_counter.py
+    csv_files = get_files(start_month_str, stop_month_str, sensor, base_dir=base_dir)
+
+    # read first file into dataframe
+    df = pd.read_csv(csv_files[0])
+
+    # concatenate remaining files onto dataframe
+    for f in csv_files[1:]:
         df2 = pd.read_csv(f)
         df = pd.concat([df, df2], ignore_index=True)
 
-    df['xmag(g)'] = df.apply(lambda row: np.abs(row['xmin(g)'] + row['xmax(g)']), axis=1)
-    df['ymag(g)'] = df.apply(lambda row: np.abs(row['ymin(g)'] + row['ymax(g)']), axis=1)
-    df['zmag(g)'] = df.apply(lambda row: np.abs(row['zmin(g)'] + row['zmax(g)']), axis=1)
+    # compute per-axis value (called "mag") that is max(abs(ymin, ymax))
+    df['xmag(g)'] = df.apply(lambda row: np.max([np.abs(row['xmin(g)']), np.abs(row['xmax(g)'])]), axis=1)
+    df['ymag(g)'] = df.apply(lambda row: np.max([np.abs(row['ymin(g)']), np.abs(row['ymax(g)'])]), axis=1)
+    df['zmag(g)'] = df.apply(lambda row: np.max([np.abs(row['zmin(g)']), np.abs(row['zmax(g)'])]), axis=1)
 
+    # enumerate columns to be summarized on hourly basis
     vals = [
         'xmag(g)',
         'ymag(g)',
@@ -46,203 +118,120 @@ def get_files():
         'vrms(g)',
     ]
 
+    # iterate over values to be summarized, group and compute aggregate functions (percentiles, min, max)
+    for v in vals:
+        my_group = df.groupby('hour').agg({v: [p1, p25, 'median', p75, p99, 'min', 'max']})
+        print(my_group.T)
+
+
+def grygier_summary_csvfile(start_month_str, stop_month_str, sensor, base_dir='G:\data\monthly_minmaxrms'):
+    """write csv file summary of hourly min/max/rms stats presumably over a long time span"""
+
+    # set pandas display options
     pd.options.display.float_format = ' {:,.4e}'.format
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 1000)
 
+    # build output filename
+    csv_fname_out = '_'.join([start_month_str, stop_month_str, sensor, 'minmaxrms', 'summary.csv'])
+    csv_file_out = os.path.join(base_dir, csv_fname_out)
+
+    # get source csv files that were produced by grygier_counter.py
+    csv_files = get_files(start_month_str, stop_month_str, sensor, base_dir=base_dir)
+
+    # read first file into dataframe
+    df = pd.read_csv(csv_files[0])
+
+    # concatenate remaining files onto dataframe
+    for f in csv_files[1:]:
+        df2 = pd.read_csv(f)
+        df = pd.concat([df, df2], ignore_index=True)
+
+    # compute per-axis value (called "mag") that is max(abs(ymin, ymax))
+    df['xmag(g)'] = df.apply(lambda row: np.max([np.abs(row['xmin(g)']), np.abs(row['xmax(g)'])]), axis=1)
+    df['ymag(g)'] = df.apply(lambda row: np.max([np.abs(row['ymin(g)']), np.abs(row['ymax(g)'])]), axis=1)
+    df['zmag(g)'] = df.apply(lambda row: np.max([np.abs(row['zmin(g)']), np.abs(row['zmax(g)'])]), axis=1)
+
+    # enumerate columns to be summarized on hourly basis
+    vals = [
+        'xmag(g)',
+        'ymag(g)',
+        'zmag(g)',
+        'vmax(g)',
+        'xrms(g)',
+        'yrms(g)',
+        'zrms(g)',
+        'vrms(g)',
+    ]
+
+    # iterate over values to be summarized, group and compute aggregate functions (percentiles, min, max)
+    csv_strings = ''
     for v in vals:
         my_group = df.groupby('hour').agg({v: [p1, p25, 'median', p75, p99, 'min', 'max']})
-        print(my_group)
+        # boxplotter(my_group)
+        csv_strings += my_group.T.to_csv(index=True)
+    # print(csv_strings)
 
-    # print(df.columns)
+    # write to output csv file
+    with open(csv_file_out, 'w', newline='') as fd:
+        fd.write(csv_strings)
 
-
-def demo_iss_req_steps():
-
-    m = np.array([
-        [0.0088, 0.0098, 0.0110, 1.8000e-006],
-        [0.0110, 0.0124, 0.0139, 1.8000e-006],
-        [0.0139, 0.0156, 0.0175, 1.8000e-006],
-        [0.0175, 0.0197, 0.0221, 1.8000e-006],
-        [0.0221, 0.0248, 0.0278, 1.8000e-006],
-        [0.0278, 0.0313, 0.0351, 1.8000e-006],
-        [0.0351, 0.0394, 0.0442, 1.8000e-006],
-        [0.0442, 0.0496, 0.0557, 1.8000e-006],
-        [0.0557, 0.0625, 0.0702, 1.8000e-006],
-        [0.0702, 0.0787, 0.0891, 1.8000e-006],
-        [0.0891, 0.1000, 0.1122, 1.8000e-006],
-        [0.1122, 0.1250, 0.1413, 2.2500e-006],
-        [0.1413, 0.1600, 0.1778, 2.8800e-006],
-        [0.1778, 0.2000, 0.2239, 3.6000e-006],
-        [0.2239, 0.2500, 0.2818, 4.5000e-006],
-        [0.2818, 0.3150, 0.3548, 5.6700e-006],
-        [0.3548, 0.4000, 0.4467, 7.2000e-006],
-        [0.4467, 0.5000, 0.5623, 9.0000e-006],
-        [0.5623, 0.6300, 0.7079, 1.1340e-005],
-        [0.7079, 0.8000, 0.8913, 1.4400e-005],
-        [0.8913, 1.0000, 1.1220, 1.8000e-005],
-        [1.1220, 1.2500, 1.4130, 2.2500e-005],
-        [1.4130, 1.6000, 1.7780, 2.8800e-005],
-        [1.7780, 2.0000, 2.2390, 3.6000e-005],
-        [2.2390, 2.5000, 2.8180, 4.5000e-005],
-        [2.8180, 3.1500, 3.5480, 5.6700e-005],
-        [3.5480, 4.0000, 4.4670, 7.2000e-005],
-        [4.4670, 5.0000, 5.6230, 9.0000e-005],
-        [5.6230, 6.3000, 7.0790, 1.1340e-004],
-        [7.0790, 8.0000, 8.9130, 1.4400e-004],
-        [8.9130, 10.0000, 11.2200, 1.8000e-004],
-        [11.2200, 12.5000, 14.1300, 2.2500e-004],
-        [14.1300, 16.0000, 17.7800, 2.8800e-004],
-        [17.7800, 20.0000, 22.3900, 3.6000e-004],
-        [22.3900, 25.0000, 28.1800, 4.5000e-004],
-        [28.1800, 31.5000, 35.4800, 5.6700e-004],
-        [35.4800, 40.0000, 44.6700, 7.2000e-004],
-        [44.6700, 50.0000, 56.2300, 9.0000e-004],
-        [56.2300, 64.0000, 71.8380, 1.1520e-003],
-        [71.8380, 80.6350, 90.5100, 1.4514e-003],
-        [90.5100, 101.5900, 114.0400, 1.8000e-003],
-        [114.0400, 128.0000, 143.6800, 1.8000e-003],
-        [143.6800, 161.2700, 181.0200, 1.8000e-003],
-        [181.0200, 203.1900, 228.0700, 1.8000e-003],
-        [228.0700, 256.0000, 287.3500, 1.8000e-003],
-        [287.3500, 322.5400, 362.0400, 1.8000e-003]])
-
-    fig, ax = plt.subplots(figsize=(10, 7.5))
-
-    # draw steps for ISS requirement in light, transparent blue
-    plt.step(m[:, 0], m[:, 3], where='post', label='post',
-             alpha=0.3, color='blue')
-
-    # draw horizontal lines at median grms values in red
-    plt.hlines(y=[3.500e-006, 2.5000e-006], xmin=[m[12, 0], m[13, 0]], xmax=[m[12, 2], m[13, 2]], linewidth=2.5,
-               alpha=0.85, color='red')
-
-    # draw lower, vertical (whisker) lines from 1st to 25th percentiles in black
-    plt.vlines(x=[m[12, 1], m[13, 1]], ymin=[1e-6, 1.5e-6], ymax=[2.0e-6, 2.1e-6], linewidth=1.5,
-               alpha=0.5, color='black')
-
-    # draw upper, vertical (whisker) lines from 75th to 99th percentiles in black
-    plt.vlines(x=[m[12, 1], m[13, 1]], ymin=[3.9e-6, 3e-6], ymax=[5.7e-6, 6.5e-6], linewidth=1.5,
-               alpha=0.5, color='black')
-
-    plt.xscale('log')
-    plt.yscale('log')
-
-    # this is an inset axes over the main axes to use as a legend
-    ax_leg = plt.axes([0.2, 0.6, 0.2, 0.2], facecolor='white')
-    plt.plot([], [])
-    plt.title('Legend')
-
-    plt.vlines(x=[10.0], ymin=[75.0], ymax=[99.0], linewidth=1.5, alpha=0.75, color='black')
-    plt.hlines(y=[50.0], xmin=[ 5.0], xmax=[15.0], linewidth=2.5, alpha=0.85, color='red')
-    plt.vlines(x=[10.0], ymin=[ 1.0], ymax=[25.0], linewidth=1.5, alpha=0.75, color='black')
-
-    plt.hlines(y=[1, 25, 50, 75, 99], xmin=[10, 10, 16, 10, 10], xmax=[30, 30, 30, 30, 30], linewidth=1, color='gray', linestyle=':')
-
-    plt.text(31, 99, '99th percentile', verticalalignment='center')
-    plt.text(31, 75, '75th percentile', verticalalignment='center')
-    plt.text(31, 50, 'median', verticalalignment='center')
-    plt.text(31, 25, '25th percentile', verticalalignment='center')
-    plt.text(31,  1, '1st percentile', verticalalignment='center')
-
-    plt.xlim(-10, 110)
-    plt.ylim(-10, 110)
-
-    plt.xticks([])
-    plt.yticks([])
-
-    plt.show()
-
-    # fig.savefig(out_file, pad_inches=(1.0, 1.0))  # 1-inch pad since figsize was chopped 1-inch all-around
+    print('wrote %s' % csv_file_out)
 
 
-def demo_box():
-    """
-    ============
-    Boxplot Demo
-    ============
+def grygier_summary_boxplot(start_month_str, stop_month_str, sensor, base_dir='G:\data\monthly_minmaxrms'):
+    """write boxplot summary of hourly min/max/rms stats presumably over a long time span"""
 
-    Example boxplot code
-    """
+    # set pandas display options
+    pd.options.display.float_format = ' {:,.4e}'.format
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
 
-    import numpy as np
-    import matplotlib.pyplot as plt
+    # build output filename
+    box_fname_out = '_'.join([start_month_str, stop_month_str, sensor, 'minmaxrms', 'summary.pdf'])
+    box_file_out = os.path.join(base_dir, box_fname_out)
 
-    # Fixing random state for reproducibility
-    np.random.seed(19680801)
+    # get source csv files that were produced by grygier_counter.py
+    csv_files = get_files(start_month_str, stop_month_str, sensor, base_dir=base_dir)
 
-    # fake up some data
-    spread = np.random.rand(50) * 100
-    center = np.ones(25) * 50
-    flier_high = np.random.rand(10) * 100 + 100
-    flier_low = np.random.rand(10) * -100
-    data = np.concatenate((spread, center, flier_high, flier_low))
+    # read first file into dataframe
+    df = pd.read_csv(csv_files[0])
 
-    ###############################################################################
+    # concatenate remaining files onto dataframe
+    for f in csv_files[1:]:
+        df2 = pd.read_csv(f)
+        df = pd.concat([df, df2], ignore_index=True)
 
-    fig1, ax1 = plt.subplots()
-    ax1.set_title('Basic Plot')
-    ax1.boxplot(data)
+    # compute per-axis value (called "mag") that is max(abs(ymin, ymax))
+    df['xmag(g)'] = df.apply(lambda row: np.max([np.abs(row['xmin(g)']), np.abs(row['xmax(g)'])]), axis=1)
+    df['ymag(g)'] = df.apply(lambda row: np.max([np.abs(row['ymin(g)']), np.abs(row['ymax(g)'])]), axis=1)
+    df['zmag(g)'] = df.apply(lambda row: np.max([np.abs(row['zmin(g)']), np.abs(row['zmax(g)'])]), axis=1)
 
-    ###############################################################################
+    # enumerate columns to be summarized on hourly basis
+    vals = [
+        'xmag(g)',
+        'ymag(g)',
+        'zmag(g)',
+        'vmax(g)',
+        'xrms(g)',
+        'yrms(g)',
+        'zrms(g)',
+        'vrms(g)',
+    ]
 
-    fig2, ax2 = plt.subplots()
-    ax2.set_title('Notched boxes')
-    ax2.boxplot(data, notch=True)
+    # iterate over values to be summarized, group and compute aggregate functions (percentiles, min, max)
+    for v in vals:
+        my_group = df.groupby('hour').agg({v: [p1, p25, 'median', p75, p99, 'min', 'max']})
+        box_plotter(v, my_group, box_file_out)
 
-    ###############################################################################
-
-    green_diamond = dict(markerfacecolor='g', marker='D')
-    fig3, ax3 = plt.subplots()
-    ax3.set_title('Changed Outlier Symbols')
-    ax3.boxplot(data, flierprops=green_diamond)
-
-    ###############################################################################
-
-    fig4, ax4 = plt.subplots()
-    ax4.set_title('Hide Outlier Points')
-    ax4.boxplot(data, showfliers=False)
-
-    ###############################################################################
-
-    red_square = dict(markerfacecolor='r', marker='s')
-    fig5, ax5 = plt.subplots()
-    ax5.set_title('Horizontal Boxes')
-    ax5.boxplot(data, vert=False, flierprops=red_square)
-
-    ###############################################################################
-
-    fig6, ax6 = plt.subplots()
-    ax6.set_title('Shorter Whisker Length')
-    ax6.boxplot(data, flierprops=red_square, vert=False, whis=0.75)
-
-    ###############################################################################
-    # Fake up some more data
-
-    spread = np.random.rand(50) * 100
-    center = np.ones(25) * 40
-    flier_high = np.random.rand(10) * 100 + 100
-    flier_low = np.random.rand(10) * -100
-    d2 = np.concatenate((spread, center, flier_high, flier_low))
-    data.shape = (-1, 1)
-    d2.shape = (-1, 1)
-
-    ###############################################################################
-    # Making a 2-D array only works if all the columns are the
-    # same length.  If they are not, then use a list instead.
-    # This is actually more efficient because boxplot converts
-    # a 2-D array into a list of vectors internally anyway.
-
-    data = [data, d2, d2[::2, 0], data, d2, d2[::2, 0], data, d2, d2[::2, 0], data, d2, d2[::2, 0], data, d2, d2[::2, 0], data, d2, d2[::2, 0], data, d2, d2[::2, 0], data, d2, d2[::2, 0]]
-    fig7, ax7 = plt.subplots()
-    ax7.set_title('Multiple Samples with Different sizes')
-    ax7.boxplot(data)
-
-    plt.show()
 
 
 if __name__ == '__main__':
 
-    # demo_box()
-    # demo_iss_req_steps()
-    get_files()
+    start_month_str = '2018-12'
+    stop_month_str = '2019-07'
+    sensors = ['121f03006', '121f08006']
+    for sensor in sensors:
+        # grygier_summary_stdout(start_month_str, stop_month_str, sensor)
+        # grygier_summary_csvfile(start_month_str, stop_month_str, sensor)
+        grygier_summary_boxplot(start_month_str, stop_month_str, sensor)
