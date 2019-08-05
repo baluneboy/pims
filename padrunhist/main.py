@@ -100,12 +100,12 @@ def get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=2*1024*1024)
     return list( ffp(files) )
 
 
-def get_pad_day_sensor_rate_mindur_files(files, day, sensor, mindur=5):
+def get_pad_day_sensor_rate_mindur_files(files, day, sensor, fs, mindur=5):
 
     # FIXME rate implied at 500.0 (needs attention in PadDataDaySensorWhereMinDur)
 
     # initialize callable classes that act as filters for our pipeline
-    file_filter1 = PadDataDaySensorWhereMinDur(day, sensor, mindur=mindur)
+    file_filter1 = PadDataDaySensorWhereMinDur(day, sensor, where={'SampleRate': fs}, mindur=mindur)
 
     # initialize processing pipeline with callable classes, but not using file list as input yet
     ffp = FileFilterPipeline(file_filter1)

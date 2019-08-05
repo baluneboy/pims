@@ -98,14 +98,30 @@ def parametersOK():
         # this command gets superset (too many for what we want here though):
         # find /misc/yoda/pub/pad -maxdepth 4 -mindepth 4 -type d -printf "%f\n" | sort | uniq
         #parameters['sensorList']=['sams2_accel_121f02','sams2_accel_121f03','sams2_accel_121f04','sams2_accel_121f05','sams2_accel_121f06','sams2_accel_121f08','samses_accel_es05','samses_accel_es06','samses_accel_es08','mams_accel_ossbtmf','mams_accel_ossraw','mams_accel_hirap','iss_rad_radgse']
-        parameters['sensorList']=[
-            'sams2_accel_121f02','sams2_accel_121f03','sams2_accel_121f04','sams2_accel_121f05','sams2_accel_121f06','sams2_accel_121f08',
-            'samses_accel_es03','samses_accel_es05','samses_accel_es06','samses_accel_es08',
-            'mams_accel_ossbtmf','mams_accel_ossraw','mams_accel_hirap','iss_rad_radgse',
-            'mma_accel_0bba','mma_accel_0bbb','mma_accel_0bbc','mma_accel_0bbd','samses_accel_es09'
+        parameters['sensorList'] = [
+            'sams2_accel_121f02',
+            'sams2_accel_121f03',
+            'sams2_accel_121f04',
+            'sams2_accel_121f05',
+            'sams2_accel_121f06',
+            'sams2_accel_121f08',
+            'samses_accel_es03',
+            'samses_accel_es05',
+            'samses_accel_es06',
+            'samses_accel_es08',
+            'mams_accel_ossbtmf',
+            'mams_accel_ossraw',
+            'mams_accel_hirap',
+            'iss_rad_radgse',
+            'mma_accel_0bba',
+            'mma_accel_0bbb',
+            'mma_accel_0bbc',
+            'mma_accel_0bbd',
+            'samses_accel_es09',
+            'samses_accel_es20',
             ]
     else:
-        parameters['sensorList'] = split(b,',')
+        parameters['sensorList'] = split(b, ',')
     return 1
 
 def printUsage():
@@ -222,10 +238,11 @@ def mainLoop():
     outfile.close()
     print 'done'
 
+
 if __name__ == '__main__':
     for p in sys.argv[1:]: # parse command line
         pair = split(p, '=', 1)
-        if (2 != len(pair)):
+        if 2 != len(pair):
             print 'bad parameter: %s' % p
             break
         if not parameters.has_key(pair[0]):
@@ -238,5 +255,4 @@ if __name__ == '__main__':
             print 'Pad times processing starting'
             mainLoop()
             sys.exit(0)
-
     printUsage()

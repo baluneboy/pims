@@ -42,11 +42,11 @@ def filespan_relativeto_dayhour(fullfilestr, dh):
         return +1
 
 
-def get_day_files(d, sensor, mindur=5, is_rev=True):
+def get_day_files(d, sensor, fs, mindur=5, is_rev=True):
     ymd_dir = datetime_to_ymd_path(d)
     glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
     fnames = glob.glob(glob_pat)
-    files = get_pad_day_sensor_rate_mindur_files(fnames, d.strftime('%Y-%m-%d'), sensor, mindur=mindur)
+    files = get_pad_day_sensor_rate_mindur_files(fnames, d.strftime('%Y-%m-%d'), sensor, fs, mindur=mindur)
     files.sort(reverse=is_rev)
     return files
 
@@ -129,12 +129,12 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
     # get files for all of stop_str's day
     stop_day = parser.parse(stop_str).replace(hour=0, minute=0, second=0, microsecond=0)
     print stop_day.strftime('%Y-%m-%d'), '<< getting stop_day files before iteration begins'
-    files = get_day_files(stop_day, sensor, mindur=min_dur)
+    files = get_day_files(stop_day, sensor, fs, mindur=min_dur)
 
     # get files for all of last_day
     last_day = stop_day - relativedelta(days=1)
     print last_day.strftime('%Y-%m-%d'), '<< getting last_day files before iteration begins'
-    files += get_day_files(last_day, sensor, mindur=min_dur)
+    files += get_day_files(last_day, sensor, fs, mindur=min_dur)
 
     # print 'len(files) = %d' % len(files)
 
@@ -148,11 +148,26 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
         # create data buffer -- at some pt in code before we need mean(counts), probably just after GSS min/max found
         buffer = PadBottomBuffer(fs, sec)
 
-        # if it's high noon, then get list of matching files for prior day and extend deque
-        if dh.hour == 12:
-            prior_day = dh.replace(hour=0) - relativedelta(days=1)
-            print prior_day.strftime('%Y-%m-%d'), '<< high noon, so extending deque with prior day files'
-            dfiles.extend(get_day_files(prior_day, sensor, mindur=min_dur))
+        # check if deque of files is empty, extend as needed
+        dfiles_empty = False if dfiles else True
+        if dfiles_empty:
+            days_ago = 0
+            while dfiles_empty:
+                days_ago += 1
+                prior_day = dh.replace(hour=0) - relativedelta(days=days_ago)
+                print prior_day.strftime('%Y-%m-%d'), '<< deque of files empty, so extending deque with prior day files'
+                prior_day_files = get_day_files(prior_day, sensor, fs, mindur=min_dur)
+                dfiles.extend(prior_day_files)
+                print 'extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d'))
+                dfiles_empty = False if dfiles else True
+
+        # # if it's high noon, then get list of matching files for prior day and extend deque
+        # if dh.hour == 12:
+        #     prior_day = dh.replace(hour=0) - relativedelta(days=1)
+        #     print prior_day.strftime('%Y-%m-%d'), '<< high noon, so extending deque with prior day files'
+        #     prior_day_files = get_day_files(prior_day, sensor, fs, mindur=min_dur)
+        #     dfiles.extend(prior_day_files)
+        #     print 'extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d'))
 
         # print 'len(dfiles) = %d' % len(dfiles)
 
@@ -160,40 +175,58 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
         print dh.strftime('%Y-%m-%d/%H'), 'extracting (t,x,y,z,v) data from files for this dh'
         last_file = None
         while True:
-            f = dfiles.popleft()
-            fspan_relative = filespan_relativeto_dayhour(f, dh)
+            if dfiles:
+                f = dfiles.popleft()
+                fspan_relative = filespan_relativeto_dayhour(f, dh)
 
-            if fspan_relative == 0:
-                a = padread_hourpart(f, fs, dh)
-                buffer.add(a)
-                print 'extract', dh, 'part of', f, 'count =', np.count_nonzero(~np.isnan(buffer.vxyz[:, 0]))
-                last_file = f
+                if fspan_relative == 0:
+                    a = padread_hourpart(f, fs, dh)
+                    buffer.add(a)
+                    print 'extract', dh, 'part of', f, 'count =', np.count_nonzero(~np.isnan(buffer.vxyz[:, 0]))
+                    last_file = f
 
-            elif fspan_relative < 0:
-                dfiles.appendleft(f)
-                if last_file is not None:
-                    # print 'prepending', last_file
-                    dfiles.appendleft(last_file)
-                #ex /misc/yoda/www/plots/batch/results/monthly_minmaxrms/year1983/month12/1983-12_121f00_minmaxrms.csv
-                ym_subdir = dh.strftime('year%Y/month%m')
-                csv_name = '_'.join([dh.strftime('%Y-%m'), sensor, 'minmaxrms.csv'])
-                csv_file = os.path.join(csv_dir, ym_subdir, csv_name)
-                if not os.path.exists(os.path.dirname(csv_file)):
-                    os.makedirs(os.path.dirname(csv_file))
-                if not os.path.exists(csv_file):
-                    labels = 'date,hour,'
-                    labels += 'vmin(g),xmin(g),ymin(g),zmin(g),'
-                    labels += 'vmax(g),xmax(g),ymax(g),zmax(g),'
-                    labels += 'vrms(g),xrms(g),yrms(g),zrms(g)\n'
-                    # labels += 'xmag(g),ymag(g),zmag(g)\n'
-                    with open(csv_file, 'w') as fd:
-                        fd.write(labels)
-                buffer.append_to_csv(csv_file, dh)
-                print 'before', dh, 'is', f, csv_file
-                break
+                elif fspan_relative < 0:
+                    dfiles.appendleft(f)
+                    if last_file is not None:
+                        # print 'prepending', last_file
+                        dfiles.appendleft(last_file)
+                    #ex /misc/yoda/www/plots/batch/results/monthly_minmaxrms/year1983/month12/1983-12_121f00_minmaxrms.csv
+                    ym_subdir = dh.strftime('year%Y/month%m')
+                    csv_name = '_'.join([dh.strftime('%Y-%m'), sensor, 'minmaxrms.csv'])
+                    csv_file = os.path.join(csv_dir, ym_subdir, csv_name)
+                    if not os.path.exists(os.path.dirname(csv_file)):
+                        os.makedirs(os.path.dirname(csv_file))
+                    if not os.path.exists(csv_file):
+                        labels = 'date,hour,'
+                        labels += 'vmin(g),xmin(g),ymin(g),zmin(g),'
+                        labels += 'vmax(g),xmax(g),ymax(g),zmax(g),'
+                        labels += 'vrms(g),xrms(g),yrms(g),zrms(g)\n'
+                        # labels += 'xmag(g),ymag(g),zmag(g)\n'
+                        with open(csv_file, 'w') as fd:
+                            fd.write(labels)
+                    buffer.append_to_csv(csv_file, dh)
+                    print 'before', dh, 'is', f, csv_file
+                    break
 
-            elif fspan_relative > 0:
-                print 'after', dh, 'is', f
+                elif fspan_relative > 0:
+                    print 'after', dh, 'is', f
+
+            else:
+
+                print 'no more files to pop from deque'
+
+                # deque of files is empty, extend as needed
+                dfiles_empty = True
+                if dfiles_empty:
+                    days_ago = 0
+                    while dfiles_empty:
+                        days_ago += 1
+                        prior_day = dh.replace(hour=0) - relativedelta(days=days_ago)
+                        print prior_day.strftime('%Y-%m-%d'), '<< deque of files empty, so extending deque with prior day files'
+                        prior_day_files = get_day_files(prior_day, sensor, fs, mindur=min_dur)
+                        dfiles.extend(prior_day_files)
+                        print 'extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d'))
+                        dfiles_empty = False if dfiles else True
 
 
 def parameters_ok():

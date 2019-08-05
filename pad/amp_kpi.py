@@ -37,8 +37,10 @@ JEN_MSID_MAP = {
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current',
-        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',  # added on 2018-08-23
-        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',  # added on 2018-08-23
+        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',   # added on 2018-08-23
+        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',   # added on 2018-08-23
+        'UEZE06RT1390C': 'ER6_Locker4_Current',       # added on 2019-08-05
+        'UEZE06RT1574J': 'TSH_ES20_HER_Power_Status',  # added on 2019-08-05
 }
 
 ER6_LOCKER3_MSID_MAP = {
@@ -247,6 +249,8 @@ def generic_sto2dataframe(stofile, query_chain=None, predicate=None):
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current',
+        'UEZE06RT1584J': 'TSH_ES20_HER_Power_Status',
+        'UEZE06RT1390C': 'ER6_Locker4_Current',
         'UEZE12RT1384C': 'ER7_Embedded_EE_Current',  # added on 2018-08-23
         'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',  # added on 2018-08-23        
         }
@@ -294,7 +298,7 @@ def msg_cir_fir_sto2dataframe(stofile):
                 is_data = False
             if is_data and not line.startswith('#Start_Data'):
                 s.write(line)
-    s.seek(0) # "rewind" to the beginning of the StringIO object
+    s.seek(0)  # "rewind" to the beginning of the StringIO object
     df = pd.read_csv(s, sep='\t')
     
     # drop the unwanted "#Header" column
@@ -347,6 +351,8 @@ def msg_cir_fir_sto2dataframe(stofile):
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current',
+        'UEZE06RT1584J': 'TSH_ES20_HER_Power_Status',
+        'UEZE06RT1390C': 'ER6_Locker4_Current',
         'UEZE12RT1384C': 'ER7_Embedded_EE_Current',  # added on 2018-08-23
         'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',  # added on 2018-08-23        
         }
@@ -356,6 +362,7 @@ def msg_cir_fir_sto2dataframe(stofile):
     # normalize on/off (as one/zero) for CIR and FIR columns
     df.TSH_ES05_CIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES05_CIR_Power_Status.values ]
     df.TSH_ES06_FIR_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES06_FIR_Power_Status.values ]
+    df.TSH_ES20_HER_Power_Status = [ normalize_cir_fir_power(v) for v in df.TSH_ES20_HER_Power_Status.values ]
 
     return df
 
@@ -603,7 +610,7 @@ def list_diff(a, b):
 def dataframe_subset(df, label, value_column, column_list):
     """return subset of dataframe that have status == 'S'"""
     # get and rename status column that corresponds to this value_column
-    status_column = column_list[ column_list.index(value_column) + 1 ]
+    status_column = column_list[column_list.index(value_column) + 1]
 
     # return empty dataframe subset if status column is all NaNs
     if np.all( pd.isnull( df[status_column] ) ):
@@ -644,6 +651,18 @@ def process_cir_fir(df, label, value_column, column_list, stofile):
     return df_payload, grouped_payload
 
 
+def process_hermes(df, label, value_column, column_list, stofile):
+    """process for specific payload (just Hermes for now)"""
+    # new dataframe (subset) for this payload
+    df_payload = dataframe_subset(df, label, value_column, column_list)
+
+    # pivot to aggregate daily sum for "payload_hours" column
+    grouped_payload = df_payload.groupby('Date').aggregate(np.sum)
+
+    # return dataframe for payload and date grouped dataframe too
+    return df_payload, grouped_payload
+
+
 def convert_sto2csv(stofile):
     """convert sto file to dataframe, then process and write to csv"""
     
@@ -663,7 +682,10 @@ def convert_sto2csv(stofile):
 
     # new dataframe (subset) for FIR
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
-    
+
+    # new dataframe (subset) for Hermes
+    df_hermes, grouped_hermes = process_hermes(df, 'hermes', 'TSH_ES20_HER_Power_Status', column_list, stofile)
+
     # FIXME
     # - move zero_list and one_list up to here
     # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
@@ -739,7 +761,10 @@ def convert_sto2csv(stofile):
 
     # new dataframe (subset) for FIR
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
-    
+
+    # new dataframe (subset) for Hermes
+    df_hermes, grouped_hermes = process_hermes(df, 'hermes', 'TSH_ES20_HER_Power_Status', column_list, stofile)
+
     # FIXME
     # - move zero_list and one_list up to here
     # - refactor commonanilty for ER3, ER4, MSG1, and MSG2
@@ -876,7 +901,12 @@ def convert_sto2xlsx(stofile, xlsxfile):
     ### FIR ###
     # new dataframe (subset) for FIR with grouped_fir being sum of payload hours on daily basis
     df_fir, grouped_fir = process_cir_fir(df, 'fir', 'TSH_ES06_FIR_Power_Status', column_list, stofile)
-    
+
+    ################################
+    ### Hermes ###
+    # new dataframe (subset) for Hermes with grouped_fir being sum of payload hours on daily basis
+    df_hermes, grouped_hermes = process_hermes(df, 'hermes', 'TSH_ES20_HER_Power_Status', column_list, stofile)
+
     # FIXME
     # - move zero_list and one_list up to here
     # - refactor commonanilty for ER3, ER4, MSG1, and MSG2

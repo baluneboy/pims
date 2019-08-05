@@ -42,10 +42,11 @@ defaults = {
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
     #('es03',        'manbearpig',   'pims',     '3.92'),
-    ('es09',        'manbearpig',   'pims',     '7.84'),
     ('es05',        'manbearpig',   'pims',     '7.84'),
     ('es06',        'chef',         'pims',     '7.84'),
-    #('oss',         'stan',         'pims',     '0.0625'),    
+    # ('es09',        'manbearpig',   'pims',     '7.84'),
+    ('es20',        'chef',         'pims',     '7.84'),
+    #('oss',         'stan',         'pims',     '0.0625'),
     ('cu_packet',   'yoda',         'samsnew',  '1')
     ],          
 'packets_per_sec':  '8',    # expected value for this sensor for this gap check period
