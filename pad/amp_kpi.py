@@ -17,6 +17,7 @@ from pims.excel.modification import overwrite_last_row_with_totals, kpi_sheet_fi
 from openpyxl.reader.excel import load_workbook
 from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
+
 JEN_MSID_MAP = {
         'ULZL02RT0471C': 'MSG_Outlet_2_Current',
         'ULZL02RT0477J': 'MSG_Outlet_2_Status',
