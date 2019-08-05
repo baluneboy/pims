@@ -1,9 +1,31 @@
 #!/usr/bin/env python
 
 import os
+import glob
 import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
+from PyPDF2 import PdfFileReader, PdfFileWriter
+
+
+def pdf_merger(start_month_str, stop_month_str, sensor):
+
+    pdf_files = []
+    for key in ['vmax', 'xmag', 'ymag', 'zmag', 'vrms', 'xrms', 'yrms', 'zrms']:
+        name_str = '%s_%s_%s_%s_pctile_summary.pdf' % (start_month_str, stop_month_str, sensor, key)
+        files = glob.glob('G:/data/monthly_minmaxrms/%s' % name_str)
+        files.sort()
+        pdf_files.extend(files)
+    pdf_out = pdf_files[0].replace('pctile', 'join').replace('_vrms','')
+    pdf_writer = PdfFileWriter()
+
+    for path in pdf_files:
+        pdf_reader = PdfFileReader(path)
+        for page in range(pdf_reader.getNumPages()):
+            pdf_writer.addPage(pdf_reader.getPage(page))
+
+    with open(pdf_out, 'wb') as fh:
+        pdf_writer.write(fh)
 
 
 def p1(a):
@@ -46,7 +68,11 @@ def box_plotter(vstr, df, pdf_out):
     plt.yscale('log')
 
     plt.xlim(-1, 24)
-    plt.ylim(5e-6, 1e-2)
+
+    if sensor.endswith('006'):
+        plt.ylim(2e-6, 2e-2)
+    else:
+        plt.ylim(1e-5, 1)
 
     plt.xticks(np.arange(0, 24, 1))
     plt.grid(True, which='both', axis='both', alpha=0.25)
@@ -57,10 +83,10 @@ def box_plotter(vstr, df, pdf_out):
     pdf_file = pdf_out.replace('minmaxrms_summary.pdf', vstr + '_pctile_summary.pdf').replace('(g)', '')
 
     k = os.path.basename(pdf_file).replace('.pdf', '').split('_')
-    title_str = 'GMT Span from {0} to {1}, Sensor {2}, Var = {3}'.format(*k[0:4])
+    title_str = 'GMT Span = {0} to {1}, Sensor = {2}, Var = {3}'.format(*k[0:4])
     plt.title(title_str)
     fig.savefig(pdf_file, pad_inches=(1.0, 1.0))
-
+    plt.close(fig)
     print('wrote %s' % pdf_file)
 
 
@@ -225,13 +251,13 @@ def grygier_summary_boxplot(start_month_str, stop_month_str, sensor, base_dir='G
         box_plotter(v, my_group, box_file_out)
 
 
-
 if __name__ == '__main__':
 
-    start_month_str = '2018-12'
+    start_month_str = '2018-01'
     stop_month_str = '2019-07'
-    sensors = ['121f03006', '121f08006']
+    sensors = ['121f03006', '121f08006', '121f03', '121f08']
     for sensor in sensors:
         # grygier_summary_stdout(start_month_str, stop_month_str, sensor)
         # grygier_summary_csvfile(start_month_str, stop_month_str, sensor)
         grygier_summary_boxplot(start_month_str, stop_month_str, sensor)
+        pdf_merger(start_month_str, stop_month_str, sensor)
