@@ -4,149 +4,127 @@ import socket
 import datetime
 
 #-----------------------------------------------------------------------------------------------------        
-HEADER = '''<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-<html>
-	<head>  
-		<meta http-equiv="content-type" content="text/html; charset=iso-8859-1" />
-		<meta http-equiv="cache-control" content="no-cache" />
-	
-		<title>SAMS Pkt %</title>
-		<link type="text/css" rel="stylesheet" media="all" href="css/reset.css" />
-		<link type="text/css" rel="stylesheet" media="all" href="css/vader-jquery-ui.css" />
-		<link type="text/css" rel="stylesheet" media="all" href="css/prettify.css" />
-		<link type="text/css" rel="stylesheet" media="all" href="css/styles.css" />
-		<link type="text/css" rel="stylesheet" media="all" href="css/fixed_table_rc.css" />
-
-	  	<script src="js/jquery.min.js"></script>
-	  	<script src="js/jquery-1.10.2.min.js" type="text/javascript"></script>
-		<script src="js/global.js" type="text/javascript"></script>
-		<script src="js/sortable_table.js" type="text/javascript"></script>
-		<script src="js/fixed_table_rc.js" type="text/javascript"></script>
-		<script src="js/prettify.js" type="text/javascript"></script>
-
-		<style>
-			#main-content { min-height: 600px; overflow: hidden; }			
-			#example_d1 { width: 95%; }
-			#example_d2 { width: 95%; }
-			#example_d3 { width: 95%; }
-			
-			#example_d3 .dwrapper { width: 980px; }
-			
-			.dwrapper #fixed_hdr1 { width: 1500px; }
-			#fixed_hdr1 th { font-weight: bold; }
-			#fixed_hdr1 th, td { border-width: 1px; border-style: solid; padding: 2px 4px; }
-			
-			.dwrapper { padding: 2px; overflow: hidden; vertical-align: top; }
-			.dwrapper div.tblWrapper { height: 300px; overflow: auto; margin-top: 10px;}
-			.dwrapper div.ft_container { width: 100%; margin-top: 10px; height: 420px;}		
-			
-			body { line-height: 1.5em; }
-			#main-content { min-width: 1000px; }
-		</style>
-
-		<script>
-			$(function () {
-				
-				$('#main-content').width($('#page-content').width() - 251);
-				
-				$('#applyFixedTableRC').click(function () {
-					
-					if ($(this).hasClass('disabled')) return;
-					
-					$('#fixed_hdr1').unwrap();
-					
-					$('#fixed_hdr1').fxdHdrCol({
-						fixedCols: 3,
-						width:     '100%',
-						height:    400,
-						colModal: [
-						   { width: 50, align: 'center' },
-						   { width: 110, align: 'center' },
-						   { width: 170, align: 'left' },
-						   { width: 250, align: 'left' },
-						   { width: 100, align: 'left' },
-						   { width: 70, align: 'left' },
-						   { width: 100, align: 'left' },
-						   { width: 100, align: 'center' },
-						   { width: 90, align: 'left' },
-						   { width: 400, align: 'left' }
-						]					
-					});
-					
-					$(this).addClass('disabled');
-				});
-				
-				$('.example').addClass('ui-widget-content');
-				
-				$('#fixed_hdr2').fxdHdrCol({
-					fixedCols:  0,
-					width:     "100%",
-					height:    400,
-					colModal: [
-						   { width: 50, align: 'center' },
-						   { width: 110, align: 'center' },
-						   { width: 170, align: 'left' },
-						   { width: 250, align: 'left' },
-						   { width: 100, align: 'left' },
-						   { width: 70, align: 'left' },
-						   { width: 100, align: 'left' },
-						   { width: 100, align: 'center' },
-						   { width: 90, align: 'left' },
-						   { width: 400, align: 'left' }
-					],
-					sort: true
-				});
-				
-				$('#fixed_hdr3').fxdHdrCol({
-					fixedCols:  0,
-					width:     "100%",
-					height:    510,
-					colModal: [{width: 110, align: 'right'},
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}, 
-					           {width: 40,  align: 'right'}
-					          ]
-				});				
-				
-				$('.menu-item').click (function () {
-					$(this).parent().find('.sub_menu').slideToggle();
-				});
-
-				$('.showcode').click (function () {
-			      	$(this).text(function (i, v) {
-			      	    return (v == 'View code')?'Hide code':'View code'
-			      	});
-			        $(this).next().slideToggle();
-			    });
-			});
-			
-		</script>
-	</head>
-	<body onload="prettyPrint()">
-		<div id="c_overlay"></div>
-		<div id="c_helper"></div>
-		<script>
-			try { $('#c_overlay').css({height: $(document).height(), width: $(document).width()}); } catch (e) {	}
-		</script>    
-		<div class="clear"></div>
-		<div id="page-content">
-			<div id="main-content" class="ui-widget-content">			
-				<h2 id="ft_demo">Scrollable SAMS Packet Percentages (click <a class="pop" href="details.html">here</a> for details).</h2>
-				<div class="example" id="example_d3">
-					<div class="dwrapper">
+HEADER = '''<!doctype html>
+<html lang="en">
+<head>
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1">
+	  <title>SAMS Pkt %</title>
+      <style>
+            .dataframe {
+                  width: 1350px;
+                  table-layout: fixed;
+                  border-collapse: collapse;
+            }
+            .dataframe th {
+                  text-decoration: underline;
+            }
+            .dataframe th,
+            .dataframe td {
+                  padding: 5px;
+                  text-align: left;
+            }
+            .dataframe td:nth-child(1),
+            .dataframe th:nth-child(1) {
+                  min-width: 150px;
+            }
+            .dataframe td:nth-child(2),
+            .dataframe th:nth-child(2) {
+                  min-width: 48px;
+            }
+            .dataframe td:nth-child(3),
+            .dataframe th:nth-child(3) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(4),
+            .dataframe th:nth-child(4) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(5),
+            .dataframe th:nth-child(5) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(6),
+            .dataframe th:nth-child(6) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(7),
+            .dataframe th:nth-child(7) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(8),
+            .dataframe th:nth-child(8) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(9),
+            .dataframe th:nth-child(9) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(10),
+            .dataframe th:nth-child(10) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(11),
+            .dataframe th:nth-child(11) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(12),
+            .dataframe th:nth-child(12) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(13),
+            .dataframe th:nth-child(13) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(14),
+            .dataframe th:nth-child(14) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(15),
+            .dataframe th:nth-child(15) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(16),
+            .dataframe th:nth-child(16) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(17),
+            .dataframe th:nth-child(17) {
+                 min-width: 48px;
+            }
+            .dataframe td:nth-child(18),
+            .dataframe th:nth-child(18) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(19),
+            .dataframe th:nth-child(19) {
+                 min-width: 48px;
+            }            
+            .dataframe td:nth-child(20),
+            .dataframe th:nth-child(20) {
+                 min-width: 48px;
+            }            
+            .dataframe thead {
+                  background-color: #333333;
+                  color: #fdfdfd;
+            }
+            .dataframe thead tr {
+                  display: block;
+                  position: relative;
+            }
+            .dataframe tbody {
+                  display: block;
+                  overflow: auto;
+                  width: 100%;
+                  height: 750px;
+                  background-color: #dddddd;
+            }
+            .dataframe tbody tr:nth-child(even) {
+                  background-color: #cac5c5;
+            }
+      </style>
+</head>
+<body>
 <!-- THE HEADER ENDS HERE -->
 '''
 
