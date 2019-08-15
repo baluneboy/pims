@@ -881,6 +881,10 @@ def convert_sto2xlsx(stofile, xlsxfile):
     df = msg_cir_fir_sto2dataframe(stofile)
     column_list = df.columns.tolist()
     #df.to_csv(stofile.replace('.sto', '_from_dataframe.csv'))
+
+    # print(df)
+    # print(column_list)
+    # print('hey')
     
     # convert like 2014:077:00:02:04 to dates
     df['Date'] = [ doytimestr_to_datetime( doy_gmtstr ).date() for doy_gmtstr in df.GMT ]
@@ -1205,7 +1209,7 @@ if __name__ == '__main__':
     
     # this first branch is main kpi route (convert_latest_sto2xlsx)
     if len(sys.argv) == 2:
-        # run manually, like this: ./amp_kpi.py convert_latest_sto2xlsx
+        # run manually, like this: ./amp_kpi.py convert_latest_sto2xlsx <<<<    <<<<    <<<<    <<<<    <<<<
         eval(sys.argv[1] + '()')
         raise SystemExit
         

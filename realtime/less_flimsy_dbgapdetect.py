@@ -297,6 +297,7 @@ def weekly_get_cu_packet_gaps():
     with open('/misc/yoda/www/plots/user/sams/dbsams.csv', 'a') as f:
         df_merged.to_csv(f, index=False, header=False)
 
+
 def pims_dbgaps():
     buf = StringIO()
     #df_merged = pd.DataFrame({'hour':[]})
@@ -343,9 +344,10 @@ def pims_dbgaps():
     s = s.replace('<tr>', '<tr style="text-align: right;">')
     s = s.replace('<table border="1" class="dataframe">', '<table class="dataframe" id="fixed_hdr3">')
     with open("/misc/yoda/www/plots/user/sams/dbpims.html", "w") as html_file:
-        html_file.write( HEADER + s.replace('nan', '') + FOOTER )            
+        html_file.write(HEADER + s.replace('nan', '') + FOOTER)
     #print df_merged
     return dbgaps.start, dbgaps.stop
+
 
 def samsnew_dbgaps(d, d2):
     buf = StringIO()
@@ -382,6 +384,7 @@ def samsnew_dbgaps(d, d2):
         hdr = hdr.replace('dbsams', 'dbpims')
         html_file.write( hdr + s.replace('nan', '') + FOOTER )            
     #print df_merged    
+
 
 def manbearpig_dbgaps(start, stop):
     buf = StringIO()
@@ -425,6 +428,7 @@ def manbearpig_dbgaps(start, stop):
     #print df_merged
     return dbgaps.start, dbgaps.stop
 
+
 def main(argv):
     """script to simply check/show gaps in db"""
     if (len(argv) == 2) and (argv[1] == 'weekly'):
@@ -434,7 +438,7 @@ def main(argv):
     # parse command line
     for p in argv[1:]:
         pair = p.split('=')
-        if (2 != len(pair)):
+        if 2 != len(pair):
             print 'bad parameter: %s' % p
             break
         else:
@@ -447,6 +451,6 @@ def main(argv):
 
     print_usage()  
 
+
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
-    

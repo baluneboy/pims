@@ -24,6 +24,7 @@ defaults = {
 'fs':             '500.0',       # samples/second for data to be analyzed
 'sec':           '3600.0',       # seconds of TSH data (v,x,y,z acceleration values) to summarize
 'min_dur':          '5.0',       # minutes -- PAD file has at least this amount; otherwise skip file
+'dry_run':        'False',       # boolean True to just dry run; False to actually run
 }
 parameters = defaults.copy()
 
@@ -232,11 +233,6 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
 def parameters_ok():
     """check for reasonableness of parameters"""
 
-    # # verify base path
-    # if not os.path.exists(parameters['dir_name']):
-    #     print 'base path (%s) does not exist' % parameters['dir_name']
-    #     return False
-
     # convert start day to date object
     try:
         start = parser.parse(parameters['start_str'])
@@ -277,6 +273,13 @@ def parameters_ok():
         print 'could not convert min_dur to float: %s' % e.message
         return False
 
+    # convert dry_run to boolean
+    try:
+        parameters['dry_run'] = True if parameters['dry_run'].lower() in ['true', '1', 'yes', 'y'] else False
+    except Exception, e:
+        print 'could not convert dry_run to boolean: %s' % e.message
+        return False
+
     return True  # params are OK; otherwise, we returned False above
 
 
@@ -291,7 +294,6 @@ def print_usage():
 
 
 def main(argv):
-    """iterate over db query results to show pertinent packet details (and header info when details=True)"""
 
     # parse command line
     for p in sys.argv[1:]:
@@ -303,11 +305,14 @@ def main(argv):
             parameters[pair[0]] = pair[1]
     else:
         if parameters_ok():
+            # print parameters
             run_reverse(parameters['sensor'], parameters['fs'], parameters['start_str'],
                         parameters['stop_str'], sec=parameters['sec'], min_dur=parameters['min_dur'])
             return 0
 
     print_usage()
+
+# FIXME dry_run input arg does nothing at the moment - it'd be nice if it traced run without actually load files or calc
 
 
 # ----------------------------------------------------------------------
