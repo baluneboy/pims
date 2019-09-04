@@ -8,12 +8,12 @@ import matplotlib.pyplot as plt
 from PyPDF2 import PdfFileReader, PdfFileWriter
 
 
-def pdf_merger(start_month_str, stop_month_str, sensor):
+def pdf_merger(start_month_str, stop_month_str, sensor, subdir):
 
     pdf_files = []
     for key in ['vmax', 'xmag', 'ymag', 'zmag', 'vrms', 'xrms', 'yrms', 'zrms']:
         name_str = '%s_%s_%s_%s_pctile_summary.pdf' % (start_month_str, stop_month_str, sensor, key)
-        files = glob.glob('G:/data/monthly_minmaxrms/%s' % name_str)
+        files = glob.glob('G:/data/monthly_minmaxrms/%s/%s' % (subdir, name_str))
         files.sort()
         pdf_files.extend(files)
     pdf_out = pdf_files[0].replace('pctile', 'join').replace('_vrms','')
@@ -70,7 +70,7 @@ def box_plotter(vstr, df, pdf_out):
     plt.xlim(-1, 24)
 
     if sensor.endswith('006'):
-        plt.ylim(2e-6, 2e-2)
+        plt.ylim(2e-6, 5e-2)
     else:
         plt.ylim(1e-5, 1)
 
@@ -205,7 +205,7 @@ def grygier_summary_csvfile(start_month_str, stop_month_str, sensor, base_dir='G
     print('wrote %s' % csv_file_out)
 
 
-def grygier_summary_boxplot(start_month_str, stop_month_str, sensor, base_dir='G:\data\monthly_minmaxrms'):
+def grygier_summary_boxplot(start_month_str, stop_month_str, sensor, subdir, base_dir='G:\data\monthly_minmaxrms'):
     """write boxplot summary of hourly min/max/rms stats presumably over a long time span"""
 
     # set pandas display options
@@ -215,7 +215,7 @@ def grygier_summary_boxplot(start_month_str, stop_month_str, sensor, base_dir='G
 
     # build output filename
     box_fname_out = '_'.join([start_month_str, stop_month_str, sensor, 'minmaxrms', 'summary.pdf'])
-    box_file_out = os.path.join(base_dir, box_fname_out)
+    box_file_out = os.path.join(base_dir, subdir, box_fname_out)
 
     # get source csv files that were produced by grygier_counter.py
     csv_files = get_files(start_month_str, stop_month_str, sensor, base_dir=base_dir)
@@ -251,13 +251,73 @@ def grygier_summary_boxplot(start_month_str, stop_month_str, sensor, base_dir='G
         box_plotter(v, my_group, box_file_out)
 
 
+def grygier_rms_plucker(start_month_str, stop_month_str, sensor, subdir, base_dir='G:\data\monthly_minmaxrms'):
+    """pluck vrms, xrms, yrms, zrms medians at best 4-hour span and worst 4-hour span"""
+
+    # set pandas display options
+    pd.options.display.float_format = ' {:,.4e}'.format
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 1000)
+
+    # get source csv files that were produced by grygier_counter.py
+    csv_files = get_files(start_month_str, stop_month_str, sensor, base_dir=base_dir)
+
+    # read first file into dataframe
+    df = pd.read_csv(csv_files[0])
+
+    # concatenate remaining files onto dataframe
+    for f in csv_files[1:]:
+        df2 = pd.read_csv(f)
+        df = pd.concat([df, df2], ignore_index=True)
+
+    # enumerate columns to be summarized on hourly basis
+    vals = [
+        'xrms(g)',
+        'yrms(g)',
+        'zrms(g)',
+        'vrms(g)',
+    ]
+
+    # iterate over values to be summarized, group and compute aggregate functions (percentiles, min, max)
+    for v in vals:
+        my_group = df.groupby('hour').agg({v: [p1, p25, 'median', p75, p99, 'min', 'max']})
+        my_series = my_group[v]['median']
+
+        cc = my_series.values
+        bb = np.tile(cc, 2)[0:27]
+        aa = pd.rolling_mean(bb, 4)
+
+        idx_best4 = np.nanargmin(aa)
+        print('best 4 hrs averaged', aa[idx_best4])
+        if idx_best4 > 23:
+            print('best 4 hrs ends at', idx_best4 - 24)
+        else:
+            print('best 4 hrs ends at', idx_best4)
+
+        idx_worst4 = np.nanargmax(aa)
+        print('worst 4 hrs averaged', aa[idx_worst4])
+        if idx_worst4 > 23:
+            print('worst 4 hrs ends at', idx_worst4 - 24)
+        else:
+            print('worst 4 hrs ends at', idx_worst4)
+
+        print('sensor', sensor, 'ax', v)
+
+
 if __name__ == '__main__':
 
-    start_month_str = '2018-01'
-    stop_month_str = '2019-07'
-    sensors = ['121f03006', '121f08006', '121f03', '121f08']
+    # start_month_str = '2018-01'
+    # stop_month_str = '2019-07'
+    # sensors = ['121f03006', '121f08006', '121f03', '121f08']
+
+    subdir = 'MadeInSpace_ICF'
+    start_month_str = '2019-07'
+    stop_month_str = '2019-08'
+    sensors = ['121f03006', '121f04006', 'es20006']
+    # sensors = ['121f03', '121f04', 'es20']
     for sensor in sensors:
-        # grygier_summary_stdout(start_month_str, stop_month_str, sensor)
-        # grygier_summary_csvfile(start_month_str, stop_month_str, sensor)
-        grygier_summary_boxplot(start_month_str, stop_month_str, sensor)
-        pdf_merger(start_month_str, stop_month_str, sensor)
+        ## grygier_summary_stdout(start_month_str, stop_month_str, sensor)
+        ## grygier_summary_csvfile(start_month_str, stop_month_str, sensor)
+        # grygier_summary_boxplot(start_month_str, stop_month_str, sensor, subdir)
+        # pdf_merger(start_month_str, stop_month_str, sensor, subdir)
+        grygier_rms_plucker(start_month_str, stop_month_str, sensor, subdir)
