@@ -41,10 +41,10 @@ defaults = {
     ('121f04',      'tweek',        'pims',     '8'),
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
-    #('es03',        'manbearpig',   'pims',     '3.92'),
-    ('es05',        'manbearpig',   'pims',     '7.84'),
+    ('es03',        'manbearpig',   'pims',     '7.84'),
+    ('es05',        'manbearpig',   'pims',     '7.84'),  # 3.92 or 7.84
     ('es06',        'chef',         'pims',     '7.84'),
-    # ('es09',        'manbearpig',   'pims',     '7.84'),
+    ('es09',        'manbearpig',   'pims',     '7.84'),
     ('es20',        'chef',         'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),
     ('cu_packet',   'yoda',         'samsnew',  '1')
@@ -234,7 +234,7 @@ class CuDatabaseHourlyGapsStartStop(DatabaseHourlyGapsStartStop):
 def percentage_fmt(x):
     """function to format percentages"""
     if x < 80:               s = '<span style="color: red">%g</span>' % x
-    elif x >= 80 and x < 99: s = '<span style="color: orange;">%g</span>' % x
+    elif x >= 80 and x < 99: s = '<span style="color: blue">%g</span>' % x
     else:                    s = '%g' % x
     return s
 
@@ -341,8 +341,8 @@ def pims_dbgaps():
     df_merged.sort_values(by=['GMT'], inplace=True, ascending=False)
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
-    s = s.replace('<tr>', '<tr style="text-align: right;">')
-    s = s.replace('<table border="1" class="dataframe">', '<table class="dataframe" id="fixed_hdr3">')
+    # s = s.replace('<tr>', '<tr style="text-align: right;">')
+    # s = s.replace('<table border="1" class="dataframe">', '<table class="dataframe" id="fixed_hdr3">')
     with open("/misc/yoda/www/plots/user/sams/dbpims.html", "w") as html_file:
         html_file.write(HEADER + s.replace('nan', '') + FOOTER)
     #print df_merged
@@ -378,7 +378,8 @@ def samsnew_dbgaps(d, d2):
     df_merged.sort_values(by=['GMT'], inplace=True, ascending=False)    
     df_merged.to_html(buf, formatters=df_formatters, escape=False, index=False, na_rep='nan')
     s = buf.getvalue()
-    s = s.replace('<tr>', '<tr style="text-align: right;">')
+    # s = s.replace('<tr>', '<tr style="text-align: right;">')
+    # s = s.replace('dataframe', 'fixed_headers')
     with open("/misc/yoda/www/plots/user/sams/dbsams.html", "w") as html_file:
         hdr = HEADER.replace('PIMS Database Tables','SAMS Database Table')
         hdr = hdr.replace('dbsams', 'dbpims')

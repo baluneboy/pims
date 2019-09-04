@@ -44,6 +44,7 @@ def filespan_relativeto_dayhour(fullfilestr, dh):
 
 
 def get_day_files(d, sensor, fs, mindur=5, is_rev=True):
+    """return list of files for given day, d, that match sensor, rate & min duration (sorted according to is_rev)"""
     ymd_dir = datetime_to_ymd_path(d)
     glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
     fnames = glob.glob(glob_pat)
@@ -120,6 +121,7 @@ def old_demo():
 
 
 def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
+    """iterate backwards through time to get files, load data and process on hourly basis writing to interim CSV file"""
 
     # print sensor, fs, start_str, stop_str, sec, min_dur
     # raise SystemExit
@@ -144,9 +146,9 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
 
     # iterate from last dh of prev_day's day/hour down to, and including start_str's day/hour
     dhr = pd.date_range(start_str, stop_str, freq='1H')[:-1]
-    for dh in dhr[::-1]:  # fancy indexing gets us the reversed chronological ordering
+    for dh in dhr[::-1]:  # note: fancy indexing here gets us the reversed chronological ordering for dhr iteration
 
-        # create data buffer -- at some pt in code before we need mean(counts), probably just after GSS min/max found
+        # create data buffer
         buffer = PadBottomBuffer(fs, sec)
 
         # check if deque of files is empty, extend as needed
@@ -283,17 +285,17 @@ def parameters_ok():
     return True  # params are OK; otherwise, we returned False above
 
 
-# print short description of how to run the program
 def print_usage():
     """print short description of how to run the program"""
+
     print 'USAGE:    %s [options]' % os.path.abspath(__file__)
     print 'EXAMPLE1: %s # FOR DEFAULTS' % os.path.abspath(__file__)
-    print 'EXAMPLE2: %s 121f03=tweek hirap=towelie details=False # TWO SMALL SETS' % os.path.abspath(__file__)
-    print 'EXAMPLE3: %s 121f03=tweek details=True # ONE DETAILED SET' % os.path.abspath(__file__)
-    print 'EXAMPLE4: %s details=True # SHOWS MAX INFO' % os.path.abspath(__file__)
+    print 'EXAMPLE2: %s dry_run=True sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # DRY RUN' % os.path.abspath(__file__)
+    print 'EXAMPLE3: %s sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # ACTUAL RUN' % os.path.abspath(__file__)
 
 
 def main(argv):
+    """parse input arguments and run routine that reverses through time to process file-by-file"""
 
     # parse command line
     for p in sys.argv[1:]:
@@ -312,11 +314,12 @@ def main(argv):
 
     print_usage()
 
-# FIXME dry_run input arg does nothing at the moment - it'd be nice if it traced run without actually load files or calc
+# FIXME dry_run input arg does nothing at the moment - it'd be nice if it traced run w/o actually loading files or calc
 
 
 # ----------------------------------------------------------------------
 # EXAMPLES:
 # put example(s) here
 if __name__ == '__main__':
+
     sys.exit(main(sys.argv))
