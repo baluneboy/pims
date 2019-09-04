@@ -12,7 +12,7 @@ HEADER = '''<!doctype html>
 	  <title>SAMS Pkt %</title>
       <style>
             .dataframe {
-                  width: 1350px;
+                  width: 1380px;
                   table-layout: fixed;
                   border-collapse: collapse;
             }
