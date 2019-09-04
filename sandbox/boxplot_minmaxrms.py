@@ -321,3 +321,5 @@ if __name__ == '__main__':
         # grygier_summary_boxplot(start_month_str, stop_month_str, sensor, subdir)
         # pdf_merger(start_month_str, stop_month_str, sensor, subdir)
         grygier_rms_plucker(start_month_str, stop_month_str, sensor, subdir)
+
+    # SEE /home/pims/dev/programs/python/pims/files/get_hist_npz_files.py for 95th percentile values (per-axis)
