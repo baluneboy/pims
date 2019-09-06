@@ -3,6 +3,7 @@
 import os
 import sys
 import glob
+import datetime
 from dateutil import parser
 import numpy as np
 from matplotlib import pyplot as plt
@@ -12,10 +13,11 @@ from ugaudio.load import padread
 from pims.pad.grygier_counter import get_day_files
 from pims.files.utils import mkdir_p
 
+_TWODAYSAGO = (datetime.datetime.now().date() - datetime.timedelta(days=2)).strftime('%Y-%m-%d')
 
 # input parameters
 defaults = {
-'start':     '2019-08-01',       # string start day
+'start':      _TWODAYSAGO,       # string start day
 'stop':              None,       # string stop day
 'sensor':        '121f03',       # string for sensor (e.g. 121f03 or 121f08006)
 'fs':             '500.0',       # samples/second for data to be analyzed
@@ -147,10 +149,11 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
     widtha = 0.7 * (binsa[1] - binsa[0])
     centera = (binsa[:-1] + binsa[1:]) / 2
 
+    fs_str = '%.0f' % fs
     bdir = '/misc/yoda/www/plots/batch/results/dailyhistpad'
     ymd_str = day.strftime('year%Y/month%m/day%d')
     day_str = day.strftime('%Y-%m-%d')
-    suffix_str = '%s_hist_mat_%s' % (sensor, str(fs))
+    suffix_str = '%s_hist_mat_%s' % (sensor, fs_str)
     mat_name = '%s_%s' % (day_str, suffix_str)
     save_dir = os.path.join(bdir, ymd_str)
     mkdir_p(save_dir)
@@ -158,7 +161,7 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
              width=width, center=center, dmin=dmin, dmax=dmax, nbins=nbins, bins=bins, hx=hx, hy=hy, hz=hz)
     print 'saved %s' % mat_name
 
-    suffix_str = '%s_hist_mat_%s_mag' % (sensor, str(fs))
+    suffix_str = '%s_hist_mat_%s_mag' % (sensor, fs_str)
     mat_name = '%s_%s' % (day_str, suffix_str)
     np.savez(os.path.join(save_dir, mat_name),
              width=widtha, center=centera, dmin=dmina, dmax=dmaxa, nbins=nbinsa, bins=binsa, hx=hxa, hy=hya, hz=hza)
@@ -173,7 +176,7 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
         plt.xlabel('Accel. (g)')
         plt.ylabel('Count')
         plt.title('Histogram for %s, %s-Axis' % (sensor, h))
-        suffix_str = '%s_%s_%s' % (sensor, h, str(fs))
+        suffix_str = '%s_%s_%s' % (sensor, h, fs_str)
         fname = '%s_%s.pdf' % (day_str, suffix_str)
         fig.savefig(os.path.join(save_dir, fname))
         print 'evince %s &' % fname
@@ -203,9 +206,10 @@ def main(argv):
             parameters[pair[0]] = pair[1]
     else:
         if parameters_ok():
-            # print parameters
+            # print parameters; raise SystemExit
             for d in pd.date_range(parameters['start'], parameters['stop']):
                  day = d.to_pydatetime().date()
+                 # print day
                  run_hist(day, parameters['sensor'], parameters['fs'])
             return 0
 
@@ -217,6 +221,7 @@ def main(argv):
 
 # FIXME histogram plot title include date & small font total pts
 # FIXME histogram ylabel "Count (thousands)" & scale counts for this during plot
+# FIXME overlay x-, y- and z-axis all on same plot with legend (lines, not bars)
 
 # FIXME dry_run input arg does nothing at the moment - it'd be nice if it traced run w/o actually loading files or calc
 

@@ -15,14 +15,15 @@ from padutils import *
 from padpro import *
 
 # set default command line parameters, times are always measured in seconds
-defaults = {'padPath':'/misc/yoda/pub/pad',# the original PAD directory path
-            'outputFile':'/misc/yoda/www/plots/batch/padtimes/padtimes.csv',# the destination path
-            'sensorList':'all',# sensor directories to check
-            'startDate': None, # Start date to process (None to resume based on csv last date);  or set manually to like '2001-05-03' 
-            'stopDate': None,  # Will stop when no year directory is found (None for "two days ago"); or set manually to like '2029-01-01'
-            'fileMode':'a'}    # use 'w' for write to start from scratch and not just append
+defaults = {'padPath':'/misc/yoda/pub/pad',  # the original PAD directory path
+            'outputFile':'/misc/yoda/www/plots/batch/padtimes/padtimes.csv',  # the destination path
+            'sensorList':'all',  # sensor directories to check
+            'startDate': None,   # Start date to process (None to resume based on csv last date);  or set manually to like '2001-05-03'
+            'stopDate': None,    # Will stop when no year directory is found (None for "two days ago"); or set manually to like '2029-01-01'
+            'fileMode':'a'}      # use 'w' for write to start from scratch and not just append
 
 parameters = defaults.copy()
+
 
 def tail( csvFile, numLines=1 ):
     f = open(csvFile, 'rb')
@@ -50,14 +51,17 @@ def tail( csvFile, numLines=1 ):
     f.close()
     return '\n'.join(''.join(data).splitlines()[-numLines:])
 
+
 def getCsvFileStopDate(csvFile):
     """get csv file stop date from its last row"""
     s = tail(csvFile, numLines=1).split(',')[0]
     return datetime.datetime.strptime(s,'%Y-%m-%d').date()
 
+
 def getDaysAgoDate(da=2):
     """get date from week ago"""
     return datetime.date.today()-datetime.timedelta(days=da)
+
 
 def parametersOK():
     b = parameters['padPath']
@@ -124,12 +128,14 @@ def parametersOK():
         parameters['sensorList'] = split(b, ',')
     return 1
 
+
 def printUsage():
     #print version
     print 'usage: packetWriter.py [options]'
     print '           options (and default values) are:'
     for i in defaults.keys():
         print '                    %s=%s' % (i, defaults[i])
+
 
 def getFileList(dir_name, subdir=True, *args):
     """Return a list of file names found in directory 'dir_name'
@@ -158,6 +164,7 @@ def getFileList(dir_name, subdir=True, *args):
             fileList.extend(getFileList(dirfile, subdir, *args))
     return fileList
 
+
 def validDir(dirname):
     if os.path.isdir(dirname):
         return 1
@@ -165,19 +172,20 @@ def validDir(dirname):
         os.makedirs(dirname)
         return 1
 
+
 def mainLoop():
 
-    #Input and output paths
+    # Input and output paths
     padPath = parameters['padPath']
     outPath = parameters['outputFile']
 
-    #Parse start and stop times
-    astart = split(parameters['startDate'],'-');
+    # Parse start and stop times
+    astart = split(parameters['startDate'],'-')
     startY, startM, startD = map(int, astart)
-    astop = split(parameters['stopDate'],'-');
+    astop = split(parameters['stopDate'], '-')
     stopY, stopM, stopD = map(int, astop)
 
-    #Setup loop to cycle through days
+    # Setup loop to cycle through days
     y, m, d = startY, startM, startD
     tStart = mktime((y,m,d,0,0,0,0,0,0))
     tStop  = mktime((stopY,stopM,stopD,0,0,0,0,0,0))
@@ -195,7 +203,7 @@ def mainLoop():
 
         padDayPath = '%s/year%s/month%02d/day%02d' % (padPath, y, m, d)
 
-        #Initialize dictionary
+        # Initialize dictionary
         dayHrs={}
         dayMB={}
         for sensor in parameters['sensorList']:
@@ -203,12 +211,12 @@ def mainLoop():
             dayMB[sensor]=0
 
         print 'Date: %s-%02d-%02d'%(y,m,d)
-        strOut = '%s-%02d-%02d,%s,%02d,%02d'%(y,m,d,y,m,d)
-        if (os.path.isdir(padDayPath)):
+        strOut = '%s-%02d-%02d,%s,%02d,%02d' % (y, m, d, y, m, d)
+        if os.path.isdir(padDayPath):
             for sensor in parameters['sensorList']:
-                padSensorPath = '%s/year%s/month%02d/day%02d/%s' % (padPath, y, m, d,sensor)
+                padSensorPath = '%s/year%s/month%02d/day%02d/%s' % (padPath, y, m, d, sensor)
                 if os.path.isdir(padSensorPath):
-                    print '    Found %s'%sensor
+                    print '    Found %s' % sensor
                     fileList = getFileList(padSensorPath, False, 'header')
                     fileList.sort()
                     prevEndTime = 0
@@ -231,7 +239,7 @@ def mainLoop():
                 strOut = strOut + ',%.4f,%.4f' % (dayHrs[sensor],dayMB[sensor])
         print >> outfile, strOut
 
-        #Increment the day
+        # Increment the day
         y, m ,d = resample.nextDate(y, m, d)
         tStart = mktime((y,m,d,0,0,0,0,0,0))
 

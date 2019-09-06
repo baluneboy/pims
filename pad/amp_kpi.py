@@ -190,9 +190,9 @@ def normalize_cir_fir_power(v):
     """normalize on/off (as one/zero) for CIR and FIR power on/off columns"""
     if isinstance(v, float) and np.isnan(v):
         return 0
-    elif v.lower().startswith('off') or v.lower().startswith('power off'):
+    elif v.lower().startswith('off') or v.lower().startswith('power off') or v.lower().startswith('open'):
         return 0
-    elif v.lower().startswith('on') or v.lower().startswith('power on'):
+    elif v.lower().startswith('on') or v.lower().startswith('power on') or v.lower().startswith('closed'):
         return 1
     else:
         return np.nan
@@ -994,7 +994,9 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # get dataframe for padtimes
     df_tmp = pd.read_csv('/misc/yoda/www/plots/batch/padtimes/padtimes.csv', parse_dates=True, index_col = [0])
     df_pad = df_tmp.filter(regex='Date|.*_hours')
-        
+
+    # FIXME verify PAD's been accounted for in CSV up through last day of last month
+
     # create wall clock dataframe
     df_wall_clock = grouped_er3.copy(deep=True)
 
@@ -1005,7 +1007,8 @@ def convert_sto2xlsx(stofile, xlsxfile):
     # merge (union via how='outer') all dataframes except for df_pad...
     #bamf_df = df_wall_clock.join([grouped_er3, grouped_er4, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu, df_pad])
     bamf_df = df_wall_clock   
-    for gr in [grouped_er3, grouped_er5, grouped_er7, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
+    # for gr in [grouped_er3, grouped_er5, grouped_er7, grouped_cir, grouped_fir, grouped_msg1, grouped_msg2, df_cu]:
+    for gr in [grouped_er3, grouped_er5, grouped_er7, grouped_cir, grouped_fir, grouped_hermes, grouped_msg1, grouped_msg2, df_cu]:
         bamf_df = bamf_df.merge(gr, left_index=True, right_index=True, how='outer')
         
     #...now merge df_pad too, but now get intersection (based on Date index) using how='inner' this time
@@ -1086,7 +1089,7 @@ def main(csvfile, resource_csvfile):
         df_monthly_hours[pctstr] = pd.Series( np.round(pct, decimals=0), index=df_monthly_hours.index)
     
     # save csv output file
-    csvout = csvfile.replace('.csv','_monthly_hours.csv')
+    csvout = csvfile.replace('.csv', '_monthly_hours.csv')
     df_monthly_hours.to_csv(csvout)
     print 'wrote %s' % csvout
 
