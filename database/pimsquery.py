@@ -3,6 +3,7 @@
 import os
 import sys
 import math
+import numpy as np
 from time import sleep
 import datetime
 from dateutil import parser, relativedelta
@@ -13,6 +14,7 @@ from pims.config.conf import get_db_params
 from pims.utils.iterabletools import pairwise
 import pandas as pd
 from hashlib import md5
+from sqlalchemy import create_engine
 
 # FIXME need hostname for testing (db @home vs. @work)
 _HOSTNAME = socket.gethostname()
@@ -46,6 +48,20 @@ def quick_test(host, schema):
 
 #quick_test('manbearpig', 'pims')
 #raise SystemExit
+
+
+def query_heartbeat(table='heartbeat', schema='pimsmon', host='stan', user=_UNAME, passwd=_PASSWD):
+    """query stan for South Park machine heart beats (and uptimes)"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    # SELECT from_unixtime(time), host, uptime FROM pimsmon.heartbeat WHERE from_unixtime(time) > NOW() - INTERVAL 15 MINUTE ORDER BY time DESC;
+    query = "SELECT from_unixtime(time) as gmt, host, uptime FROM %s.%s WHERE from_unixtime(time) > NOW() - INTERVAL 10 MINUTE ORDER BY time DESC;" % (schema, table)
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    df['uptime'] = pd.to_datetime(df['uptime'], format='%Y-%m-%d %H:%M:%S')
+    df['updays'] = (df['gmt'] - df['uptime']) / np.timedelta64(1, 'D')
+    return df
+
 
 def get_mams_bias_cal(last=10, host='stan', db='pims', uname=_UNAME, passwd=_PASSWD):
     """return string showing last several records for MAMS bias cal"""
