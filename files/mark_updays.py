@@ -28,7 +28,7 @@ FOOTER += '''
 
 
 def write_updays_html_file(htm_file):
-    computers = os.environ['SPARKS'].split(' ')
+    computers = os.environ['SOUTHPARK'].split(' ')
     dfe = pd.DataFrame({'host': computers})
     df = query_heartbeat()
     dfm = pd.merge(df, dfe, on='host', how='outer')
@@ -60,7 +60,7 @@ def write_updays_html_file(htm_file):
         updays_cell, host_cell = cells[3], cells[1]
         updays = float(updays_cell.getText())
         # change background color to gold if up more than 60 days
-        if updays > 60.0:
+        if updays > 120.0:
             updays_cell.attrs['bgcolor'] = '#FFD700'
             host_cell.attrs['bgcolor'] = '#FFD700'
 
