@@ -2,7 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import re
-import sys, inspect
+import sys
+import inspect
 
 ###############################################################################
 # handbook (hb) dir pattern
