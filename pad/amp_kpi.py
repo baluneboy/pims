@@ -1034,7 +1034,7 @@ def convert_sto2xlsx(stofile, xlsxfile):
     df_config = read_config_template()
     df_config.to_excel(writer, sheet_name='kpi', index=False)
     
-    # Create sheets for dataframes
+    # Create sheet for raw data (via dataframe)
     bamf_df.to_excel(writer, sheet_name='raw', index=True)
     
     # Close the Pandas Excel writer and output the Excel file.
@@ -1212,7 +1212,7 @@ if __name__ == '__main__':
     
     # this first branch is main kpi route (convert_latest_sto2xlsx)
     if len(sys.argv) == 2:
-        # run manually, like this: ./amp_kpi.py convert_latest_sto2xlsx <<<<    <<<<    <<<<    <<<<    <<<<
+        # run manually, like this: ./amp_kpi.py convert_latest_sto2xlsx <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
         eval(sys.argv[1] + '()')
         raise SystemExit
         

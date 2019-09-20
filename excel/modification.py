@@ -121,19 +121,19 @@ def get_totals_from_column_labels(xlsx_file, sheet_name, raw_column_labels):
             totals[c] = None
     return totals
 
-# reckon GMT range and overwrite last row with totals, if okay
+
 def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
     """reckon GMT range and overwrite last row with totals, if okay"""
 
     # load workbook and get "raw" and "kpi" worksheets
     wb = load_workbook(filename = xlsx_file)
-    ws = wb.get_sheet_by_name("raw")
-    ws2 = wb.get_sheet_by_name("kpi")
+    ws_raw = wb.get_sheet_by_name("raw")
+    ws_kpi = wb.get_sheet_by_name("kpi")
     
     # check GMT range for month
-    ws, gmt_start, gmt_end = reckon_month(ws)
-    # _cell = ws.cell('A1')
-    _cell = ws.cell(row=1, column=1)
+    ws_raw, gmt_start, gmt_end = reckon_month(ws_raw)
+    # _cell = ws_raw.cell('A1')
+    _cell = ws_raw.cell(row=1, column=1)
     _cell.value = '/</-/'
 
     # FIXME, the df_crux line that tries to keep only "this one month's worth" below may not be needed?
@@ -149,25 +149,25 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
         # fill kpi formula cell value and style
         formula_str = "=G%d/H%d" % (r, r)
         # dest_str = 'F%d' % r
-        # _cell_kpi_formula = ws2.cell(dest_str)
-        _cell_kpi_formula = ws2.cell(column=6, row=r)
+        # _cell_kpi_formula = ws_kpi.cell(dest_str)
+        _cell_kpi_formula = ws_kpi.cell(column=6, row=r)
         #_cell_kpi_formula.style.number_format.format_code = '#0.0%'
         _cell_kpi_formula.number_format = '#0.0%' 
         _cell_kpi_formula.value = formula_str
 
-        # ws2.cell('A' + str(r)).value = gmt_start
-        # ws2.cell('B' + str(r)).value = gmt_end
-        # numstr = ws2.cell('G' + str(r)).value
-        # denstr = ws2.cell('H' + str(r)).value
+        # ws_kpi.cell('A' + str(r)).value = gmt_start
+        # ws_kpi.cell('B' + str(r)).value = gmt_end
+        # numstr = ws_kpi.cell('G' + str(r)).value
+        # denstr = ws_kpi.cell('H' + str(r)).value
 
-        ws2.cell(column=1, row=r).value = gmt_start
-        ws2.cell(column=2, row=r).value = gmt_end
-        numstr = ws2.cell(column=7, row=r).value
-        denstr = ws2.cell(column=8, row=r).value
+        ws_kpi.cell(column=1, row=r).value = gmt_start  # GMT Start column
+        ws_kpi.cell(column=2, row=r).value = gmt_end    # GMT End column
+        numstr = ws_kpi.cell(column=7, row=r).value
+        denstr = ws_kpi.cell(column=8, row=r).value
         
         # Numerator
-        # _cell_numerator = ws2.cell('G' + str(r))
-        _cell_numerator = ws2.cell(column=7, row=r)
+        # _cell_numerator = ws_kpi.cell('G' + str(r))
+        _cell_numerator = ws_kpi.cell(column=7, row=r)
         try:
             _cell_numerator.value = raw_sum[numstr]
         except:
@@ -176,8 +176,8 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
         _cell_numerator.number_format = '#0.0'
         
         # Denominator
-        # _cell_denominator = ws2.cell('H' + str(r))
-        _cell_denominator = ws2.cell(column=8, row=r)
+        # _cell_denominator = ws_kpi.cell('H' + str(r))
+        _cell_denominator = ws_kpi.cell(column=8, row=r)
         try:
             _cell_denominator.value = raw_sum[denstr]
         except:
@@ -199,7 +199,7 @@ def overwrite_last_row_with_totals(xlsx_file, df_config, bamf_df):
     
     ## You should only modify column dimensions after you have written a cell in 
     ##     the column. Perfect world: write column dimensions once per column
-    #ws.column_dimensions["C"].width = 60.0    
+    #ws_raw.column_dimensions["C"].width = 60.0
 
     # save
     wb.save(filename = xlsx_file)

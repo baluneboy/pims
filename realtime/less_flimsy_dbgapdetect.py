@@ -41,10 +41,10 @@ defaults = {
     ('121f04',      'tweek',        'pims',     '8'),
     ('121f05',      'chef',         'pims',     '8'),
     ('121f08',      'timmeh',       'pims',     '8'),
-    ('es03',        'manbearpig',   'pims',     '7.84'),
-    ('es05',        'manbearpig',   'pims',     '7.84'),  # 3.92 or 7.84
+    ('es03',        'kenny',        'pims',     '7.84'),
+    ('es05',        'kenny',        'pims',     '7.84'),  # 3.92 or 7.84
     ('es06',        'chef',         'pims',     '7.84'),
-    ('es09',        'manbearpig',   'pims',     '7.84'),
+    ('es09',        'kenny',        'pims',     '7.84'),
     ('es20',        'chef',         'pims',     '7.84'),
     #('oss',         'stan',         'pims',     '0.0625'),
     ('cu_packet',   'yoda',         'samsnew',  '1')
