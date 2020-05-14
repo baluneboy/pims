@@ -98,3 +98,4 @@ probes.komodoproject
 
 # Pycharm Projects
 PycharmProjects/
+*.bak
