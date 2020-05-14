@@ -27,8 +27,18 @@ FOOTER += '''
 '''
 
 
-def write_updays_html_file(htm_file):
+def write_updays_html_file(htm_file, skip=None):
+    # get list of computers from environment var
     computers = os.environ['SOUTHPARK'].split(' ')
+
+    # pythonic way to avoid empty list as default parameter
+    if skip is None:
+        skip = []
+    for c in skip:
+        computers.remove(c)
+
+    print computers
+
     dfe = pd.DataFrame({'host': computers})
     df = query_heartbeat()
     dfm = pd.merge(df, dfe, on='host', how='outer')
@@ -71,4 +81,4 @@ def write_updays_html_file(htm_file):
 
 if __name__ == "__main__":
     htm_file = '/misc/yoda/www/plots/user/sams/status/southpark/updays.htm'
-    write_updays_html_file(htm_file)
+    write_updays_html_file(htm_file, skip=['stan'])  # usually, default: skip=None

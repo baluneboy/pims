@@ -230,7 +230,7 @@ def plot_cutemps_and_current(d1=None, d2=None, pdf_file=None):
     SEC_AVG = 30  # just for current (for now)
     
     if pdf_file is None:
-        pdf_file = '/misc/yoda/www/plots/user/sams/status/cutemps_er6locker3aggcurrent.pdf'
+        pdf_file = '/misc/yoda/www/plots/user/sams/status/cutemps_er6locker1aggcurrent.pdf'
         
     if d2 is None:
         d2 = round_time(datetime.datetime.now(), round_to=1)
@@ -256,8 +256,9 @@ def plot_cutemps_and_current(d1=None, d2=None, pdf_file=None):
     format_x_date_month_day(ax1)
     
     dt = datetime.datetime.now()
-    plt.suptitle('SAMS CU Laptop Temperatures and %d-Sec. Avg. of\nER6 Locker 3 Aggregate Current (updated at %s)' % (SEC_AVG, dt.strftime('%Y-%m-%d %H:%M:%S')))
-    
+    # plt.suptitle('SAMS CU Laptop Temperatures and %d-Sec. Avg. of\nER6 Locker 3 Aggregate Current (updated at %s)' % (SEC_AVG, dt.strftime('%Y-%m-%d %H:%M:%S')))
+    plt.suptitle('SAMS CU Laptop Temperatures and %d-Sec. Avg. of\nER6 Locker 1 Aggregate Current (updated at %s)' % (SEC_AVG, dt.strftime('%Y-%m-%d %H:%M:%S')))
+
     plt.ylabel('Temp. (deg. C)')
     plt.xlabel('GMT Hour')
     plt.ylim((20, 100))
@@ -275,7 +276,8 @@ def plot_cutemps_and_current(d1=None, d2=None, pdf_file=None):
     dfc_m = dfc_m.reset_index()
     #print dfc_m
         
-    plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_3_current'])
+    # plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_3_current'])
+    plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_1_current'])
     plt.subplots_adjust(left=0.1, right=0.85, bottom=0.15, top=0.88)
     
     format_x_date_month_day(ax2)

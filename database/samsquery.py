@@ -691,7 +691,8 @@ def query_gse_packet_current(d1, d2, table='gse_packet', schema='samsnew', host=
     t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
     t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
     #SELECT ku_timestamp, er6_locker_3_current FROM samsnew.gse_packet order by ku_timestamp desc limit 11;
-    query = "select ku_timestamp, er6_locker_3_current from %s.%s where ku_timestamp >= '%s' and ku_timestamp < '%s' order by ku_timestamp asc;" % (schema, table, t1, t2)
+    # query = "select ku_timestamp, er6_locker_3_current from %s.%s where ku_timestamp >= '%s' and ku_timestamp < '%s' order by ku_timestamp asc;" % (schema, table, t1, t2)
+    query = "select ku_timestamp, er6_locker_1_current from %s.%s where ku_timestamp >= '%s' and ku_timestamp < '%s' order by ku_timestamp asc;" % (schema, table, t1, t2)
     #print query
     #print query
     engine = create_engine(constr, echo=False)
