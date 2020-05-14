@@ -100,13 +100,13 @@ if __name__ == "__main__":
     #---------------------------------------------------
     m = match_pattern_demo('/misc/yoda/pub/pad/year2013/month01/day02/sams2_accel_121f05006/2013_01_02_00_08_27.913-2013_01_02_01_25_23.117.121f05006.header', _PADHEADERFILES_PATTERN)
     if m:
-        print m.group('sensor'), m.group('start')
+        print(m.group('sensor'), m.group('start'))
     else:
-        print 'no match'
+        print('no match')
         
     #---------------------------------------------------
     m = match_pattern_demo('/misc/yoda/www/plots/batch/year2013/month10/day01/2013_10_01_08_00_00.000_121f03_spgs_roadmaps500.pdf', _BATCHROADMAPS_PATTERN)
     if m:
-        print m.group('sensor'), m.group('start')
+        print(m.group('sensor'), m.group('start'))
     else:
-        print 'no match'
+        print('no match')

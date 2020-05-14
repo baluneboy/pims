@@ -49,8 +49,8 @@ def get_hdr_dict_fs_fc_sensor(hdr_file):
 def demo_grep():
     hdr_file = '/Users/ken/Downloads/pad/2018_06_13_15_06_10.361-2018_06_13_15_06_24.359.121f04.header'
     hdr_file = '/misc/yoda/pub/pad/year2018/month06/day13/sams2_accel_121f04/2018_06_13_15_06_10.361-2018_06_13_15_06_24.359.121f04.header'
-    print get_hdr_dict_fs_fc_loc_ssa(hdr_file)
-    print get_hdr_dict_fs_fc_sensor(hdr_file)
+    print(get_hdr_dict_fs_fc_loc_ssa(hdr_file))
+    print(get_hdr_dict_fs_fc_sensor(hdr_file))
 
 
 if __name__ == '__main__':

@@ -10,6 +10,17 @@ from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, DateRangePadFile
 from interval import Interval
 
+
+def sensor_subdir(sensor):
+    """return string for sensor subdir name given sensor designation"""
+    if sensor.startswith('121f0'):
+        return 'sams2_accel_' + sensor
+    elif sensor.startswith('es'):
+        return 'samses_accel_' + sensor
+    else:
+        return 'unknown'
+
+
 # return dirname (or None) for given sensor+suffix on day of datetime, dtm
 def get_path_to_sensor(sensor, suffix, dtm):
     """return dirname (or None) for given sensor+suffix on day of datetime, dtm"""
@@ -22,6 +33,7 @@ def get_path_to_sensor(sensor, suffix, dtm):
     else:
         return None
 
+
 def get_header_file(sensor, suffix, dtm):
     """return header filename (or None) for given sensor+suffix for datetime, dtm"""
     dirname = get_path_to_sensor(sensor, suffix, dtm)
@@ -32,6 +44,7 @@ def get_header_file(sensor, suffix, dtm):
     ##bools = Interval(dtm, dtm) in intervals[0]
     ##print bools
     return headers
+
 
 def pad_quarantiner():
     """TODO implement PAD quarantiner routine to...SEE
@@ -74,6 +87,7 @@ def pad_quarantiner():
             
         print '%d file pairs for %s* were quarantined' % (len(quarantined_hdr_files), sensor)
 
+
 def main(argv):
     """describe what this routine does here"""
     # parse command line
@@ -89,6 +103,7 @@ def main(argv):
             run(parameters['start'], parameters['stop'], parameters['subdirpat'])          
             return 0
     printUsage()  
+
 
 if __name__ == '__main__':
     #sys.exit(main(sys.argv))

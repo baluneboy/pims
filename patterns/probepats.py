@@ -88,4 +88,4 @@ def _get_underscore_pattern_varnames(predicate=is_underscore_pattern):
 __all__ = _get_underscore_pattern_varnames()
 
 if __name__ == '__main__':
-    print __all__
+    print(__all__)

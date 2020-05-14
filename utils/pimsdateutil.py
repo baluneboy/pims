@@ -11,10 +11,10 @@ from dateutil import parser, relativedelta
 from warnings import warn
 
 
-MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = range(7)
+MONDAY, TUESDAY, WEDNESDAY, THURSDAY, FRIDAY, SATURDAY, SUNDAY = list(range(7))
 
 (JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE,
- JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER) = range(1, 13)
+ JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER) = list(range(1, 13))
 
 _DAY = datetime.timedelta(1)
         
@@ -136,7 +136,9 @@ def datetime_to_ymd_path(d, base_dir='/misc/yoda/pub/pad'):
     '/misc/yoda/pub/pad/year2009/month12/day31'
     
     """
-    return os.path.join( base_dir, d.strftime('year%Y/month%m/day%d') )
+    fmt_str = os.sep.join(['year%Y', 'month%m', 'day%d'])
+    # return os.path.join(base_dir, d.strftime('year%Y/month%m/day%d') )
+    return os.path.join(base_dir, d.strftime(fmt_str) )
 
 
 def datetime_to_roadmap_ymd_path(d):
@@ -233,7 +235,7 @@ def timestr_to_datetime(timestr):
         timestr += '_00_00.000'
     try:
         d = datetime.datetime.strptime(timestr,'%Y_%m_%d_%H_%M_%S.%f')
-    except ValueError, e:
+    except ValueError as e:
         raise ValueError('%s is a bad timestr' % timestr)
     return d
 
@@ -250,7 +252,7 @@ def samsops_timestamp_to_datetime(timestr):
     """
     try:
         d = datetime.datetime.strptime(timestr,'%Y-%m-%d %H:%M:%S')
-    except ValueError, e:
+    except ValueError as e:
         raise ValueError('%s is a bad timestr' % timestr)
     return d
 
@@ -318,7 +320,7 @@ def northfield_fullfilestr_to_date(fullfilestr):
         mo = int(fstr[0:2])
         da = int(fstr[2:4])
         d = datetime.date(yr, mo, da)
-    except ValueError, e:
+    except ValueError as e:
         warn( 'fstr %s did not nicely convert to date' % fstr )
         d = None
     return d
@@ -336,12 +338,12 @@ def pad_fullfilestr_to_start_stop(fullfilestr):
     # print 'stopstr', stopstr
     try:
         d1 = timestr_to_datetime(startstr)
-    except ValueError, e:
+    except ValueError as e:
         warn( 'startstr %s did not nicely convert to datetime in timestr_to_datetime' % startstr )
         d1 = None
     try:
         d2 = timestr_to_datetime(stopstr)
-    except ValueError, e:
+    except ValueError as e:
         warn( 'stopstr %s did not nicely convert to datetime in timestr_to_datetime' % stopstr )
         d2 = None
     return d1, d2
@@ -358,12 +360,12 @@ def otomat_fullfilestr_to_start_stop(fullfilestr):
     stopstr = '.'.join(bigstr.split('.')[:-2])
     try:
         d1 = timestr_to_datetime(startstr)
-    except ValueError, e:
+    except ValueError as e:
         warn( 'startstr %s did not nicely convert to datetime' % startstr )
         d1 = None
     try:
         d2 = timestr_to_datetime(stopstr)
-    except ValueError, e:
+    except ValueError as e:
         warn( 'stopstr %s did not nicely convert to datetime' % stopstr )
         d2 = None
     return d1, d2
@@ -396,7 +398,7 @@ def foscam_fullfilestr_to_datetime(fullfilestr):
     mm = m.group('minute')
     try:
         d1 = parser.parse(daystr + ' ' + hh + ':' + mm)
-    except ValueError, e:
+    except ValueError as e:
         d1 = None
     return d1
 
@@ -765,6 +767,7 @@ def datetime_sdn2dtm(datenum):
 def testdoc(verbose=True):
     import doctest
     return doctest.testmod(verbose=verbose)
+
 
 if __name__ == "__main__":
     testdoc(verbose=True)

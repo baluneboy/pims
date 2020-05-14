@@ -165,7 +165,7 @@ class MinutesLongMp3File(object):
         try:
             audio = MP3(fname)
             m = audio.info.length / 60.0
-        except Exception, e:
+        except Exception as e:
             m = -1.0 # could not get dur minutes
 
         return m
@@ -197,8 +197,8 @@ class EeStatsFile(object):
         try:
             # we are splitting for basenames like ee_stats_2017-01-02.pkl
             d = parse(os.path.basename(fullname).split('_')[-1].split('.')[0]).date()
-        except Exception, e:
-            print 'could not parse date from %s' % fullname
+        except Exception as e:
+            print('could not parse date from %s' % fullname)
             d = 0
 
         return d
@@ -486,7 +486,7 @@ def demo():
     # Initialize processing pipeline (no file list as input yet)
     #ffp = FileFilterPipeline(BigFile(min_bytes=33), EndsWith('mp3'))
     ffp = FileFilterPipeline(MinutesLongMp3File(min_minutes=0.9, max_minutes=10.1))
-    print ffp
+    print(ffp)
     
     # Apply processing pipeline input #1 (now ffp is callable)
     inp1 = ['/Users/ken/Music/iTunes/iTunes Media/Podcasts/The Math Dude Quick and Dirty Tips to Make Math Easier/227 227 TMD Polygon Puzzle_ How Many Degrees Are In a Polygon_.mp3',
@@ -495,14 +495,14 @@ def demo():
             '/tmp/four.txt',
             '/tmp/five.not']
     for f in ffp(inp1):
-        print f
+        print(f)
 
 def demo3():
     from datetime import datetime
     
     # Initialize processing pipeline (no file list as input yet)
     ffp = FileFilterPipeline(EeStatsFile(start_date=datetime(2017,1,31).date(), end_date=datetime(2017,2,1).date()))
-    print ffp
+    print(ffp)
     
     # Apply processing pipeline input #1 (now ffp is callable)
     inp1 = ['/misc/yoda/www/plots/user/sheep/ee_stats_2017-01-29.pkl',
@@ -510,14 +510,14 @@ def demo3():
             '/misc/yoda/www/plots/user/sheep/ee_stats_2017-01-31.pkl',
             '/misc/yoda/www/plots/user/sheep/ee_stats_2017-02-01.pkl']
     for f in ffp(inp1):
-        print f
+        print(f)
 
     
 def demo2():
     
     # Initialize processing pipeline (no file list as input yet)
     ffp = FileFilterPipeline(MatchSensorAxRoadmap('121f03', 'x'), BigFile(min_bytes=20))
-    print ffp
+    print(ffp)
     
     # Apply processing pipeline input #1 (now ffp is callable)
     fnames = [
@@ -526,7 +526,7 @@ def demo2():
         ]
     inp2 = [ os.path.join('/tmp/x/', f) for f in fnames ]
     for f in ffp(inp2):
-        print f
+        print(f)
     
     
 def demo_gateway2():
@@ -537,13 +537,13 @@ def demo_gateway2():
     day = datetime.datetime(2016,1,22)
     hours = [(0,4), (22,23)]
     ffp = FileFilterPipeline(OtoDaySensorHours(day, hours))
-    print ffp
+    print(ffp)
     
     # Apply processing pipeline input #1 (now ffp is callable)
     wild_path = '/misc/yoda/www/plots/batch/results/onethird/year2016/month01/day22/sams2_accel_121f03/*mat'
     filenames = glob.glob(wild_path)
     for f in ffp(filenames):
-        print f 
+        print(f) 
    
    
 def demo_gateway():
@@ -552,14 +552,14 @@ def demo_gateway():
     
     # Initialize processing pipeline (no file list as input yet)
     ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad('121f03', 500, 200), MinDurMinutesPad(min_minutes=5.0))
-    print ffp
+    print(ffp)
     
     # Apply processing pipeline input #1 (now ffp is callable)
     #wild_path = '/misc/yoda/pub/pad/year2018/month01/day02/sams2_accel_121f03/*header'
     wild_path = '/tmp/trashpad/year2018/month01/day02/sams2_accel_121f03/*header'
     filenames = glob.glob(wild_path)
     for f in ffp(filenames):
-        print f    
+        print(f)    
     
 
 def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path='/misc/yoda/www/plots/batch'):
@@ -569,7 +569,7 @@ def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path=
     if start is None:
         start = parse(end) - datetime.timedelta(days=7)
     for d in pd.date_range(start, end):
-        print d.date(), sensor, 'spg' + axis, " > ",
+        print(d.date(), sensor, 'spg' + axis, " > ", end=' ')
         day_dir = os.path.dirname(datetime_to_roadmap_fullstub(d))
     
         # initialize processing pipeline (no file list as input yet)
@@ -579,25 +579,25 @@ def show_missing_roadmaps(end, start=None, sensor='121f03', axis='s', base_path=
         # /misc/yoda/www/plots/batch/year2018/month01/day25/2018_01_25_00_00_00.000_121f04ten_pcss_roadmaps500.pdf
         day_files = glob.glob(os.path.join(day_dir, '*_%s_*roadmaps*.pdf' % sensor))
         if len(day_files) == 0:
-            print 'MISSING---',
+            print('MISSING---', end=' ')
         else:
             for f in ffp(day_files):
                 hh = f.split('_')[3]
-                print hh,
-        print ''
+                print(hh, end=' ')
+        print('')
 
 
 def demo_fetch_big_pad_files(start, end, sensor, fs, fc, hours):
     import glob
     import pandas as pd
 
-    print start, end
-    print sensor, fs, fc
-    print hours
+    print(start, end)
+    print(sensor, fs, fc)
+    print(hours)
 
     for d in pd.date_range(start, end):
-        print d.date(), sensor, " > ",
-        day_dir = datetime_to_ymd_path(d)
+        print(d.date(), sensor, " > ", end=' ')
+        day_dir = datetime_to_ymd_path(d, base_dir='d:/pad')
 
         # initialize processing pipeline (no file list as input yet)
         ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad(sensor, fs, fc),
@@ -608,14 +608,14 @@ def demo_fetch_big_pad_files(start, end, sensor, fs, fc, hours):
         glob_pat = os.path.join(day_dir, '*_*_%s/*.%s' % (sensor, sensor))
         day_files = glob.glob(glob_pat)
         if len(day_files) == 0:
-            print 'MISSING---',
+            print('MISSING---', end=' ')
         else:
             # for f in ffp(day_files):
             #     hh = f.split('_')[3]
             #     print hh,
             keep_files = list(ffp(day_files))
-            print len(keep_files), 'files', keep_files,
-        print ''
+            print(len(keep_files), 'files', keep_files, end=' ')
+        print('')
 
 
 if __name__ == "__main__":
@@ -627,4 +627,4 @@ if __name__ == "__main__":
     # demo_gateway2()
 
     # SLEEP FILES ONLY
-    demo_fetch_big_pad_files('2016-01-01', '2016-01-31', '121f03006', 142.0, 6.0, [(0, 4)])
+    demo_fetch_big_pad_files('2020-04-01', '2020-04-07', '121f03006', 142.0, 6.0, [(0, 4)])

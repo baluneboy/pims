@@ -6,7 +6,8 @@ import sys
 import os
 from xml.dom.minidom import *
 from string import *
-from commands import *
+#from commands import *
+from subprocess import *
 
 def get_sub_field(h, field, Lsubs):
 	""" get sub fields using xml parser """
