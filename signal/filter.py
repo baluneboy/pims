@@ -6,6 +6,8 @@ from scipy import io, signal
 from scipy.signal import butter, lfilter
 import matplotlib.pyplot as plt
 
+from pims.signal.rollingstats import stride_buffer
+
 
 def butter_bandpass(lowcut, highcut, fs, order=5):
     nyq = 0.5 * fs
@@ -172,6 +174,27 @@ def demo_spectrogram():
     plt.show()
 
 
+def demo_get_signal():
+    fs = 10e3
+    N = 1e5
+    amp = 2*np.sqrt(2)
+    freq = 1234.0
+    noise_power = 0.001 * fs / 2
+    time = np.arange(N) / fs
+    x = amp*np.sin(2*np.pi*freq*time)
+    x += np.random.normal(scale=np.sqrt(noise_power), size=time.shape)
+    return x, fs
+
+
+def demo_welch(x, fs):
+    f, Pxx_den = signal.welch(x, fs, nperseg=1024)
+    plt.semilogy(f, Pxx_den)
+    plt.ylim([0.5e-3, 1])
+    plt.xlabel('frequency [Hz]')
+    plt.ylabel('PSD [V**2/Hz]')
+    plt.show()
+
+
 def demo_sams_spectrogram():
     from ugaudio.load import padread
 
@@ -179,7 +202,7 @@ def demo_sams_spectrogram():
     a = padread(filename)
     y = a[:, 2]
     fs = 142.0
-    nperseg = 4096
+    nperseg = 8192
     f, t, Sxx = signal.spectrogram(y, fs, nperseg=nperseg, noverlap=nperseg/2)
 
     print(np.log10(Sxx))
@@ -191,9 +214,43 @@ def demo_sams_spectrogram():
     plt.show()
 
 
+def my_func(a):
+    """Average first and last element of a 1-D array"""
+    return (a[0] + a[-1]) * 0.5
+
+
+def my_psd(x, fs, nfft):
+    """FIXME how do we handle getting frequencies back [first file only]?"""
+    f, Pxx_den = signal.welch(x, fs, nperseg=nfft)
+    return f, Pxx_den
+
+
 if __name__=="__main__":
     #demo()
     #demo2()
     # demo3()
     # run_example()
-    demo_sams_spectrogram()
+    # demo_sams_spectrogram()
+
+    nfft = 8192
+    x, fs = demo_get_signal()
+    x = x[:8192*4]  # FIXME we need for loop with last 4096 pts being handed over across iterations of
+    # demo_welch(x, fs)
+
+    # x = np.arange(1, 33)
+    # print(x.shape)
+
+    # verify even window length
+    w = 8192  # window length (default = 8192?)
+    if w % 2 != 0:
+        raise Exception('window length must be even-valued')
+    # data = stride_buffer(np.arange(1, 31), w=w, olap=w//2).transpose()
+    data = stride_buffer(x, w=w, olap=w//2).transpose()
+    # print(data)
+    # print(np.apply_along_axis(my_func, 0, data))
+    f, pxx = np.apply_along_axis(my_psd, 0, data, fs, nfft)
+
+    print(pxx)
+
+    print(data.shape)
+    print(pxx.shape)

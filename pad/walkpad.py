@@ -2,9 +2,12 @@ import os
 from datetime import timedelta, date
 from collections import deque
 from pathlib import Path
+from scipy import signal
 
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.files.filter_pipeline import FileFilterPipeline, HeaderMatchesSensorRateCutoffPad, BigFile
+from pims.signal.filter import my_psd
+from ugaudio.load import padread
 
 
 # FIXME this function should go in better/generic location BUT w/o breaking daily infrastructure from 2to3 deal
@@ -73,18 +76,68 @@ class PadFilesIterator(object):
         return self.files.popleft()
 
 
-sensor = '121f02'
-fs, fc = 500.0, 200.0
-min_bytes = 2.3 * 1024 * 1024  # bytes in 5 min = 5(16B/rec)(500rec/sec)(60sec/1min) = 2.28 MB
+class PadFileProcess(object):
+
+    def __init__(self, label):
+        self.count = 0
+        self.label = label
+
+    def __str__(self):
+        return '%s, count = %d' % (self.label, self.count)
+
+    def process_file(self, pad_file):
+        self.count += 1
+
+
+class PadFilePsd(PadFileProcess):
+
+    def save_config(self, file1):
+        print('do something special with very first file & call process_file too')
+        data = padread(file1)
+        # TODO get label, deltaf (to get freqs), nfft, etc. into config file for this labeled data set
+
+    def process_file(self, pad_file, fs, nfft):
+        super().process_file(pad_file)
+        # return os.stat(pad_file).st_size // 16 // nmax
+
+        y = padread(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
+        n = nfft * (len(y) // nfft)
+        y = y[:n]  # y gets truncated after an integer multiple of nfft pts
+
+        f, pyy = my_psd(y, fs, nfft)
+        return pyy
+
+
+nfft = 8192
+nmax = 8192 * 4
+nover = nfft//2
+
+sensor = '121f03006'
+# fs, fc = 500.0, 200.0
+# min_bytes = 2.3 * 1024 * 1024  # bytes in 5 min = 5(16B/rec)(500rec/sec)(60sec/1min)/1024/1024 = 2.28 MB
+fs, fc = 142.0, 6.0
+min_bytes = 0.7 * 1024 * 1024  # bytes in 5 min = 5(16B/rec)(142rec/sec)(60sec/1min)/1024/1024 = 0.65 MB
 ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad(sensor, fs, fc), BigFile(min_bytes=min_bytes))
-top_dir = os.sep.join(['d:', 'pad'])
-start_date = date(2020, 4, 1)
+# top_dir = os.sep.join(['d:', 'pad'])
+top_dir = 'p:' + os.sep
+start_date = date(2020, 5, 10)
 num_days = 77
 
 # create iterator
 pfi = PadFilesIterator(sensor, start_date, num_days, reverse=False, top=top_dir, ffp=ffp)
 
-file_count = 0
-for f in pfi:
-    file_count += 1
-    print(file_count, f)
+# pad_file = next(pfi)
+# data = padread(pad_file)
+# print(data.shape)
+# y = data[:, 2]
+# print(len(y))
+# f, pyy = my_rolling_psd(y, fs, nfft)
+
+# process per pad file
+pfp = PadFilePsd('daily_psd')
+for i, f in enumerate(pfi):
+    # special handling for first file only
+    if i == 0:
+        pfp.save_config(f)
+    pyy = pfp.process_file(f, fs, nfft)
+    print(pfp, f, pyy.shape)
