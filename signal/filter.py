@@ -220,10 +220,22 @@ def my_func(a):
 
 
 def my_psd(x, fs, nfft):
-    """FIXME how do we handle getting frequencies back [first file only]?"""
+    """FIXME how do we handle getting frequencies back [first file only FTW!?]?"""
     f, Pxx_den = signal.welch(x, fs, nperseg=nfft)
     return f, Pxx_den
 
+
+def my_int_rms(a, int_pts, olap_pts):
+    """FIXME how do we handle getting frequencies back [first file only FTW!?]?"""
+    a2 = np.power(a, 2)
+    window = np.ones(int_pts) / float(int_pts)
+    return np.sqrt(np.convolve(a2, window, 'valid'))
+
+
+a = np.array([1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0, 11.0, 12.0])
+print(a)
+print(my_int_rms(a, 3, 2))
+raise SystemExit
 
 if __name__=="__main__":
     #demo()
