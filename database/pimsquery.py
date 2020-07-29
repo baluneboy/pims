@@ -30,8 +30,37 @@ _SCHEMA, _UNAME, _PASSWD = get_db_params('pimsquery')
 _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS = get_db_params('samsquery')
 
 
+def get_packet_count(host, schema, sensor):
+    """return count of packets in sensor db table on host in schema"""
+    # 'mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>'
+    # 'mysql://username:password@serverlocation/mysqldb_databasename?charset=utf8&use_unicode=0'
+    engine = create_engine('mysql://' + _UNAME + ':' + _PASSWD + '@' + host + '/' + schema + '?charset=utf8&use_unicode=0')
+    connection = engine.connect()
+    query = "select count(*) as pkt_count from %s;" % sensor
+    resultproxy = engine.execute(query)
+    # FIXME this is short-circuit kludge WHAT IF we get more than one result? (not possible, then check and be sure)
+    for rowproxy in resultproxy:
+        for column, value in rowproxy.items():
+            return value
+
+
+def insert_keep_alive_1970(host, schema, sensor):
+    """insert a dummy 1970 record to keep LabVIEW spectrograms alive"""
+    # 'mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>'
+    # 'mysql://username:password@serverlocation/mysqldb_databasename?charset=utf8&use_unicode=0'
+    engine = create_engine('mysql://' + _UNAME + ':' + _PASSWD + '@' + host + '/' + schema + '?charset=utf8&use_unicode=0')
+    connection = engine.connect()
+    if sensor.startswith('es'):
+        stype = 9
+    elif sensor.startswith('121'):
+        stype = 1
+    else:
+        stype = -1
+    result = engine.execute("INSERT INTO %s (time, type, packet, header) VALUES ('0', %s, 'NULL', 'NULL');" % (sensor, stype))
+
+
 # FIXME did this sqlalchemy quick test wrt obspy
-def quick_test(host, schema):
+def quick_test(host, schema, sensor=None):
     from sqlalchemy import create_engine
     # 'mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>'
     # 'mysql://username:password@serverlocation/mysqldb_databasename?charset=utf8&use_unicode=0'
@@ -46,8 +75,8 @@ def quick_test(host, schema):
     result.close()
     r2.close()
 
-#quick_test('manbearpig', 'pims')
-#raise SystemExit
+# quick_test('chef', 'pims')
+# raise SystemExit
 
 
 def query_heartbeat(table='heartbeat', schema='pimsmon', host='stan', user=_UNAME, passwd=_PASSWD):
@@ -568,7 +597,9 @@ def ike_insert(f):
         sys.exit(0)
     else:
         sys.exit(-1)
-        
+
+# EXAMPLE: INSERT INTO es20 (time, type) VALUES ('0', '9');
+
 if __name__ == "__main__":
     #demo()
     #demo_jaxapost()
