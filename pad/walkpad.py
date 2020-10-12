@@ -4,21 +4,11 @@ from collections import deque
 from pathlib import Path
 from scipy import signal
 
+from pims.pad.daily_utils import sensor_subdir
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.files.filter_pipeline import FileFilterPipeline, HeaderMatchesSensorRateCutoffPad, BigFile
 from pims.signal.filter import my_psd, my_int_rms
 from ugaudio.load import padread
-
-
-# FIXME this function should go in better/generic location BUT w/o breaking daily infrastructure from 2to3 deal
-def sensor_subdir(sensor):
-    """return string for sensor subdir name given sensor designation"""
-    if sensor.startswith('121f0'):
-        return 'sams2_accel_' + sensor
-    elif sensor.startswith('es'):
-        return 'samses_accel_' + sensor
-    else:
-        return 'unknown'
 
 
 # FIXME this needs StopIteration on probably the cumulative number of days that have been visited

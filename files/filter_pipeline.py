@@ -6,13 +6,18 @@ import time
 import datetime
 from dateutil.parser import parse
 from dateutil.relativedelta import relativedelta
-from mutagen.mp3 import MP3
+import importlib
 
 from pims.patterns.probepats import _ROADMAP_PDF_FILENAME_PATTERN, _QUASISTEADY_ESTIMATE_PDF_PATTERN
 from pims.patterns.dailyproducts import _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop, otomat_fullfilestr_to_start_stop #, foscam_fullfilestr_to_datetime
 from pims.utils.pimsdateutil import datetime_to_roadmap_fullstub, datetime_to_ymd_path
 from pims.files.padgrep import get_hdr_dict_fs_fc_loc_ssa, get_hdr_dict_fs_fc_sensor
+
+spam_spec = importlib.util.find_spec("mutagen")
+found = spam_spec is not None
+if found:
+    from mutagen.mp3 import MP3
 
 
 class FileFilterPipeline(object):
