@@ -17,7 +17,7 @@ _TWODAYSAGO = str( datetime.datetime.now().date() - datetime.timedelta(days=2) )
 defaults = {
 'start':        _TWODAYSAGO,    # string for start date
 'stop':         _TWODAYSAGO,    # string for stop date
-'subdirpat':    '(sams2|mams)_accel_(121f0.*|hirap.*)', # string regexp pattern for sensor subdirs
+'subdirpat':    '(sams2|mams|samses)_accel_(121f0.*|hirap.*|es.*)', # string regexp pattern for sensor subdirs
 }
 parameters = defaults.copy()
 

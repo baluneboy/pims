@@ -1,9 +1,9 @@
 #!/usr/bin/env python
 
-import re
+#import re
 import os
 import sys
-import csv
+#import csv
 import numpy as np
 import scipy.io as spio
 import pandas as pd
@@ -15,7 +15,7 @@ from pims.files.utils import mkdir_p, most_recent_file_with_suffix
 from pims.database.samsquery import CuMonthlyQuery, _HOST_SAMS, _SCHEMA_SAMS, _UNAME_SAMS, _PASSWD_SAMS
 from pims.excel.modification import overwrite_last_row_with_totals, kpi_sheet_fill
 from openpyxl.reader.excel import load_workbook
-from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
+#from xlsxwriter.utility import xl_rowcol_to_cell, xl_range
 
 
 JEN_MSID_MAP = {
@@ -38,9 +38,9 @@ JEN_MSID_MAP = {
         'UEZE05RT1841J': 'ER5_Drawer2_Ethernet',
         'UEZE06RT1578J': 'ER6_Locker3_Status',
         'UEZE06RT1389C': 'ER6_Locker3_Current',
-        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',   # added on 2018-08-23
-        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',   # added on 2018-08-23
-        'UEZE06RT1390C': 'ER6_Locker4_Current',       # added on 2019-08-05
+        'UEZE12RT1384C': 'ER7_Embedded_EE_Current',    # added on 2018-08-23
+        'UEZE12RT1548J': 'ER7_EE_F01_Power_Status',    # added on 2018-08-23
+        'UEZE06RT1390C': 'ER6_Locker4_Current',        # added on 2019-08-05
         'UEZE06RT1574J': 'TSH_ES20_HER_Power_Status',  # added on 2019-08-05
 }
 
@@ -1025,6 +1025,10 @@ def convert_sto2xlsx(stofile, xlsxfile):
     my_last_month = my_this_month_day_one - datetime.timedelta(days=1)
     first_day = my_last_month.replace(day=1)
     last_day = my_this_month_day_one - datetime.timedelta(days=1)
+
+    # TODO find a way to dial things back to backfill; otherwise, tacit assumption we are working on "recent" dates
+    #first_day, last_day = datetime.date(2020, 7, 1), datetime.date(2020, 7, 31)
+
     bamf_df = bamf_df.loc[first_day:last_day]
 
     # Create a Pandas Excel writer using XlsxWriter as the engine.
@@ -1205,7 +1209,10 @@ msg4feb = """FIXME
 6. CU total hours should be max(all_sensors, cu_packet_count).
 """
 print '%s\n' % msg4feb
-#raise SystemExit
+
+# import time
+# print time.time()
+# raise SystemExit
 
 
 if __name__ == '__main__':

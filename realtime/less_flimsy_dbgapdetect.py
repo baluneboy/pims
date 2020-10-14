@@ -36,11 +36,11 @@ from pims.utils.pimsdateutil import floor_ten_minutes
 defaults = {
 'sensorhosts': [
     #('hirap',       'towelie',      'pims',     '5.21'),    
-    ('121f02',      'timmeh',       'pims',     '8'),
+    ('121f02',      'tweek',        'pims',     '8'),
     ('121f03',      'tweek',        'pims',     '8'),
     ('121f04',      'tweek',        'pims',     '8'),
     ('121f05',      'chef',         'pims',     '8'),
-    ('121f08',      'timmeh',       'pims',     '8'),
+    ('121f08',      'kenny',        'pims',     '8'),
     ('es03',        'kenny',        'pims',     '7.84'),
     ('es05',        'kenny',        'pims',     '7.84'),  # 3.92 or 7.84
     ('es06',        'chef',         'pims',     '7.84'),

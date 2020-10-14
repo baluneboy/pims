@@ -79,6 +79,7 @@ def show_pad_hours_for_day(date_str, subdirs):
             delta_sec = -1
         print '{0:>6.1f} {1:>4.1f} {2:s}'.format(delta_sec / 60.0, total_sec / 3600.0, subdir)
 
+
 if __name__ == "__main__":
     
     #day_range = DayRange(one,two)

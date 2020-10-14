@@ -44,8 +44,8 @@ def get_packet_count(host, schema, sensor):
             return value
 
 
-def insert_keep_alive_1970(host, schema, sensor):
-    """insert a dummy 1970 record to keep LabVIEW spectrograms alive"""
+def insert_keep_alive_for_labview(host, schema, sensor):
+    """insert a dummy record to keep LabVIEW spectrograms alive"""
     # 'mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>'
     # 'mysql://username:password@serverlocation/mysqldb_databasename?charset=utf8&use_unicode=0'
     engine = create_engine('mysql://' + _UNAME + ':' + _PASSWD + '@' + host + '/' + schema + '?charset=utf8&use_unicode=0')
@@ -74,6 +74,31 @@ def quick_test(host, schema, sensor=None):
         print "GMT:", r['gmt']
     result.close()
     r2.close()
+
+
+def get_last_gmt(host, schema, sensor=None):
+    from sqlalchemy import create_engine
+    # 'mysql+mysqldb://<user>:<password>@<host>[:<port>]/<dbname>'
+    # 'mysql://username:password@serverlocation/mysqldb_databasename?charset=utf8&use_unicode=0'
+    engine = create_engine('mysql://' + _UNAME + ':' + _PASSWD + '@' + host + '/' + schema + '?charset=utf8&use_unicode=0')
+    connection = engine.connect()
+    result = engine.execute("select from_unixtime(max(time)) from %s" % sensor)
+    max_time = result.first()[0]
+    result.close()
+    return max_time
+
+
+def get_db_count(host, schema, sensor, start, stop):
+    from sqlalchemy import create_engine
+    engine = create_engine('mysql://' + _UNAME + ':' + _PASSWD + '@' + host + '/' + schema + '?charset=utf8&use_unicode=0')
+    connection = engine.connect()
+    query = "select count(*) from %s where from_unixtime(time) between '%s' and '%s'" % (sensor, start, stop)
+    # print query
+    result = engine.execute(query)
+    c = result.first()[0]
+    result.close()
+    return c
+
 
 # quick_test('chef', 'pims')
 # raise SystemExit

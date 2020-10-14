@@ -644,6 +644,18 @@ def prune_samsmon_table(table, time_columnstr, schema='samsmon', host='yoda'):
     con.close()
 
 
+def query_cu_packet_battery(d1, d2, table='cu_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    query = "select timestamp, battery_charge from %s.%s where timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, t1, t2)
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
 def query_cu_packet_temps(d1, d2, table='cu_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
     """get records from d1 to d2"""
     constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)

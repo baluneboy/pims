@@ -298,9 +298,10 @@ def rough_kpi_for_march2015():
 
 # demonstrate LooseSensorDayIntervals
 def demo_intervals():
-    dstart = parser.parse('2015-07-25')
-    dstop =  parser.parse('2015-07-26')
-    maxgapsec = 17.0
+    dstart = parser.parse('2020-08-04')
+    dstop =  parser.parse('2020-08-04')
+    #maxgapsec = 17.0  # for MAMS?
+    maxgapsec = 1.0  # for SAMS?
 
     hig = LooseSensorDayIntervals(dstart, dstop, maxgapsec, base_dir='/misc/yoda/pub/pad')
     #print 'YODA GAPS'

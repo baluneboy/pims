@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import datetime
 from pims.database.samsquery import SimpleQueryAOS, query_cu_packet_temps, query_gse_packet_current
+from pims.database.samsquery import query_cu_packet_battery
 from pimsdateutil import round_time
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -52,8 +53,37 @@ def plot_cu_temps():
 
     #plt.show()
 
-    plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps.pdf')    
-    
+    plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps.pdf')
+
+
+def plot_cu_battery():
+    d2 = round_time(datetime.datetime.now(), round_to=1)
+    d1 = round_time(d2 - datetime.timedelta(hours=36), round_to=1)
+    # d1, d2 = datetime.datetime(2020, 9, 14, 20), datetime.datetime(2020, 9, 15, 20)
+    # print d1.strftime('%Y-%m-%d %H:%M:%S')
+    # print d2.strftime('%Y-%m-%d %H:%M:%S')
+    df = query_cu_packet_battery(d1, d2)
+    df.to_csv('/misc/yoda/www/plots/user/sams/status/cubattery.csv')
+    ax = plt.figure(figsize=(11, 8.5), dpi=200).add_subplot(111)
+    df.plot(ax=ax, x='timestamp').legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    plt.subplots_adjust(left=0.1, right=0.85, bottom=0.0, top=0.88)
+
+    format_x_date_month_day(ax)
+
+    dt = datetime.datetime.now()
+    plt.title('SAMS CU Laptop Battery Charge (updated at %s)' % dt.strftime('%Y-%m-%d %H:%M:%S'))
+    plt.ylabel('Charge (%)')
+    plt.xlabel('GMT Hour')
+    plt.ylim((-1, 101))
+    ax.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
+
+    for label in ax.xaxis.get_ticklabels(minor=True)[::2]:
+        label.set_visible(False)
+
+    # plt.show()
+
+    plt.savefig('/misc/yoda/www/plots/user/sams/status/cubattery.pdf')
+
 
 def plot_gse_current():
     d2 = round_time(datetime.datetime.now(), round_to=1)
@@ -222,7 +252,83 @@ def plot_current_custom(d1, d2=None):
     
     #plt.show()
     #plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps_cache/2018-03-21_laptop_lockup_er6_locker3_current.pdf')   
-    plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps_cache/2018-04-11_laptop_batt_replaced_er6_locker3_current.pdf')   
+    plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps_cache/2018-04-11_laptop_batt_replaced_er6_locker3_current.pdf')
+
+
+def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
+    SEC_AVG = 30  # just for current (for now)
+
+    if pdf_file is None:
+        pdf_file = '/misc/yoda/www/plots/user/sams/status/cubattery_er6locker1aggcurrent.pdf'
+
+    if d2 is None:
+        d2 = round_time(datetime.datetime.now(), round_to=1)
+    if d1 is None:
+        d1 = round_time(d2 - datetime.timedelta(hours=36), round_to=1)
+    if d2 <= d1:
+        print 'd2 <= d1, so nothing to do'
+        return
+
+    # print d1.strftime('%Y-%m-%d %H:%M:%S'),
+    # print d2.strftime('%Y-%m-%d %H:%M:%S')
+
+    # queries for battery charge and current
+    df = query_cu_packet_battery(d1, d2)
+    dfc = query_gse_packet_current(d1, d2)
+
+    fig = plt.figure(num=None, figsize=(11, 8.5), dpi=200, facecolor='w', edgecolor='k')
+
+    ax1 = plt.subplot(211)
+
+    df.plot(ax=ax1, x='timestamp').legend(loc='center left', bbox_to_anchor=(1, 0.5))
+
+    format_x_date_month_day(ax1)
+
+    dt = datetime.datetime.now()
+    plt.suptitle('SAMS CU Laptop Battery and %d-Sec. Avg. of\nER6 Locker 1 Aggregate Current (updated at %s)' % (
+    SEC_AVG, dt.strftime('%Y-%m-%d %H:%M:%S')))
+
+    plt.ylabel('Charge (%)')
+    plt.xlabel('GMT Hour')
+    plt.ylim((-1, 101))
+    ax1.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
+
+    for label in ax1.xaxis.get_ticklabels(minor=True):
+        label.set_visible(False)
+
+    #plt.legend(prop={'size': 8}, bbox_to_anchor=(1, 0.88))
+
+    ax2 = plt.subplot(212, sharex=ax1)
+
+    # resample for averaging
+    dfc_m = dfc.reset_index().set_index('ku_timestamp').resample('%dS' % SEC_AVG).mean()
+    dfc_m = dfc_m.reset_index()
+    # print dfc_m
+
+    # plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_3_current'])
+    plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_1_current'])
+    plt.subplots_adjust(left=0.1, right=0.85, bottom=0.15, top=0.88)
+
+    format_x_date_month_day(ax2)
+
+    # plt.title('ER6 Locker 3 Current, 60-Second Average (updated at %s)' % d2.strftime('%Y-%m-%d %H:%M:%S'))
+    plt.ylabel('Current (A)')
+    plt.xlabel('GMT Hour')
+    plt.ylim((-0.1, 6.1))
+    ax2.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
+    plt.yticks([0, 1, 2, 3, 4, 5, 6])
+
+    for label in ax2.xaxis.get_ticklabels(minor=True)[::2]:
+        label.set_visible(False)
+
+    # fix top axes position to scootch it down a bit
+    pos1, pos2 = ax1.get_position(), ax2.get_position()  # original positions
+    pos1 = [pos1.x0, 0.94 * pos1.y0, pos1.width, 1.12 * pos1.height]
+    ax1.set_position(pos1)  # new position for top axes
+
+    # plt.show()
+
+    plt.savefig(pdf_file)
 
 
 def plot_cutemps_and_current(d1=None, d2=None, pdf_file=None):

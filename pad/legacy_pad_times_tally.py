@@ -131,7 +131,7 @@ def parametersOK():
 
 def printUsage():
     #print version
-    print 'usage: packetWriter.py [options]'
+    print 'usage: legacy_pad_times_tally.py [options]'
     print '           options (and default values) are:'
     for i in defaults.keys():
         print '                    %s=%s' % (i, defaults[i])
@@ -220,6 +220,7 @@ def mainLoop():
                     fileList = getFileList(padSensorPath, False, 'header')
                     fileList.sort()
                     prevEndTime = 0
+                    print '    Found %d file' % len(fileList)
                     for hfn in fileList:
                         fn = padFileName = split(hfn, '.header')[0]
                         if(os.path.exists(fn)):
