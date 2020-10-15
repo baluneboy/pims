@@ -23,7 +23,8 @@ import numpy as np
 import pandas as pd
 import portion as po
 import datetime
-from itertools import groupby, tee
+from dateutil import parser
+from itertools import groupby, tee, chain
 from pathlib import Path
 from pims.pad.sams_sensor_map import sensor_map
 # import warnings
@@ -72,6 +73,14 @@ def datetime_from_list(time_parts):
     return datetime.datetime(*time_parts)
 
 
+def to_dtm(s):
+    """return datetime object given a parseable string or a datetime object"""
+    if isinstance(s, datetime.datetime):
+        return s
+    else:
+        return parser.parse(s)
+
+
 def encode_list(s_list):
     """return list of lists, each with 2 elements [run_length, value]
     [ '+', '+', '+', '-', '-', ...] -> [ [3, '+'], [2, '-'], ...] """
@@ -113,105 +122,6 @@ class DataFrameIterator(object):
     def __next__(self):
         i1, i2 = next(self.zip_inds)
         return self.df.iloc[i1:i2]
-
-
-class PadFileDayGroups(object):
-
-    def __init__(self, sensor, day, pth='/misc/yoda/pub/pad', rate=500.0):
-        self.sensor = sensor
-        self.day = day
-        self.pth = pth
-        self.rate = rate
-        self.df = self._get_files_dataframe()
-        self.inds = self._get_group_inds()
-        self._zip_inds = zip(self.inds, self.inds[1:])
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        i1, i2 = next(self._zip_inds)
-        df_group = self.df.iloc[i1:i2]
-        start = df_group.iloc[0].Start
-        rate = df_group.iloc[0].SampleRate
-        samples = sum(df_group.Samples)
-        return PadGroup(start, rate, samples, df=df_group)
-
-    def _get_files_dataframe(self):
-        """return dataframe of file info for given sensor, day, pad_path"""
-        ymd_parts = (int(x) for x in self.day.split('-'))
-        ymd = datetime.datetime(*ymd_parts).date()
-        ymd_str = 'year%04d/month%02d/day%02d' % (ymd.year, ymd.month, ymd.day)
-        sensor_prefix, bytes_per_rec = sensor_map[self.sensor]
-        sensor_subdir = sensor_prefix + self.sensor
-        p = Path(self.pth) / Path(ymd_str) / sensor_subdir
-        if not p.exists():
-            #print('no such path %s', p)
-            return pd.DataFrame()
-        all_files = []
-        for hdr in p.rglob('*.header'):
-            if 'quarantine' in hdr.parent.name:
-                continue
-            fs = read_sample_rate(hdr)
-            dat = get_data_file(hdr)
-            num_bytes = dat.stat().st_size
-            num_pts = int(num_bytes / bytes_per_rec)
-            start_str = dat.name.split("+", 1)[0].split('-', 1)[0]
-            t_parts = [value_from_str(v) for v in start_str.split('_')]
-            start = datetime_from_list(t_parts)
-            stop = start + datetime.timedelta(seconds=(num_pts - 1) / fs)
-            all_files.append((dat.name, dat.parent, num_pts, fs, start, stop))
-        all_files.sort()  # this gets us into ascending time order for sure
-        columns = ["Filename", "Parent", "Samples", "SampleRate", "Start", "Stop"]
-        df = pd.DataFrame.from_records(all_files, columns=columns)
-        # only keep rows with desired sample rate (and sort on start time)
-        df_filtered = df[df['SampleRate'] == self.rate]
-        return df_filtered
-
-    def _get_plusminus_list(self):
-        """return list of plus/minus signs extracted from each Filename in dataframe"""
-        pm_list = list(self.df.apply(lambda row: '+' if '+' in row.Filename else '-', axis=1))
-        return pm_list
-
-    def _get_encoded_run_lengths(self):
-        """return run-length-encoded contiguous files from plus/minus list"""
-        # get plus/minus characters to use for grouping contiguous files
-        pm_list = self._get_plusminus_list()
-        if not pm_list:
-            return []
-        pm_list[0] = '-'  # 1st element is effectively a minus for grouping purposes
-        encoded_pm_list = encode_list(pm_list)
-        # add a trailing "zero plus" element if we have an odd number
-        if len(encoded_pm_list) % 2 != 0:
-            encoded_pm_list.append([0, '+'])
-        return encoded_pm_list
-
-    def get_file_group_runs(self):
-        """return a list of run length integers based on plus/minus indicators in filenames"""
-        runs = []
-        encoded_pm_list = self._get_encoded_run_lengths()
-        for one, two in pairwise(encoded_pm_list):
-            num_minus = one[0]
-            if num_minus == 1:
-                runs.append(one[0] + two[0])
-            else:
-                for i in range(0, num_minus - 1):
-                    runs.append(1)
-                runs.append(1 + two[0])
-        return runs
-
-    def _get_group_inds(self):
-        """return iterable over groups of files in form of dataframe"""
-        runs = self.get_file_group_runs()
-        inds = np.cumsum(np.array([0] + runs))
-        inds[-1] = inds[-1] + 1
-        return inds
-
-    # def dataframe_groups(self):
-    #     """return iterable over groups of files in form of dataframe"""
-    #     inds = self._get_group_inds()
-    #     dfi = DataFrameIterator(self.df, inds)
-    #     return dfi
 
 
 class PadChunk(object):
@@ -301,55 +211,193 @@ class PadGap(PadChunk):
             return new_value
 
 
-class OldPadGroup(object):
+class PadFileDayGroups(object):
 
-    def __init__(self, df):
-        self._df = df
-        self._start = df.iloc[0].Start
-        self._rate = df.iloc[0].SampleRate
-        self._samples = sum(df.Samples)
-        self._duration = datetime.timedelta(seconds=(self._samples-1)/self._rate)
-        self._stop = self._start + self._duration
+    def __init__(self, sensor, day, pth='/misc/yoda/pub/pad', rate=500.0):
+        self.sensor = sensor
+        self._day = day if isinstance(day, datetime.date) else to_dtm(day).date()
+        self.pth = pth
+        self.rate = rate
+        self.df = self._get_files_dataframe()
+        self.inds = self._get_group_inds()
+        self._zip_inds = zip(self.inds, self.inds[1:])
+
+    @property
+    def day(self):
+        """return start time for this group"""
+        return self._day
 
     def __str__(self):
-        dur_str = strfdelta(self.duration, '{hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
-        s = '%s to %s (%s, %9d pts)' % (self.start, self.stop, dur_str, self.samples)
+        day_str = self._day.strftime('%Y-%m-%d')
+        s = '%s: %s for %s day directory (fs=%.2f)' % (self.__class__.__name__, self.sensor, day_str, self.rate)
         return s
 
-    @property
-    def df(self):
-        """return dataframe for this group"""
-        return self._df
+    def __iter__(self):
+        return self
 
-    @property
-    def rate(self):
-        """return float for sample rate of this group"""
-        return self._rate
+    def __next__(self):
+        i1, i2 = next(self._zip_inds)
+        df_group = self.df.iloc[i1:i2]
+        start = df_group.iloc[0].Start
+        rate = df_group.iloc[0].SampleRate
+        samples = sum(df_group.Samples)
+        return PadGroup(start, rate, samples, df=df_group)
 
-    @property
-    def samples(self):
-        """return number of samples (pts) for this group"""
-        return self._samples
+    def _get_files_dataframe(self):
+        """return dataframe of file info for given sensor, day, pad_path"""
+        # ymd_parts = (int(x) for x in self.day.split('-'))
+        # ymd = datetime.datetime(*ymd_parts).date()
+        # ymd_str = 'year%04d/month%02d/day%02d' % (ymd.year, ymd.month, ymd.day)
+        ymd_str = 'year%04d/month%02d/day%02d' % (self._day.year, self._day.month, self._day.day)
+        sensor_prefix, bytes_per_rec = sensor_map[self.sensor]
+        sensor_subdir = sensor_prefix + self.sensor
+        p = Path(self.pth) / Path(ymd_str) / sensor_subdir
+        if not p.exists():
+            #print('no such path %s', p)
+            return pd.DataFrame()
+        all_files = []
+        for hdr in p.rglob('*.header'):
+            if 'quarantine' in hdr.parent.name:
+                continue
+            fs = read_sample_rate(hdr)
+            dat = get_data_file(hdr)
+            num_bytes = dat.stat().st_size
+            num_pts = int(num_bytes / bytes_per_rec)
+            start_str = dat.name.split("+", 1)[0].split('-', 1)[0]
+            t_parts = [value_from_str(v) for v in start_str.split('_')]
+            start = datetime_from_list(t_parts)
+            stop = start + datetime.timedelta(seconds=(num_pts - 1) / fs)
+            all_files.append((dat.name, dat.parent, num_pts, fs, start, stop))
+        all_files.sort()  # this gets us into ascending time order for sure
+        columns = ["Filename", "Parent", "Samples", "SampleRate", "Start", "Stop"]
+        df = pd.DataFrame.from_records(all_files, columns=columns)
+        # only keep rows with desired sample rate (and sort on start time)
+        df_filtered = df[df['SampleRate'] == self.rate]
+        return df_filtered
 
-    @property
-    def duration(self):
-        """return datetime.timedelta as duration for this group"""
-        return self._duration
+    def _get_plusminus_list(self):
+        """return list of plus/minus signs extracted from each Filename in dataframe"""
+        pm_list = list(self.df.apply(lambda row: '+' if '+' in row.Filename else '-', axis=1))
+        return pm_list
 
-    @property
-    def stop(self):
-        """return stop time for this group"""
-        return self._stop
+    def _get_encoded_run_lengths(self):
+        """return run-length-encoded contiguous files from plus/minus list"""
+        # get plus/minus characters to use for grouping contiguous files
+        pm_list = self._get_plusminus_list()
+        if not pm_list:
+            return []
+        pm_list[0] = '-'  # 1st element is effectively a minus for grouping purposes
+        encoded_pm_list = encode_list(pm_list)
+        # add a trailing "zero plus" element if we have an odd number
+        if len(encoded_pm_list) % 2 != 0:
+            encoded_pm_list.append([0, '+'])
+        return encoded_pm_list
+
+    def get_file_group_runs(self):
+        """return a list of run length integers based on plus/minus indicators in filenames"""
+        runs = []
+        encoded_pm_list = self._get_encoded_run_lengths()
+        for one, two in pairwise(encoded_pm_list):
+            num_minus = one[0]
+            if num_minus == 1:
+                runs.append(one[0] + two[0])
+            else:
+                for i in range(0, num_minus - 1):
+                    runs.append(1)
+                runs.append(1 + two[0])
+        return runs
+
+    def _get_group_inds(self):
+        """return iterable over groups of files in form of dataframe"""
+        runs = self.get_file_group_runs()
+        inds = np.cumsum(np.array([0] + runs))
+        inds[-1] += 1
+        return inds
+
+    # def dataframe_groups(self):
+    #     """return iterable over groups of files in form of dataframe"""
+    #     inds = self._get_group_inds()
+    #     dfi = DataFrameIterator(self.df, inds)
+    #     return dfi
+
+
+class PadFileGroups(object):
+
+    def __init__(self, sensor, start, stop, pth='/misc/yoda/pub/pad', rate=500.0):
+        self.sensor = sensor
+        self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
+        self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
+        self.pth = pth
+        self.rate = rate
+
+    def __str__(self):
+        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self.sensor, start_str, stop_str, self.rate)
+        return s
+
+    def show_days(self):
+        d1, d2 = self._start.date(), self._stop.date()
+        grps = []
+        for d in pd.date_range(d1, d2):
+            pad_day_groups = PadFileDayGroups(self.sensor, d, pth=self.pth, rate=self.rate)
+            if d == d1:
+                # print('first day')
+                if self._start < pad_day_groups.df.iloc[0].Start:
+                    # print('need prev day since %s is later than desired start %s' % (pad_day_groups.df.iloc[0].Start, self._start))
+                    grps.append(PadFileDayGroups(self.sensor, d - datetime.timedelta(days=1), pth=self.pth, rate=self.rate))
+                # else:
+                #     print('may need trim since desired start %s is after %s' % (self._start, pad_day_groups1.df.iloc[0].Start))
+            elif d == d2:
+                # print('last day')
+                if self._stop > pad_day_groups.df.iloc[-1].Stop:
+                    print('need next day since %s is earlier than desired stop %s' % (pad_day_groups.df.iloc[-1].Stop, self._stop))
+                else:
+                    print('may need trim since desired stop %s is before %s' % (self._stop, pad_day_groups.df.iloc[-1].Stop))
+            grps.append(pad_day_groups)
+        pad_days_groups = chain(*grps)
+        for g in pad_days_groups:
+            print(g)
+
 
     @property
     def start(self):
         """return start time for this group"""
         return self._start
 
+    @property
+    def stop(self):
+        """return stop time for this group"""
+        return self._stop
+
+
+pfg = PadFileGroups('121f02', '2020-10-11 00:00:00', '2020-10-13 12:00:00')
+print(pfg)
+pfg.show_days()
+raise SystemExit
+
 
 #pad_file = '/home/pims/PycharmProjects/mendTheGap/example2.pad'
 # demo_write_read_pad_file(pad_file)
 
+
+def demo_generic_file_groups():
+    sensors = ['121f03', ]
+    day, pth_str = '2020-04-07', '/misc/yoda/pub/pad'
+    rate = 500.0
+    delta_t = datetime.timedelta(seconds=1.0/rate)
+    day = to_dtm(day).date()
+    for sensor in sensors:
+        print('---', sensor, '---')
+
+        pad_groups1 = PadFileDayGroups(sensor, day - datetime.timedelta(days=1), pth=pth_str, rate=rate)
+        pad_groups2 = PadFileDayGroups(sensor, day, pth=pth_str, rate=rate)
+        pad_groups = chain(pad_groups1, pad_groups2)
+        # runs = pad_groups.get_file_group_runs()
+        # print(sensor, sum(runs), runs)
+        prev_grp = None
+        for i, grp in enumerate(pad_groups):
+            print(i, grp)
 
 def demo_file_groups():
     sensors = ['121f02', '121f03', '121f04', '121f05', '121f08']
@@ -362,6 +410,7 @@ def demo_file_groups():
     for sensor in sensors:
         print('---', sensor, '---')
         pad_groups = PadFileDayGroups(sensor, day, pth=pth_str, rate=rate)
+        print(pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)
         prev_grp = None
@@ -434,6 +483,7 @@ def demo_gmt_iterator():
 
 if __name__ == '__main__':
     demo_file_groups()
+    # demo_generic_file_groups()
     #demo_gmt_iterator()
     # c = Count()
     # for i in c:
