@@ -27,11 +27,6 @@ from dateutil import parser
 from itertools import groupby, tee, chain
 from pathlib import Path
 from pims.pad.sams_sensor_map import sensor_map
-# import warnings
-#from pims.pad.walkpad import PadFileIntRms
-from pandas_ods_reader import read_ods
-# from ugaudio.load import padread
-# from ugaudio.create import demo_write_read_pad_file
 
 
 def read_sample_rate(hdr):
@@ -314,12 +309,6 @@ class PadFileDayGroups(object):
         inds[-1] += 1
         return inds
 
-    # def dataframe_groups(self):
-    #     """return iterable over groups of files in form of dataframe"""
-    #     inds = self._get_group_inds()
-    #     dfi = DataFrameIterator(self.df, inds)
-    #     return dfi
-
 
 class PadFileGroups(object):
 
@@ -371,16 +360,6 @@ class PadFileGroups(object):
         return self._stop
 
 
-pfg = PadFileGroups('121f02', '2020-10-11 00:00:00', '2020-10-13 12:00:00')
-print(pfg)
-pfg.show_days()
-raise SystemExit
-
-
-#pad_file = '/home/pims/PycharmProjects/mendTheGap/example2.pad'
-# demo_write_read_pad_file(pad_file)
-
-
 def demo_generic_file_groups():
     sensors = ['121f03', ]
     day, pth_str = '2020-04-07', '/misc/yoda/pub/pad'
@@ -398,6 +377,7 @@ def demo_generic_file_groups():
         prev_grp = None
         for i, grp in enumerate(pad_groups):
             print(i, grp)
+
 
 def demo_file_groups():
     sensors = ['121f02', '121f03', '121f04', '121f05', '121f08']
@@ -481,10 +461,14 @@ def demo_gmt_iterator():
         print(i)
 
 
+def demo_arbitrary_time_range():
+    pfg = PadFileGroups('121f02', '2020-10-01 00:00:00', '2020-10-07 22:00:00')
+    print(pfg)
+    pfg.show_days()
+
+
 if __name__ == '__main__':
-    demo_file_groups()
-    # demo_generic_file_groups()
+    #demo_file_groups()
+    #demo_generic_file_groups()
     #demo_gmt_iterator()
-    # c = Count()
-    # for i in c:
-    #     print(i)
+    demo_arbitrary_time_range()
