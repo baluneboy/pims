@@ -125,13 +125,15 @@ class PadChunk(object):
         self._df = df
         self._start = start
         self._rate = rate
-        self._samples = self._set_samples(samples)
+        self._samples = self._verify_samples(samples)
         self._duration = self._set_duration()
         self._stop = self._start + self._duration
 
     def __str__(self):
-        dur_str = strfdelta(self.duration, '{hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
-        s = '%s to %s (%s, %9d pts)' % (self.start, self.stop, dur_str, self.samples)
+        startstr = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        stopstr = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        durstr = strfdelta(self.duration, '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
+        s = '%s to %s (%s, %9d pts, %4d files)' % (startstr, stopstr, durstr, self.samples, len(self.df))
         return s
 
     @property
@@ -149,7 +151,7 @@ class PadChunk(object):
         """return number of samples (pts) for this group"""
         return self._samples
 
-    def _set_samples(self, value):
+    def _verify_samples(self, value):
         if not isinstance(value, int):
             raise TypeError('number of samples must be an integer')
         return value
@@ -181,6 +183,15 @@ class PadGroup(PadChunk):
     def __init__(self, start, rate, samples, df):
         PadChunk.__init__(self, start, rate, samples, df=df)
 
+    def trim(self, t1, t2):
+        """trim entries that do not fall within t1 <= t <= t2"""
+        df = self.df[self.df.Stop >= t1]
+        self._df = df[df.Start <= t2]
+        self._start = self._df.iloc[0].Start
+        self._samples = self._verify_samples(sum(self._df.Samples))
+        self._duration = self._set_duration()
+        self._stop = self._start + self._duration
+
 
 class PadGap(PadChunk):
 
@@ -191,11 +202,14 @@ class PadGap(PadChunk):
         if self.samples == 0:
             dur_str = '00h 00m 00s 000000us'
         else:
-            dur_str = strfdelta(self.duration, '{hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
-        s = '%s to %s (%s, %9d pts)' % (self.start, self.stop, dur_str, self.samples)
+            dur_str = strfdelta(self.duration,
+                                '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
+        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        s = '%s to %s (%s, %9d pts)' % (start_str, stop_str, dur_str, self.samples)
         return s
 
-    def _set_samples(self, value):
+    def _verify_samples(self, value):
         if isinstance(value, int):
             return value
         if float(value).is_integer():
@@ -316,6 +330,8 @@ class PadFileGroups(object):
         self.sensor = sensor
         self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
         self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
+        if self._start >= self._stop:
+            raise Exception('in %s, start time must be before stop time' % self.__class__.__name__)
         self.pth = pth
         self.rate = rate
 
@@ -325,29 +341,33 @@ class PadFileGroups(object):
         s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self.sensor, start_str, stop_str, self.rate)
         return s
 
-    def show_days(self):
+    def get_groups(self):
         d1, d2 = self._start.date(), self._stop.date()
-        grps = []
+        raw_groups = []
         for d in pd.date_range(d1, d2):
             pad_day_groups = PadFileDayGroups(self.sensor, d, pth=self.pth, rate=self.rate)
             if d == d1:
-                # print('first day')
+                # special handling first day (may need previous day too)
                 if self._start < pad_day_groups.df.iloc[0].Start:
-                    # print('need prev day since %s is later than desired start %s' % (pad_day_groups.df.iloc[0].Start, self._start))
-                    grps.append(PadFileDayGroups(self.sensor, d - datetime.timedelta(days=1), pth=self.pth, rate=self.rate))
-                # else:
-                #     print('may need trim since desired start %s is after %s' % (self._start, pad_day_groups1.df.iloc[0].Start))
-            elif d == d2:
-                # print('last day')
-                if self._stop > pad_day_groups.df.iloc[-1].Stop:
-                    print('need next day since %s is earlier than desired stop %s' % (pad_day_groups.df.iloc[-1].Stop, self._stop))
-                else:
-                    print('may need trim since desired stop %s is before %s' % (self._stop, pad_day_groups.df.iloc[-1].Stop))
-            grps.append(pad_day_groups)
-        pad_days_groups = chain(*grps)
+                    pre_grp = PadFileDayGroups(self.sensor, d - datetime.timedelta(days=1), pth=self.pth, rate=self.rate)
+                    raw_groups.append(pre_grp)
+            raw_groups.append(pad_day_groups)
+        pad_days_groups = chain(*raw_groups)
+        my_groups = []
         for g in pad_days_groups:
-            print(g)
-
+            if g.stop <= self._start:
+                continue  # this group begins & ends completely before my desired start time, so skip it
+            elif g.start <= self._start < g.stop:
+                # prefix = 'your span starts in here somewhere'
+                g.trim(self._start, self._stop)
+                # print(g, prefix)
+            elif g.start <= self._stop < g.stop:
+                # my desired span stops in here somewhere
+                g.trim(self._start, self._stop)
+                my_groups.append(g)
+                break
+            my_groups.append(g)
+        return my_groups
 
     @property
     def start(self):
@@ -379,26 +399,16 @@ def demo_generic_file_groups():
             print(i, grp)
 
 
-def demo_file_groups():
-    sensors = ['121f02', '121f03', '121f04', '121f05', '121f08']
-    # sensors = ['121f03', ]
-    day, pth_str = '2020-04-07', '/misc/yoda/pub/pad'
-    # day, pth_str = '2020-04-01', '/home/pims/data/pad'
-    # day, pth_str = '2020-04-05', 'G:/data/pad'
-    rate = 500.0
+def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
     delta_t = datetime.timedelta(seconds=1.0/rate)
     for sensor in sensors:
-        print('---', sensor, '---')
         pad_groups = PadFileDayGroups(sensor, day, pth=pth_str, rate=rate)
-        print(pad_groups)
+        print('---', sensor, '---', pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)
         prev_grp = None
         for i, grp in enumerate(pad_groups):
-            if prev_grp is None:
-                # print('no previous group')
-                pass
-            else:
+            if prev_grp is not None:
                 prefix = 'gap'
                 suffix = ''
                 sec_between_groups = (grp.start - prev_grp.stop).total_seconds()
@@ -418,16 +428,41 @@ def demo_file_groups():
                     gap_stop = grp.start - delta_t
                     gap_duration = gap_stop - gap_start
                     gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
-                    # if gap_samples < 0:
-                    #     pass
-                    # elif gap_samples == 0:
-                    #     pass
-                    # elif gap_samples < 1:
-                    #     gap_str = '--h --m --s ------us'
-                    # else:
-                    #     gap_str = strfdelta(gap_duration,
-                    #                         '{hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
-                    # print('gap %s to %s (%s, %13.3f pts)' % (gap_start, gap_stop, gap_str, gap_samples))
+                gap = PadGap(gap_start, gap_rate, gap_samples)
+                print(prefix, gap, suffix)
+            print('%03d' % i, grp)
+            prev_grp = grp
+
+
+def demo_pad_file_groups(start, stop, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
+    delta_t = datetime.timedelta(seconds=1.0/rate)
+    for sensor in sensors:
+        pad_groups = PadFileGroups(sensor, start, stop, pth=pth_str, rate=rate).get_groups()
+        print('---', sensor, '---', pad_groups)
+        # runs = pad_groups.get_file_group_runs()
+        # print(sensor, sum(runs), runs)
+        prev_grp = None
+        for i, grp in enumerate(pad_groups):
+            if prev_grp is not None:
+                prefix = 'gap'
+                suffix = ''
+                sec_between_groups = (grp.start - prev_grp.stop).total_seconds()
+                gap_start = prev_grp.stop + delta_t
+                gap_rate = prev_grp.rate
+                if sec_between_groups < 0:
+                    print('*** HOW CAN GAP HAVE NEGATIVE LENGTH?! ***')
+                    break
+                elif sec_between_groups < delta_t.total_seconds():
+                    print('*** A GAP THAT IS SHORTER THAN DELTA-T?! ***')
+                    break
+                elif (sec_between_groups == delta_t.total_seconds()) or (prev_grp.stop == grp.start):
+                    prefix = 'wtf'
+                    suffix = '*** A GAP THAT IS EQUAL TO DELTA-T IS NOT REALLY A GAP! ***'
+                    gap_samples = 0
+                else:
+                    gap_stop = grp.start - delta_t
+                    gap_duration = gap_stop - gap_start
+                    gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
                 print(prefix, gap, suffix)
             print('%03d' % i, grp)
@@ -461,14 +496,21 @@ def demo_gmt_iterator():
         print(i)
 
 
-def demo_arbitrary_time_range():
-    pfg = PadFileGroups('121f02', '2020-10-01 00:00:00', '2020-10-07 22:00:00')
+def old_demo_pad_file_groups(show_gaps=False):
+    pfg = PadFileGroups('121f08', '2020-10-01 12:34:56', '2020-10-03 11:22:33')
     print(pfg)
-    pfg.show_days()
+    groups = pfg.get_groups()
+    for i, g in enumerate(groups):
+        print('%4d' % i, g)
 
 
 if __name__ == '__main__':
-    #demo_file_groups()
-    #demo_generic_file_groups()
-    #demo_gmt_iterator()
-    demo_arbitrary_time_range()
+
+    day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
+    # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], 'G:/data/pad'
+    # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/home/pims/data/pad'
+    rate = 500.0
+    demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
+
+    start, stop = '2020-04-07 00:00:00', '2020-04-08 00:00:00'
+    demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=500.0)
