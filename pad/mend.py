@@ -326,14 +326,17 @@ class PadFileDayGroups(object):
 
 class PadFileGroups(object):
 
-    def __init__(self, sensor, start, stop, pth='/misc/yoda/pub/pad', rate=500.0):
+    def __init__(self, sensor, start, stop=None, pth='/misc/yoda/pub/pad', rate=500.0):
         self.sensor = sensor
         self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
+        if stop is None:
+            stop = self._start + datetime.timedelta(days=1)
         self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
         if self._start >= self._stop:
             raise Exception('in %s, start time must be before stop time' % self.__class__.__name__)
         self.pth = pth
         self.rate = rate
+        self.groups = iter(self.get_groups())
 
     def __str__(self):
         start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
@@ -341,17 +344,24 @@ class PadFileGroups(object):
         s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self.sensor, start_str, stop_str, self.rate)
         return s
 
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self.groups)
+
     def get_groups(self):
         d1, d2 = self._start.date(), self._stop.date()
         raw_groups = []
         for d in pd.date_range(d1, d2):
             pad_day_groups = PadFileDayGroups(self.sensor, d, pth=self.pth, rate=self.rate)
-            if d == d1:
-                # special handling first day (may need previous day too)
-                if self._start < pad_day_groups.df.iloc[0].Start:
-                    pre_grp = PadFileDayGroups(self.sensor, d - datetime.timedelta(days=1), pth=self.pth, rate=self.rate)
-                    raw_groups.append(pre_grp)
-            raw_groups.append(pad_day_groups)
+            if not pad_day_groups.df.empty:
+                if d == d1:
+                    # special handling first day (may need previous day too)
+                    if self._start < pad_day_groups.df.iloc[0].Start:
+                        pre_grp = PadFileDayGroups(self.sensor, d - datetime.timedelta(days=1), pth=self.pth, rate=self.rate)
+                        raw_groups.append(pre_grp)
+                raw_groups.append(pad_day_groups)
         pad_days_groups = chain(*raw_groups)
         my_groups = []
         for g in pad_days_groups:
@@ -399,6 +409,69 @@ def demo_generic_file_groups():
             print(i, grp)
 
 
+class SamsData(object):
+
+    def __init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0):
+        self.sensor = sensor
+        self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
+        if stop is None:
+            stop = self._start + datetime.timedelta(days=1)
+        self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
+        if self._start >= self._stop:
+            raise Exception('in %s, start time must be before stop time' % self.__class__.__name__)
+        self.pth_str = pth_str
+        self.rate = rate
+
+    def __str__(self):
+        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self.sensor, start_str, stop_str, self.rate)
+        return s
+
+    @property
+    def start(self):
+        """return start time for this group"""
+        return self._start
+
+    @property
+    def stop(self):
+        """return stop time for this group"""
+        return self._stop
+
+    def get_groups(self):
+        delta_t = datetime.timedelta(seconds=1.0/self.rate)
+        pad_groups = PadFileGroups(self.sensor, self.start, stop=self.stop, pth=self.pth_str, rate=self.rate)
+        # print('<--', self.sensor, '-->', pad_groups)
+        # runs = pad_groups.get_file_group_runs()
+        # print(sensor, sum(runs), runs)
+        prev_grp = None
+        for i, grp in enumerate(pad_groups):
+            if prev_grp is not None:
+                prefix = 'gap'
+                suffix = ''
+                sec_between_groups = (grp.start - prev_grp.stop).total_seconds()
+                gap_start = prev_grp.stop + delta_t
+                gap_rate = prev_grp.rate
+                if sec_between_groups < 0:
+                    print('*** HOW CAN GAP HAVE NEGATIVE LENGTH?! ***')
+                    break
+                elif sec_between_groups < delta_t.total_seconds():
+                    print('*** A GAP THAT IS SHORTER THAN DELTA-T?! ***')
+                    break
+                elif (sec_between_groups == delta_t.total_seconds()) or (prev_grp.stop == grp.start):
+                    prefix = 'wtf'
+                    suffix = '*** A GAP THAT IS EQUAL TO DELTA-T IS NOT REALLY A GAP! ***'
+                    gap_samples = 0
+                else:
+                    gap_stop = grp.start - delta_t
+                    gap_duration = gap_stop - gap_start
+                    gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
+                gap = PadGap(gap_start, gap_rate, gap_samples)
+                print(prefix, gap, suffix)
+            print('%03d' % i, grp)
+            prev_grp = grp
+
+
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
     delta_t = datetime.timedelta(seconds=1.0/rate)
     for sensor in sensors:
@@ -437,8 +510,8 @@ def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=50
 def demo_pad_file_groups(start, stop, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
     delta_t = datetime.timedelta(seconds=1.0/rate)
     for sensor in sensors:
-        pad_groups = PadFileGroups(sensor, start, stop, pth=pth_str, rate=rate).get_groups()
-        print('---', sensor, '---', pad_groups)
+        pad_groups = PadFileGroups(sensor, start, stop=stop, pth=pth_str, rate=rate)
+        print('<--', sensor, '-->', pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)
         prev_grp = None
@@ -506,11 +579,14 @@ def old_demo_pad_file_groups(show_gaps=False):
 
 if __name__ == '__main__':
 
-    day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
+    # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
     # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], 'G:/data/pad'
-    # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/home/pims/data/pad'
+    day, sensors, pth_str = '2020-04-02', ['121f02', '121f03'], '/home/pims/data/pad'
     rate = 500.0
-    demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
+    # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
+    start, stop = '2020-04-02', None
+    # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
-    start, stop = '2020-04-07 00:00:00', '2020-04-08 00:00:00'
-    demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=500.0)
+    sd = SamsData(sensors[1], start, stop, pth_str=pth_str, rate=rate)
+    print(sd)
+    sd.get_groups()
