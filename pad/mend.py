@@ -494,7 +494,7 @@ class PadRaw(object):
 class Pad(PadRaw):
 
     def __init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0):
-        PadRaw.__init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0)
+        PadRaw.__init__(self, sensor, start, stop, pth_str=pth_str, rate=rate)
         self._start_ind = self._get_ind_start()
         self._stop_ind = self._get_ind_stop()
 
@@ -513,35 +513,41 @@ class Pad(PadRaw):
             print('%03d' % i, g, end='')
             if i == 0:
                 print('  FIRST GROUP\n')
-                actual_start = self.groups[0].df.iloc[0].Start + datetime.timedelta(seconds=self.start_ind/self.rate)
-                print('1st grp start %s' % self.groups[0].df.iloc[0].Start)
-                print('desired start %s' % self.start)
-                print('actual start  %s (ind = %d)' % (actual_start, self.start_ind))
+                first_grp_start = self.groups[0].df.iloc[0].Start
+                actual_start = first_grp_start + datetime.timedelta(seconds=self.start_ind/self.rate)
+                delta_time = actual_start - first_grp_start
+                print('1st grp start %s' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('desired start %s' % self.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('actual start  %s (ind = %d) < %s into first file' % (
+                    actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    self.start_ind, delta_time))
                 print(g.df.iloc[0])
             elif i == len(self.groups) - 1:
                 print('   LAST GROUP\n')
                 actual_stop = self.groups[-1].df.iloc[-1].Stop + datetime.timedelta(seconds=self.stop_ind/self.rate)
-                print('last grp stop %s' % self.groups[-1].df.iloc[-1].Stop)
-                print('desired stop  %s' % self.stop)
-                print('actual stop   %s (ind = %d)' % (actual_stop, self.stop_ind))
+                print('last grp stop %s' % self.groups[-1].df.iloc[-1].Stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('desired stop  %s' % self.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('actual stop   %s (ind = %d)' % (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                                                       self.stop_ind))
                 print(g.df.iloc[-1])
             if 'PadGap' == g.__class__.__name__:
                 print(' <-- gap -->')
             else:
                 print('')
 
-    def _get_ind_start(self):
-        delta_sec = (self.start - self.groups[0].df.iloc[0].Start).total_seconds()
+    def _get_ind(self, i_group, t2, math_fun):
+        t1 = self.groups[i_group].df.iloc[i_group].Start
+        delta_sec = (t2 - t1).total_seconds()
         pts = self.rate * delta_sec
-        ind = math.floor(pts)
-        return ind
+        return math_fun(pts)
+
+    def _get_ind_start(self):
+        ind_grp, t2 = 0, self.start
+        return self._get_ind(ind_grp, t2, math.floor)
 
     def _get_ind_stop(self):
-        print('group cumulative pts = %d' % sum(self.groups[-1].df.Samples))
-        delta_sec = (self.groups[-1].df.iloc[-1].Stop - self.stop).total_seconds()
-        pts = self.rate * delta_sec
-        ind_from_end = math.ceil(pts)
-        return ind_from_end
+        ind_grp, t2 = -1, self.stop
+        return self._get_ind(ind_grp, t2, math.ceil)
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -656,8 +662,8 @@ if __name__ == '__main__':
     # day, sensors, pth_str = '2020-04-02', ['121f02', '121f03'], '/home/pims/data/pad'
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
-    # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], 'G:/data/pad'
-    start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
+    start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
+    # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
