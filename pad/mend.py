@@ -409,7 +409,7 @@ def demo_generic_file_groups():
             print(i, grp)
 
 
-class SamsData(object):
+class PadRaw(object):
 
     def __init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0):
         self.sensor = sensor
@@ -421,12 +421,21 @@ class SamsData(object):
             raise Exception('in %s, start time must be before stop time' % self.__class__.__name__)
         self.pth_str = pth_str
         self.rate = rate
+        self._groups = self._get_groups()
 
     def __str__(self):
         start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self.sensor, start_str, stop_str, self.rate)
         return s
+
+    def show_groups(self):
+        for i, g in enumerate(self.groups):
+            print('%03d' % i, g, end='')
+            if 'PadGap' == g.__class__.__name__:
+                print(' --- gap ---')
+            else:
+                print('')
 
     @property
     def start(self):
@@ -438,12 +447,18 @@ class SamsData(object):
         """return stop time for this group"""
         return self._stop
 
-    def get_groups(self):
+    @property
+    def groups(self):
+        """return PadGroup objects"""
+        return self._groups
+
+    def _get_groups(self):
         delta_t = datetime.timedelta(seconds=1.0/self.rate)
         pad_groups = PadFileGroups(self.sensor, self.start, stop=self.stop, pth=self.pth_str, rate=self.rate)
         # print('<--', self.sensor, '-->', pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)
+        grps = []
         prev_grp = None
         for i, grp in enumerate(pad_groups):
             if prev_grp is not None:
@@ -467,9 +482,40 @@ class SamsData(object):
                     gap_duration = gap_stop - gap_start
                     gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
-                print(prefix, gap, suffix)
-            print('%03d' % i, grp)
+                grps.append(gap)
+                # print(prefix, gap, suffix)
+            grps.append(grp)
+            # print('%03d' % i, grp)
             prev_grp = grp
+        # print('+' * 55)
+        return grps
+
+
+class Pad(PadRaw):
+
+    def show_groups(self):
+        for i, g in enumerate(self.groups):
+            print('%03d' % i, g, end='')
+            if i == 0:
+                print('  FIRST GROUP\n')
+                print(g.df.iloc[0])
+                self.get_ind_start()
+            elif i == len(self.groups) - 1:
+                print('   LAST GROUP\n')
+                print(g.df.iloc[-1])
+            if 'PadGap' == g.__class__.__name__:
+                print(' <-- gap -->')
+            else:
+                print('')
+
+    def get_ind_start(self):
+        delta_sec = (self.start - self.groups[0].df.iloc[0].Start).total_seconds()
+        pts = self.rate * delta_sec
+        ind = math.floor(pts)
+        actual_start = self.groups[0].df.iloc[0].Start + datetime.timedelta(seconds=ind/self.rate)
+        print('desired start %s' % self.start)
+        print('1st grp start %s' % self.groups[0].df.iloc[0].Start)
+        print('actual start  %s (ind = %d)' % (actual_start, ind))
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -580,13 +626,14 @@ def old_demo_pad_file_groups(show_gaps=False):
 if __name__ == '__main__':
 
     # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
-    # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], 'G:/data/pad'
-    day, sensors, pth_str = '2020-04-02', ['121f02', '121f03'], '/home/pims/data/pad'
+    # day, sensors, pth_str = '2020-04-06', ['121f02', '121f03', '121f04', '121f05', '121f08'], 'G:/data/pad'
+    # day, sensors, pth_str = '2020-04-02', ['121f02', '121f03'], '/home/pims/data/pad'
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
-    start, stop = '2020-04-02', None
+    start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], 'G:/data/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
-    sd = SamsData(sensors[1], start, stop, pth_str=pth_str, rate=rate)
-    print(sd)
-    sd.get_groups()
+    p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
+    print(p)
+    print('=' * 108)
+    p.show_groups()
