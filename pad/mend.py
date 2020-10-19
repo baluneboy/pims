@@ -493,29 +493,55 @@ class PadRaw(object):
 
 class Pad(PadRaw):
 
+    def __init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0):
+        PadRaw.__init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0)
+        self._start_ind = self._get_ind_start()
+        self._stop_ind = self._get_ind_stop()
+
+    @property
+    def start_ind(self):
+        """return integer which is index into 1st file in 1st group to get actual (floor) start time"""
+        return self._start_ind
+
+    @property
+    def stop_ind(self):
+        """return integer which is index into last file in last group to get actual (ceil) stop time"""
+        return self._stop_ind
+
     def show_groups(self):
         for i, g in enumerate(self.groups):
             print('%03d' % i, g, end='')
             if i == 0:
                 print('  FIRST GROUP\n')
+                actual_start = self.groups[0].df.iloc[0].Start + datetime.timedelta(seconds=self.start_ind/self.rate)
+                print('1st grp start %s' % self.groups[0].df.iloc[0].Start)
+                print('desired start %s' % self.start)
+                print('actual start  %s (ind = %d)' % (actual_start, self.start_ind))
                 print(g.df.iloc[0])
-                self.get_ind_start()
             elif i == len(self.groups) - 1:
                 print('   LAST GROUP\n')
+                actual_stop = self.groups[-1].df.iloc[-1].Stop + datetime.timedelta(seconds=self.stop_ind/self.rate)
+                print('last grp stop %s' % self.groups[-1].df.iloc[-1].Stop)
+                print('desired stop  %s' % self.stop)
+                print('actual stop   %s (ind = %d)' % (actual_stop, self.stop_ind))
                 print(g.df.iloc[-1])
             if 'PadGap' == g.__class__.__name__:
                 print(' <-- gap -->')
             else:
                 print('')
 
-    def get_ind_start(self):
+    def _get_ind_start(self):
         delta_sec = (self.start - self.groups[0].df.iloc[0].Start).total_seconds()
         pts = self.rate * delta_sec
         ind = math.floor(pts)
-        actual_start = self.groups[0].df.iloc[0].Start + datetime.timedelta(seconds=ind/self.rate)
-        print('desired start %s' % self.start)
-        print('1st grp start %s' % self.groups[0].df.iloc[0].Start)
-        print('actual start  %s (ind = %d)' % (actual_start, ind))
+        return ind
+
+    def _get_ind_stop(self):
+        print('group cumulative pts = %d' % sum(self.groups[-1].df.Samples))
+        delta_sec = (self.groups[-1].df.iloc[-1].Stop - self.stop).total_seconds()
+        pts = self.rate * delta_sec
+        ind_from_end = math.ceil(pts)
+        return ind_from_end
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -630,7 +656,8 @@ if __name__ == '__main__':
     # day, sensors, pth_str = '2020-04-02', ['121f02', '121f03'], '/home/pims/data/pad'
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
-    start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], 'G:/data/pad'
+    # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], 'G:/data/pad'
+    start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
