@@ -530,7 +530,7 @@ class Pad(PadRaw):
                 print('need to get data on into file index=%d of last group' % ind_file)
                 subtract_term = cumsum_pts[ind_file-1]
                 print(self.stop_ind, subtract_term, self.stop_ind - subtract_term)
-                actual_stop = self.groups[-1].df.iloc[-1].Start + datetime.timedelta(seconds=self.stop_ind/self.rate)
+                actual_stop = self.groups[-1].df.iloc[0].Start + datetime.timedelta(seconds=self.stop_ind/self.rate)
                 print('last grp start %s' % self.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
                 print('desired stop   %s' % self.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
                 print('actual stop    %s (ind = %d)' % (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
