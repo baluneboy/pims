@@ -526,8 +526,9 @@ class Pad(PadRaw):
                 print('   LAST GROUP\n')
                 cumsum_pts = np.cumsum(self.groups[-1].df.Samples.values)
                 print(cumsum_pts)
-                ind_files = np.argmax(cumsum_pts >= self.stop_ind)
-                subtract_term = cumsum_pts[ind_files-1]
+                ind_file = np.argmax(cumsum_pts >= self.stop_ind)
+                print('need to get data on into file index=%d of last group' % ind_file)
+                subtract_term = cumsum_pts[ind_file-1]
                 print(self.stop_ind, subtract_term, self.stop_ind - subtract_term)
                 actual_stop = self.groups[-1].df.iloc[-1].Start + datetime.timedelta(seconds=self.stop_ind/self.rate)
                 print('last grp start %s' % self.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
@@ -668,7 +669,7 @@ if __name__ == '__main__':
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
-    start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:06:01.000', ['121f03', ], 'G:/data/pad'
+    start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:18:01.000', ['121f03', ], 'G:/data/dummy_pad'
     # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
