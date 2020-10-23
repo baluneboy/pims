@@ -512,30 +512,30 @@ class Pad(PadRaw):
         for i, g in enumerate(self.groups):
             print('%03d' % i, g, end='')
             if i == 0:
-                print('  FIRST GROUP\n')
+                print('  FIRST GROUP')
                 first_grp_start = self.groups[0].df.iloc[0].Start
                 actual_start = first_grp_start + datetime.timedelta(seconds=self.start_ind/self.rate)
                 delta_time = actual_start - first_grp_start
-                print('1st grp start %s' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
-                print('desired start %s' % self.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
-                print('actual start  %s (ind = %d) <-- %s into first file' % (
-                    actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                    self.start_ind, delta_time))
-                print(g.df.iloc[0])
+                # print('\n1st grp start %s' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                # print('desired start %s' % self.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                # print('actual start  %s (ind = %d) <-- %s into first file' % (
+                #     actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                #     self.start_ind, delta_time))
+                # print(g.df.iloc[0])
             elif i == len(self.groups) - 1:
-                print('   LAST GROUP\n')
+                print('   LAST GROUP')
                 cumsum_pts = np.cumsum(self.groups[-1].df.Samples.values)
-                print(cumsum_pts)
                 ind_file = np.argmax(cumsum_pts >= self.stop_ind)
-                print('need to get data on into file index=%d of last group' % ind_file)
                 subtract_term = cumsum_pts[ind_file-1]
-                print(self.stop_ind, subtract_term, self.stop_ind - subtract_term)
                 actual_stop = self.groups[-1].df.iloc[0].Start + datetime.timedelta(seconds=self.stop_ind/self.rate)
-                print('last grp start %s' % self.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
-                print('desired stop   %s' % self.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
-                print('actual stop    %s (ind = %d)' % (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
-                                                       self.stop_ind))
-                print(g.df.iloc[-1])
+                # print(cumsum_pts)
+                # print('need to get data on into file index=%d of last group' % ind_file)
+                # print(self.stop_ind, subtract_term, self.stop_ind - subtract_term)
+                # print('last grp start %s' % self.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                # print('desired stop   %s' % self.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                # print('actual stop    %s (ind = %d)' % (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                #                                        self.stop_ind))
+                # print(g.df.iloc[-1])
             if 'PadGap' == g.__class__.__name__:
                 print(' <-- gap -->')
             else:
@@ -549,11 +549,13 @@ class Pad(PadRaw):
 
     def _get_ind_start(self):
         ind_grp, ind_file, t2 = 0, 0, self.start
-        return self._get_ind(ind_grp, ind_file, t2, math.floor)
+        i_start = self._get_ind(ind_grp, ind_file, t2, math.floor)
+        return max([i_start, 0])
 
     def _get_ind_stop(self):
         ind_grp, ind_file, t2 = -1, 0, self.stop
-        return self._get_ind(ind_grp, ind_file, t2, math.ceil)
+        i_stop = self._get_ind(ind_grp, ind_file, t2, math.ceil)
+        return min([i_stop, self.groups[-1].samples])
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -669,7 +671,8 @@ if __name__ == '__main__':
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
-    start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:18:01.000', ['121f03', ], 'G:/data/dummy_pad'
+    # start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:18:01.000', ['121f03', ], 'G:/data/dummy_pad'
+    start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:46:00.214', ['121f03', ], 'G:/data/dummy_pad'
     # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
