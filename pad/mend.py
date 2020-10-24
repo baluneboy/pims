@@ -493,8 +493,6 @@ class PadRaw(object):
 
 class Pad(PadRaw):
 
-    """A metadata object that facilitates reading/processing of SAMS data."""
-
     def __init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0):
         PadRaw.__init__(self, sensor, start, stop, pth_str=pth_str, rate=rate)
         self._start_ind = self._get_ind_start()
@@ -502,13 +500,46 @@ class Pad(PadRaw):
 
     @property
     def start_ind(self):
-        """return integer which is index into first group to get actual (floor) start time"""
+        """return integer which is index into 1st file in 1st group to get actual (floor) start time"""
         return self._start_ind
 
     @property
     def stop_ind(self):
-        """return integer which is index into last group to get actual (ceil) stop time"""
+        """return integer which is index into last file in last group to get actual (ceil) stop time"""
         return self._stop_ind
+
+    def show_groups(self):
+        for i, g in enumerate(self.groups):
+            print('%03d' % i, g, end='')
+            if i == 0:
+                print('  FIRST GROUP', end='')
+                first_grp_start = self.groups[0].df.iloc[0].Start
+                actual_start = first_grp_start + datetime.timedelta(seconds=self.start_ind/self.rate)
+                delta_time = actual_start - first_grp_start
+                print('\n\n1st grp start %s' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('desired start %s' % self.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('actual start  %s (ind = %d) <-- %s into first file' % (
+                    actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                    self.start_ind, delta_time))
+                # print(g.df.iloc[0])
+            elif i == len(self.groups) - 1:
+                print('   LAST GROUP', end='')
+                cumsum_pts = np.cumsum(self.groups[-1].df.Samples.values)
+                ind_file = np.argmax(cumsum_pts >= self.stop_ind)
+                subtract_term = cumsum_pts[ind_file-1]
+                actual_stop = self.groups[-1].df.iloc[0].Start + datetime.timedelta(seconds=self.stop_ind/self.rate)
+                # print(cumsum_pts)
+                # print('need to get data on into file index=%d of last group' % ind_file)
+                # print(self.stop_ind, subtract_term, self.stop_ind - subtract_term)
+                print('\n\nlast grp start %s' % self.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('desired stop   %s' % self.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3])
+                print('actual stop    %s (ind = %d)' % (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3],
+                                                       self.stop_ind))
+                # print(g.df.iloc[-1])
+            if 'PadGap' == g.__class__.__name__:
+                print(' <-- gap -->')
+            else:
+                print('')
 
     def _get_ind(self, i_group, i_file, t2, math_fun):
         t1 = self.groups[i_group].df.iloc[i_file].Start
@@ -524,121 +555,7 @@ class Pad(PadRaw):
     def _get_ind_stop(self):
         ind_grp, ind_file, t2 = -1, 0, self.stop
         i_stop = self._get_ind(ind_grp, ind_file, t2, math.ceil)
-        return min([i_stop, (self.groups[-1].samples-1)])
-
-
-class SamsProcess(object):
-
-    """Iterator over Pad object to process (primarily) SAMS data."""
-
-    def __init__(self, pad, verbose=False):
-        self.pad = pad
-        self.verbose = verbose
-
-    def __str__(self):
-        s = ''
-        for i, g in enumerate(self.pad.groups):
-            if i == 0 and self.verbose:
-                s = 'FIRST GROUP'
-                first_grp_start = self.pad.groups[0].df.iloc[0].Start
-                actual_start = first_grp_start + datetime.timedelta(seconds=self.pad.start_ind/self.pad.rate)
-                delta_time = actual_start - first_grp_start
-                s += '\nBEG %s = first grp start' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nBEG %s = desired start' % self.pad.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nBEG %s = actual start (ind = %d) <-- %s into first group\n' %\
-                     (actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.start_ind, delta_time)
-
-            s += '\n%03d %s' % (i, g)
-
-            if i == len(self.pad.groups) - 1 and self.verbose:
-                s += '\n\nLAST GROUP'
-                cumsum_pts = np.cumsum(self.pad.groups[-1].df.Samples.values)
-                ind_file = np.argmax(cumsum_pts >= self.pad.stop_ind)
-                subtract_term = cumsum_pts[ind_file-1]
-                actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
-                              datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
-                last_grp_start = self.pad.groups[-1].df.iloc[0].Start
-                delta_time = actual_stop - last_grp_start
-                # print(cumsum_pts)
-                # print('need to get data on into file index=%d of last group' % ind_file)
-                # print(self.pad.stop_ind, subtract_term, self.pad.stop_ind - subtract_term)
-                s += '\nEND %s = last grp start' % self.pad.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nEND %s = desired stop' % self.pad.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nEND %s = actual stop (ind = %d) <-- %s into last group' % \
-                     (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.stop_ind, delta_time)
-
-            if 'PadGap' == g.__class__.__name__:
-                s += ' <-- gap -->'
-            else:
-                s += ''
-
-        return s.lstrip('\n')
-
-
-class SamsShow(object):
-
-    """Iterator over Pad object to describe SAMS data chunks."""
-
-    def __init__(self, pad, size, fun, verbose=False):
-        self.pad = pad
-        self.size = size
-        self.fun = fun
-        self.verbose = verbose
-
-    def __str__(self):
-        s = ''
-        for i, g in enumerate(self.pad.groups):
-            if i == 0 and self.verbose:
-                s = 'FIRST GROUP'
-                first_grp_start = self.pad.groups[0].df.iloc[0].Start
-                actual_start = first_grp_start + datetime.timedelta(seconds=self.pad.start_ind/self.pad.rate)
-                delta_time = actual_start - first_grp_start
-                s += '\nBEG %s = first grp start' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nBEG %s = desired start' % self.pad.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nBEG %s = actual start (ind = %d) <-- %s into first group\n' %\
-                     (actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.start_ind, delta_time)
-
-            s += '\n%03d %s' % (i, g)
-
-            if i == len(self.pad.groups) - 1 and self.verbose:
-                s += '\n\nLAST GROUP'
-                cumsum_pts = np.cumsum(self.pad.groups[-1].df.Samples.values)
-                ind_file = np.argmax(cumsum_pts >= self.pad.stop_ind)
-                subtract_term = cumsum_pts[ind_file-1]
-                actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
-                              datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
-                last_grp_start = self.pad.groups[-1].df.iloc[0].Start
-                delta_time = actual_stop - last_grp_start
-                # print(cumsum_pts)
-                # print('need to get data on into file index=%d of last group' % ind_file)
-                # print(self.pad.stop_ind, subtract_term, self.pad.stop_ind - subtract_term)
-                s += '\nEND %s = last grp start' % self.pad.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nEND %s = desired stop' % self.pad.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nEND %s = actual stop (ind = %d) <-- %s into last group' % \
-                     (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.stop_ind, delta_time)
-
-            if 'PadGap' == g.__class__.__name__:
-                s += ' <-- gap -->'
-            else:
-                s += ''
-
-        return s.lstrip('\n')
-
-    def run(self):
-        for ind_grp, g in enumerate(self.pad.groups):
-            if 'PadGap' == g.__class__.__name__:
-                print(' <-- gap -->')
-            else:
-                count_pts = 0
-                for ind_file, row in g.df.iterrows():
-                    i1 = 0 if ind_grp > 0 else self.pad.start_ind
-                    if ind_grp == len(self.pad.groups) - 1:
-                        count_pts += row['Samples']
-                    if count_pts > self.pad.stop_ind:
-                        i2 = self.pad.stop_ind
-                    else:
-                        i2 = row['Samples'] - 1
-                    print(i1, i2, row['Filename'], row['Samples'])
+        return min([i_stop, self.groups[-1].samples])
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -746,10 +663,6 @@ def old_demo_pad_file_groups(show_gaps=False):
         print('%4d' % i, g)
 
 
-def show_head(d):
-    print(d)
-
-
 if __name__ == '__main__':
 
     # day, sensors, pth_str = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
@@ -759,17 +672,12 @@ if __name__ == '__main__':
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
     # start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:18:01.000', ['121f03', ], 'G:/data/dummy_pad'
-    start, stop, sensors, pth_str = '2020-04-06 00:00:00.200', '2020-04-06 00:47:00.214', ['121f03', ], 'G:/data/dummy_pad'
+    start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:46:00.211', ['121f03', ], '/home/pims/Downloads/dummy_pad'
     # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
-    # print(p)
-
-    size = 500
-    fun = show_head
-    ss = SamsShow(p, size, fun, verbose=True)
+    print(p)
     print('=' * 108)
-    print(ss)
+    p.show_groups()
     print('=' * 108)
-    ss.run()
