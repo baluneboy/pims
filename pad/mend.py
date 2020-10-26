@@ -636,9 +636,12 @@ class SamsShow(object):
         return s.lstrip('\n')
 
     def run(self):
+        count = 0
         for ind_grp, g in enumerate(self.pad.groups):
             if 'PadGap' == g.__class__.__name__:
-                print(' <------- gap ------->                 pts=%d' % g.samples)
+                count += g.samples
+                print('{:84s} {:7d} of {:7d} pts [now {:9d} pts]'.
+                      format(' <------- gap ------->', g.samples, g.samples, count))
             else:
                 count_pts = self.pad.stop_ind + 1
                 for ind_file, row in g.df.iterrows():
@@ -650,8 +653,9 @@ class SamsShow(object):
                         if count_pts < row['Samples']:
                             i2 = count_pts - 1
                         count_pts -= row['Samples']
-                    print('file {}, inds=[{:7d} {:7d}], {:7d} of {:7d} pts'.
-                          format(row['Filename'], i1, i2, (i2-i1) + 1, row['Samples']))
+                    count += (i2 - i1) + 1
+                    print('file {}, inds=[{:7d} {:7d}], {:7d} of {:7d} pts [now {:9d} pts]'.
+                          format(row['Filename'], i1, i2, (i2-i1) + 1, row['Samples'], count))
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -771,8 +775,8 @@ if __name__ == '__main__':
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
-    start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
-    # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
+    # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
+    start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
     # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
