@@ -367,6 +367,8 @@ class PadFileGroups(object):
         for g in pad_days_groups:
             if g.stop <= self._start:
                 continue  # this group begins & ends completely before my desired start time, so skip it
+            elif g.start >= self._stop:
+                break
             elif g.start <= self._start < g.stop:
                 # prefix = 'your span starts in here somewhere'
                 g.trim(self._start, self._stop)
@@ -479,6 +481,15 @@ class PadRaw(object):
                     gap_samples = 0
                 else:
                     gap_stop = grp.start - delta_t
+                    # if gap_stop >= self.stop:
+                    #     # print(gap_stop)
+                    #     # print(self.stop)
+                    #     # print('?' * 26)
+                    #     gap_duration = self.stop - gap_start
+                    #     gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
+                    #     gap = PadGap(gap_start, gap_rate, gap_samples)
+                    #     grps.append(gap)
+                    #     return grps
                     gap_duration = gap_stop - gap_start
                     gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
@@ -760,8 +771,8 @@ if __name__ == '__main__':
     rate = 500.0
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
-    # start, stop, sensors, pth_str = '2020-04-06 00:00:00.000', '2020-04-06 00:18:01.000', ['121f03', ], 'G:/data/dummy_pad'
-    start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
+    start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
+    # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
     # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
