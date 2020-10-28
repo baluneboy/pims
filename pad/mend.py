@@ -23,10 +23,10 @@ import numpy as np
 import pandas as pd
 import portion as po
 import datetime
-from dateutil import parser
 from itertools import groupby, tee, chain
 from pathlib import Path
 from pims.pad.sams_sensor_map import sensor_map
+from pims.pad.mendmore import to_dtm, CountEndtime
 
 
 def read_sample_rate(hdr):
@@ -67,13 +67,6 @@ def datetime_from_list(time_parts):
     time_parts.extend([int(sec), round(1e3 * frac) * 1000])
     return datetime.datetime(*time_parts)
 
-
-def to_dtm(s):
-    """return datetime object given a parseable string or a datetime object"""
-    if isinstance(s, datetime.datetime):
-        return s
-    else:
-        return parser.parse(s)
 
 
 def encode_list(s_list):
@@ -636,12 +629,15 @@ class SamsShow(object):
         return s.lstrip('\n')
 
     def run(self):
-        count = 0
+        # count = 0
+        t1 = self.pad.groups[0].start + datetime.timedelta(seconds=self.pad.start_ind / self.pad.rate)
+        cet = CountEndtime(t1, self.pad.rate)
         for ind_grp, g in enumerate(self.pad.groups):
             if 'PadGap' == g.__class__.__name__:
-                count += g.samples
-                print('{:84s} {:7d} of {:7d} pts [now {:9d} pts]'.
-                      format(' <------- gap ------->', g.samples, g.samples, count))
+                cet += g.samples
+                print('{:84s} {:7d} of {:7d} pts [n = {:9d} pts, end {}]'.
+                      format(' <------- gap ------->',
+                             g.samples, g.samples, cet.count, cet.end.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]))
             else:
                 count_pts = self.pad.stop_ind + 1
                 for ind_file, row in g.df.iterrows():
@@ -653,9 +649,10 @@ class SamsShow(object):
                         if count_pts < row['Samples']:
                             i2 = count_pts - 1
                         count_pts -= row['Samples']
-                    count += (i2 - i1) + 1
-                    print('file {}, inds=[{:7d} {:7d}], {:7d} of {:7d} pts [now {:9d} pts]'.
-                          format(row['Filename'], i1, i2, (i2-i1) + 1, row['Samples'], count))
+                    cet += (i2 - i1) + 1
+                    print('file {}, inds=[{:7d} {:7d}], {:7d} of {:7d} pts [n = {:9d} pts, end {}]'.
+                          format(row['Filename'], i1, i2, (i2-i1) + 1, row['Samples'], cet.count,
+                                 cet.end.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]))
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
