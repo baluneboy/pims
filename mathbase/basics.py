@@ -27,7 +27,7 @@ def demo_numpy_array_append_rows(sensor, y, m, d):
     import glob
     import datetime
     import numpy as np
-    from ugaudio.load import padread
+    from ugaudio.load import pad_read
     from pims.utils.pimsdateutil import datetime_to_ymd_path
     ymd_dir = datetime_to_ymd_path(datetime.date(y, m, d))
     glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
@@ -35,7 +35,7 @@ def demo_numpy_array_append_rows(sensor, y, m, d):
     arr = np.empty((0, 5), dtype=np.float32)    # float32 matches what we read from PAD file
     for fname in fnames[:3]:
         # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
-        a = padread(fname)
+        a = pad_read(fname)
         a[:,1:4] = a[:,1:4] - a[:,1:4].mean(axis=0)  # demean x, y and z columns
         v = np.array( np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2) )  # compute vector magnitude
         #new_col = np.reshape(v, (-1, 1))

@@ -8,7 +8,7 @@ from pims.pad.daily_utils import sensor_subdir
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.files.filter_pipeline import FileFilterPipeline, HeaderMatchesSensorRateCutoffPad, BigFile
 from pims.signal.filter import my_psd, my_int_rms
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 
 
 # FIXME this needs StopIteration on probably the cumulative number of days that have been visited
@@ -83,14 +83,14 @@ class PadFilePsd(PadFileProcess):
 
     def save_config(self, file1):
         print('do something special with very first file & call process_file too')
-        data = padread(file1)
+        data = pad_read(file1)
         # TODO get label, deltaf (to get freqs), nfft, etc. into config file for this labeled data set
 
     def process_file(self, pad_file, fs, nfft):
         super().process_file(pad_file)
         # return os.stat(pad_file).st_size // 16 // nmax
 
-        y = padread(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
+        y = pad_read(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
         n = nfft * (len(y) // nfft)
         y = y[:n]  # y gets truncated after an integer multiple of nfft pts
 
@@ -104,7 +104,7 @@ class PadFileIntRms(PadFileProcess):
         super().process_file(pad_file)
         # return os.stat(pad_file).st_size // 16 // nmax
 
-        y = padread(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
+        y = pad_read(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
         n = int_pts * (len(y) // int_pts)
         y = y[:n]  # y gets truncated after an integer multiple of nfft pts
 

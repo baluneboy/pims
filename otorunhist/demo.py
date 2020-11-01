@@ -16,7 +16,7 @@ from main import get_log10rms_bins, get_log10_data_and_extrema
 from pims.signal.rounding import roundup100, roundup_int
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile, PadDaySensorHours, HeaderMatchesSensorRateCutoffPad
 
 import glob
@@ -643,7 +643,7 @@ def demo_boxplot_width_setter():
 def file_trapz(pad_file, fs, sec=10.0):
 
     # read data from PAD file into Tx4 array
-    a = padread(pad_file)
+    a = pad_read(pad_file)
 
     # toss out time column
     a = np.delete(a, 0, axis=1)

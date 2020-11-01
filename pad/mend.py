@@ -27,6 +27,7 @@ from itertools import groupby, tee, chain
 from pathlib import Path
 from pims.pad.sams_sensor_map import sensor_map
 from pims.pad.mendmore import to_dtm, CountEndtime
+from ugaudio.load import sams_pad_read
 
 
 def read_sample_rate(hdr):
@@ -629,7 +630,9 @@ class SamsShow(object):
         return s.lstrip('\n')
 
     def run(self):
-        # count = 0
+        xyz = np.empty((1507, 3))
+        xyz[:] = np.NaN
+        xyz_row = 0
         t1 = self.pad.groups[0].start + datetime.timedelta(seconds=self.pad.start_ind / self.pad.rate)
         cet = CountEndtime(t1, self.pad.rate)
         for ind_grp, g in enumerate(self.pad.groups):
@@ -638,6 +641,8 @@ class SamsShow(object):
                 print('{:84s} {:7d} of {:7d} pts [n = {:9d} pts, end {}]'.
                       format(' <------- gap ------->',
                              g.samples, g.samples, cet.count, cet.end.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]))
+                xyz_row = cet.count
+                print("xyz_row", xyz_row)
             else:
                 count_pts = self.pad.stop_ind + 1
                 for ind_file, row in g.df.iterrows():
@@ -650,9 +655,19 @@ class SamsShow(object):
                             i2 = count_pts - 1
                         count_pts -= row['Samples']
                     cet += (i2 - i1) + 1
+                    fname = Path(row['Parent'], row['Filename'])
+                    if (i2-i1) + 1 == row['Samples']:
+                        count_rows = -1
+                    else:
+                        count_rows = (i2-i1) + 1
+                    arr = sams_pad_read(fname, offset_rows=i1, count_rows=count_rows)
+                    xyz[xyz_row:cet.count, :] = arr
                     print('file {}, inds=[{:7d} {:7d}], {:7d} of {:7d} pts [n = {:9d} pts, end {}]'.
                           format(row['Filename'], i1, i2, (i2-i1) + 1, row['Samples'], cet.count,
                                  cet.end.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]))
+                    xyz_row = cet.count
+                    print("xyz_row", xyz_row)
+        print(xyz)
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):

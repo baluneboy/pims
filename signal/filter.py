@@ -196,10 +196,10 @@ def demo_welch(x, fs):
 
 
 def demo_sams_spectrogram():
-    from ugaudio.load import padread
+    from ugaudio.load import pad_read
 
     filename = 'D:/pad/year2020/month04/day27/sams2_accel_121f08006/2020_04_27_09_06_28.344+2020_04_27_09_37_14.421.121f08006'
-    a = padread(filename)
+    a = pad_read(filename)
     y = a[:, 2]
     fs = 142.0
     nperseg = 8192

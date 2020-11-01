@@ -17,7 +17,7 @@ from pims.pad.loose_pad_intervalset import LoosePadIntervalSet, CompareOverlapIn
 from pims.utils.pimsdateutil import datetime_to_doytimestr, floor_minute, ceil_minute
 from pims.files.utils import extract_sensor_from_headers_list, tuplify_headers, mkdir_original_for_trim, move_pad_pair
 from pims.utils.iterabletools import pairwise
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 
 
 # find header files for given year/month/day
@@ -386,7 +386,7 @@ def trim_pad(old_hdr_file, side, sec):
     # get data, header, file times and compute new begin/end GMTs for filename
     old_dat_file = old_hdr_file.replace('.header', '')
     start_file, stop_file = pad_fullfilestr_to_start_stop(old_hdr_file)
-    data = padread(old_dat_file)
+    data = pad_read(old_dat_file)
     Nfile = len(data)
     Ntrim = np.ceil(fs * sec)
     if Ntrim >= Nfile:

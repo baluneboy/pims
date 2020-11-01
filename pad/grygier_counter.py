@@ -10,7 +10,7 @@ from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from collections import deque
 
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 from pims.padrunhist.main import get_pad_day_sensor_rate_mindur_files
 from pims.utils.pimsdateutil import datetime_to_ymd_path, pad_fullfilestr_to_start_stop
 from pims.pad.pad_buffer import PadBottomBuffer

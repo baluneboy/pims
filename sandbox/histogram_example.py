@@ -9,7 +9,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
 
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 from pims.pad.grygier_counter import get_day_files
 from pims.files.utils import mkdir_p
 
@@ -29,7 +29,7 @@ parameters = defaults.copy()
 
 def load_file(filename, show_files=False):
     # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
-    b = padread(filename)
+    b = pad_read(filename)
 
     # demean each column
     a = b - b.mean(axis=0)

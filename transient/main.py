@@ -33,7 +33,7 @@ from pims.padrunhist.plumb_line import plumblines
 
 from pims.signal.rounding import roundup100, roundup_int
 from pims.utils.pimsdateutil import datetime_to_ymd_path
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile, PadDaySensorHours, HeaderMatchesSensorRateCutoffPad
 import glob
 
@@ -544,7 +544,7 @@ def accmag_hist_from_pad_files(start, stop, sensor, fs, fc, taghours):
             for pad_file in ffp(day_files):
 
                 # read data from PAD file into Tx4 array
-                a = padread(pad_file)
+                a = pad_read(pad_file)
 
                 # toss out time column
                 a = np.delete(a, 0, axis=1)
@@ -1114,7 +1114,7 @@ def generate_perctile_boxplots(pickle_files, tags, axs):
 def file_trapz(pad_file, fs, pctiles, sec=10.0):
 
     # read data from PAD file into Tx4 array
-    a = padread(pad_file)
+    a = pad_read(pad_file)
 
     # toss out time column
     a = np.delete(a, 0, axis=1)

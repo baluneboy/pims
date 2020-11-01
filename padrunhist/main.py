@@ -28,7 +28,7 @@ from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
 from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir, PadDataDaySensorWhereMinDur
 from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
-from ugaudio.explore import padread, pad_file_percentiles
+from ugaudio.explore import pad_read, pad_file_percentiles
 
 
 DEFAULT_PADDIR = argparser.DEFAULT_PADDIR
@@ -115,7 +115,7 @@ def get_pad_day_sensor_rate_mindur_files(files, day, sensor, fs, mindur=5):
 
 
 def demo_pad_pct99(sensor, y, m, d, min_bytes=2*1024*1024):
-    from ugaudio.load import padread
+    from ugaudio.load import pad_read
     ymd_dir = datetime_to_ymd_path(datetime.date(y, m, d))
     glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
     fnames = glob.glob(glob_pat)
@@ -123,7 +123,7 @@ def demo_pad_pct99(sensor, y, m, d, min_bytes=2*1024*1024):
     arr = np.empty((0, 4))
     for fname in fnames_filt:
         # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
-        b = padread(fname)
+        b = pad_read(fname)
         a = b - b.mean(axis=0)       # demean each column
         #a = np.delete(a, 0, 1)       # delete first (time) column
         a[:,0] = np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2)  # replace 1st column with vecmag
@@ -865,7 +865,7 @@ def pad_percentiles_from_date_list_file(fname, sensor):
                 arr = np.empty((0, 4))
                 for fname in my_files:
                     # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
-                    b = padread(fname)
+                    b = pad_read(fname)
                     a = b - b.mean(axis=0)       # demean each column
                     #a = np.delete(a, 0, 1)       # delete first (time) column
                     a[:,0] = np.sqrt(a[:,1]**2 + a[:,2]**2 + a[:,3]**2)  # replace 1st column with vecmag
