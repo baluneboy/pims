@@ -649,8 +649,7 @@ class SamsShow(object):
                 for ind_file, row in g.df.iterrows():
                     print("ind_grp =", ind_grp, "ind_file =", ind_file)
                     i1 = 0
-                    # FIXME replace if statement below with check of desired start time within bounds of file start/stop
-                    if ind_grp == 0 and ind_file == 0:
+                    if row['Start'] <= self.pad.start <= row['Stop']:
                         i1 = self.pad.start_ind
                     i2 = row['Samples'] - 1
                     if ind_grp == len(self.pad.groups) - 1:
