@@ -630,13 +630,14 @@ class SamsShow(object):
         return s.lstrip('\n')
 
     def run(self):
-        xyz = np.empty((1507, 3))
+        xyz = np.empty((1800000*2, 3))
         xyz[:] = np.NaN
         xyz_row = 0
         t1 = self.pad.groups[0].start + datetime.timedelta(seconds=self.pad.start_ind / self.pad.rate)
         cet = CountEndtime(t1, self.pad.rate)
         for ind_grp, g in enumerate(self.pad.groups):
             if 'PadGap' == g.__class__.__name__:
+                print("ind_grp =", ind_grp, "is a gap")
                 cet += g.samples
                 print('{:84s} {:7d} of {:7d} pts [n = {:9d} pts, end {}]'.
                       format(' <------- gap ------->',
@@ -646,7 +647,9 @@ class SamsShow(object):
             else:
                 count_pts = self.pad.stop_ind + 1
                 for ind_file, row in g.df.iterrows():
+                    print("ind_grp =", ind_grp, "ind_file =", ind_file)
                     i1 = 0
+                    # FIXME replace if statement below with check of desired start time within bounds of file start/stop
                     if ind_grp == 0 and ind_file == 0:
                         i1 = self.pad.start_ind
                     i2 = row['Samples'] - 1
@@ -788,8 +791,8 @@ if __name__ == '__main__':
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
     # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
-    start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
-    # start, stop, sensors, pth_str = '2020-04-05 23:56:00.197', None, ['121f03', ], '/misc/yoda/pub/pad'
+    # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
+    start, stop, sensors, pth_str = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
