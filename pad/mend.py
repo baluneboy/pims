@@ -603,6 +603,9 @@ class SamsShow(object):
                 s += '\nBEG %s = actual start (ind = %d) <-- %s into first group\n' %\
                      (actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.start_ind, delta_time)
 
+                s += '\nGrp GroupStart                 GroupStopCalc            Duration'
+                s += '                         NumPts    NumFiles'
+
             s += '\n%03d %s' % (i, g)
 
             if i == len(self.pad.groups) - 1 and self.verbose:
