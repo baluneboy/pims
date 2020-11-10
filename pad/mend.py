@@ -166,10 +166,20 @@ class PadChunk(object):
         """return stop time for this group"""
         return self._stop
 
+    @stop.setter
+    def stop(self, t):
+        """set stop time to t"""
+        self._stop = t
+
     @property
     def start(self):
         """return start time for this group"""
         return self._start
+
+    @start.setter
+    def start(self, t):
+        """set start time to t"""
+        self._start = t
 
 
 class PadGroup(PadChunk):
@@ -502,8 +512,33 @@ class Pad(PadRaw):
 
     def __init__(self, sensor, start, stop, pth_str='/misc/yoda/pub/pad', rate=500.0):
         PadRaw.__init__(self, sensor, start, stop, pth_str=pth_str, rate=rate)
+        self.nudge_groups()
         self._start_ind = self._get_ind_start()
         self._stop_ind = self._get_ind_stop()
+
+    def nudge_groups(self):
+        """based on start time of first group, nudge subsequent group start/stop times (max of one time step)"""
+        t_step = 1.0 / self.rate
+        last_time = None
+        for g in self.groups:
+            if last_time is None:
+                last_time = g.stop
+                print('grp:', g)
+                continue
+            grp_step = (g.start - last_time).total_seconds()
+            num_steps = grp_step / t_step
+            nudged_num_steps = int(num_steps)
+            nudged_grp_step = nudged_num_steps * t_step
+            new_g_start = last_time + datetime.timedelta(seconds=nudged_grp_step)
+            new_g_stop = new_g_start + datetime.timedelta(seconds=(g.samples - 1)/g.rate)
+            g.start = new_g_start
+            g.stop = new_g_stop
+            # print('new_g_start:', g.start)
+            # print(' new_g_stop:', g.stop)
+            print("grp:", g)
+            if num_steps != nudged_num_steps:
+                print('nudged by %.3f seconds' % nudged_grp_step)
+            last_time = g.stop
 
     @property
     def start_ind(self):
@@ -633,11 +668,19 @@ class SamsShow(object):
         return s.lstrip('\n')
 
     def run(self):
-        xyz = np.empty((1800000*2, 3))
-        xyz[:] = np.NaN
+
+        # use metadata for one-hour data array creation
+        num_pts = int(self.pad.rate * 60 * 60)
+        print("num_pts", num_pts)
+
+        # setup empty buffer to hold xyz array for one hour
+        xyz = np.empty((num_pts, 3))  # this will contain garbage values
+        xyz[:] = np.NaN  # replace garbage values with NaN
+
         xyz_row = 0
         t1 = self.pad.groups[0].start + datetime.timedelta(seconds=self.pad.start_ind / self.pad.rate)
         cet = CountEndtime(t1, self.pad.rate)
+
         for ind_grp, g in enumerate(self.pad.groups):
             if 'PadGap' == g.__class__.__name__:
                 print("ind_grp =", ind_grp, "is a gap")
@@ -799,6 +842,8 @@ if __name__ == '__main__':
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
     # print(p)
+    print(p)
+    # raise SystemExit
 
     size = 500
     fun = show_head
