@@ -71,7 +71,7 @@ class CountEndtime(object):
         if not isinstance(other, int):
             raise TypeError('can only add integer number of points to keep track of counts and end time')
         self._count += other
-        self._end += datetime.timedelta(seconds=other / self.rate)
+        self._end += datetime.timedelta(seconds=other/self.rate)
         return self
 
 

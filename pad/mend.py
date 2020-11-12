@@ -122,12 +122,16 @@ class PadChunk(object):
         self._samples = self._verify_samples(samples)
         self._duration = self._set_duration()
         self._stop = self._start + self._duration
+        self.was_nudged = False
+        self.nudge_sec = 0.0
 
     def __str__(self):
         startstr = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         stopstr = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         durstr = strfdelta(self.duration, '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
         s = '%s to %s (%s, %9d pts, %4d files)' % (startstr, stopstr, durstr, self.samples, len(self.df))
+        if self.was_nudged:
+            s += ' nudged %.3fs' % self.nudge_sec
         return s
 
     @property
@@ -166,11 +170,6 @@ class PadChunk(object):
         """return stop time for this group"""
         return self._stop
 
-    @stop.setter
-    def stop(self, t):
-        """set stop time to t"""
-        self._stop = t
-
     @property
     def start(self):
         """return start time for this group"""
@@ -179,7 +178,16 @@ class PadChunk(object):
     @start.setter
     def start(self, t):
         """set start time to t"""
+        if self.was_nudged:
+            raise Exception('cannot nudge more than once')
+        nudge_sec = (t - self.start).total_seconds()
+        if np.abs(nudge_sec) < 1.0e-4:
+            # nudge too small, round to zero (i.e. no nudge)
+            return
+        self.nudge_sec = nudge_sec
+        self.was_nudged = True
         self._start = t
+        self._stop = self.stop - datetime.timedelta(seconds=self.nudge_sec)
 
 
 class PadGroup(PadChunk):
@@ -211,6 +219,7 @@ class PadGap(PadChunk):
         start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         s = '%s to %s (%s, %9d pts)' % (start_str, stop_str, dur_str, self.samples)
+        s += ' <-- gap -->'
         return s
 
     def _verify_samples(self, value):
@@ -523,21 +532,15 @@ class Pad(PadRaw):
         for g in self.groups:
             if last_time is None:
                 last_time = g.stop
-                print('grp:', g)
+                # print('grp:', g)
                 continue
             grp_step = (g.start - last_time).total_seconds()
             num_steps = grp_step / t_step
             nudged_num_steps = int(num_steps)
             nudged_grp_step = nudged_num_steps * t_step
             new_g_start = last_time + datetime.timedelta(seconds=nudged_grp_step)
-            new_g_stop = new_g_start + datetime.timedelta(seconds=(g.samples - 1)/g.rate)
-            g.start = new_g_start
-            g.stop = new_g_stop
-            # print('new_g_start:', g.start)
-            # print(' new_g_stop:', g.stop)
-            print("grp:", g)
-            if num_steps != nudged_num_steps:
-                print('nudged by %.3f seconds' % nudged_grp_step)
+            g.start = new_g_start  # this will nudge entire group in lockstep
+            # print("grp:", g)
             last_time = g.stop
 
     @property
@@ -595,8 +598,9 @@ class SamsProcess(object):
                 cumsum_pts = np.cumsum(self.pad.groups[-1].df.Samples.values)
                 ind_file = np.argmax(cumsum_pts >= self.pad.stop_ind)
                 subtract_term = cumsum_pts[ind_file-1]
-                actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
-                              datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
+                # actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
+                #               datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
+                actual_stop = self.pad.groups[-1].start + datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
                 last_grp_start = self.pad.groups[-1].df.iloc[0].Start
                 delta_time = actual_stop - last_grp_start
                 # print(cumsum_pts)
@@ -606,11 +610,6 @@ class SamsProcess(object):
                 s += '\nEND %s = desired stop' % self.pad.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                 s += '\nEND %s = actual stop (ind = %d) <-- %s into last group' % \
                      (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.stop_ind, delta_time)
-
-            if 'PadGap' == g.__class__.__name__:
-                s += ' <-- gap -->'
-            else:
-                s += ''
 
         return s.lstrip('\n')
 
@@ -645,25 +644,13 @@ class SamsShow(object):
 
             if i == len(self.pad.groups) - 1 and self.verbose:
                 s += '\n\nLAST GROUP'
-                cumsum_pts = np.cumsum(self.pad.groups[-1].df.Samples.values)
-                ind_file = np.argmax(cumsum_pts >= self.pad.stop_ind)
-                subtract_term = cumsum_pts[ind_file-1]
-                actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
-                              datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
-                last_grp_start = self.pad.groups[-1].df.iloc[0].Start
-                delta_time = actual_stop - last_grp_start
-                # print(cumsum_pts)
-                # print('need to get data on into file index=%d of last group' % ind_file)
-                # print(self.pad.stop_ind, subtract_term, self.pad.stop_ind - subtract_term)
+                last_grp_start = self.pad.groups[-1].start
+                delta_time = datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
+                actual_stop = last_grp_start + delta_time
                 s += '\nEND %s = last grp start' % self.pad.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                 s += '\nEND %s = desired stop' % self.pad.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
                 s += '\nEND %s = actual stop (ind = %d) <-- %s into last group' % \
                      (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.stop_ind, delta_time)
-
-            if 'PadGap' == g.__class__.__name__:
-                s += ' <-- gap -->'
-            else:
-                s += ''
 
         return s.lstrip('\n')
 
@@ -709,7 +696,8 @@ class SamsShow(object):
                     else:
                         count_rows = (i2-i1) + 1
                     arr = sams_pad_read(fname, offset_rows=i1, count_rows=count_rows)
-                    xyz[xyz_row:cet.count, :] = arr
+                    end_row = np.min([xyz.shape[0], cet.count])
+                    xyz[xyz_row:end_row, :] = arr
                     print('file {}, inds=[{:7d} {:7d}], {:7d} of {:7d} pts [n = {:9d} pts, end {}]'.
                           format(row['Filename'], i1, i2, (i2-i1) + 1, row['Samples'], cet.count,
                                  cet.end.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]))
@@ -841,9 +829,6 @@ if __name__ == '__main__':
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)
-    # print(p)
-    print(p)
-    # raise SystemExit
 
     size = 500
     fun = show_head
