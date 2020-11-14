@@ -26,7 +26,7 @@ import datetime
 from itertools import groupby, tee, chain
 from pathlib import Path
 from pims.pad.sams_sensor_map import sensor_map
-from pims.pad.mendmore import to_dtm, CountEndtime
+from pims.pad.mendmore import to_dtm, CountEndtime, parse_timedelta
 from ugaudio.load import sams_pad_read
 
 
@@ -164,6 +164,7 @@ class PadChunk(object):
             return datetime.timedelta(seconds=0)
         else:
             return datetime.timedelta(seconds=(self._samples-1)/self._rate)
+            # return datetime.timedelta(seconds=self._samples/self._rate)
 
     @property
     def stop(self):
@@ -187,7 +188,7 @@ class PadChunk(object):
         self.nudge_sec = nudge_sec
         self.was_nudged = True
         self._start = t
-        self._stop = self.stop - datetime.timedelta(seconds=self.nudge_sec)
+        self._stop = t + self.duration
 
 
 class PadGroup(PadChunk):
@@ -570,48 +571,48 @@ class Pad(PadRaw):
         return min([i_stop, (self.groups[-1].samples-1)])
 
 
-class SamsProcess(object):
-
-    """Iterator over Pad object to process (primarily) SAMS data."""
-
-    def __init__(self, pad, verbose=False):
-        self.pad = pad
-        self.verbose = verbose
-
-    def __str__(self):
-        s = ''
-        for i, g in enumerate(self.pad.groups):
-            if i == 0 and self.verbose:
-                s = 'FIRST GROUP'
-                first_grp_start = self.pad.groups[0].df.iloc[0].Start
-                actual_start = first_grp_start + datetime.timedelta(seconds=self.pad.start_ind/self.pad.rate)
-                delta_time = actual_start - first_grp_start
-                s += '\nBEG %s = first grp start' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nBEG %s = desired start' % self.pad.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nBEG %s = actual start (ind = %d) <-- %s into first group\n' %\
-                     (actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.start_ind, delta_time)
-
-            s += '\n%03d %s' % (i, g)
-
-            if i == len(self.pad.groups) - 1 and self.verbose:
-                s += '\n\nLAST GROUP'
-                cumsum_pts = np.cumsum(self.pad.groups[-1].df.Samples.values)
-                ind_file = np.argmax(cumsum_pts >= self.pad.stop_ind)
-                subtract_term = cumsum_pts[ind_file-1]
-                # actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
-                #               datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
-                actual_stop = self.pad.groups[-1].start + datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
-                last_grp_start = self.pad.groups[-1].df.iloc[0].Start
-                delta_time = actual_stop - last_grp_start
-                # print(cumsum_pts)
-                # print('need to get data on into file index=%d of last group' % ind_file)
-                # print(self.pad.stop_ind, subtract_term, self.pad.stop_ind - subtract_term)
-                s += '\nEND %s = last grp start' % self.pad.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nEND %s = desired stop' % self.pad.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-                s += '\nEND %s = actual stop (ind = %d) <-- %s into last group' % \
-                     (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.stop_ind, delta_time)
-
-        return s.lstrip('\n')
+# class SamsProcess(object):
+#
+#     """Iterator over Pad object to process (primarily) SAMS data."""
+#
+#     def __init__(self, pad, verbose=False):
+#         self.pad = pad
+#         self.verbose = verbose
+#
+#     def __str__(self):
+#         s = ''
+#         for i, g in enumerate(self.pad.groups):
+#             if i == 0 and self.verbose:
+#                 s = 'FIRST GROUP'
+#                 first_grp_start = self.pad.groups[0].df.iloc[0].Start
+#                 actual_start = first_grp_start + datetime.timedelta(seconds=self.pad.start_ind/self.pad.rate)
+#                 delta_time = actual_start - first_grp_start
+#                 s += '\nBEG %s = first grp start' % first_grp_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+#                 s += '\nBEG %s = desired start' % self.pad.start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+#                 s += '\nBEG %s = actual start (ind = %d) <-- %s into first group\n' %\
+#                      (actual_start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.start_ind, delta_time)
+#
+#             s += '\n%03d %s' % (i, g)
+#
+#             if i == len(self.pad.groups) - 1 and self.verbose:
+#                 s += '\n\nLAST GROUP'
+#                 cumsum_pts = np.cumsum(self.pad.groups[-1].df.Samples.values)
+#                 ind_file = np.argmax(cumsum_pts >= self.pad.stop_ind)
+#                 subtract_term = cumsum_pts[ind_file-1]
+#                 # actual_stop = self.pad.groups[-1].df.iloc[0].Start +\
+#                 #               datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
+#                 actual_stop = self.pad.groups[-1].start + datetime.timedelta(seconds=self.pad.stop_ind/self.pad.rate)
+#                 last_grp_start = self.pad.groups[-1].df.iloc[0].Start
+#                 delta_time = actual_stop - last_grp_start
+#                 # print(cumsum_pts)
+#                 # print('need to get data on into file index=%d of last group' % ind_file)
+#                 # print(self.pad.stop_ind, subtract_term, self.pad.stop_ind - subtract_term)
+#                 s += '\nEND %s = last grp start' % self.pad.groups[-1].start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+#                 s += '\nEND %s = desired stop' % self.pad.stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+#                 s += '\nEND %s = actual stop (ind = %d) <-- %s into last group' % \
+#                      (actual_stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3], self.pad.stop_ind, delta_time)
+#
+#         return s.lstrip('\n')
 
 
 class SamsShow(object):
@@ -824,8 +825,8 @@ if __name__ == '__main__':
     # demo_pad_file_day_groups(day, sensors, pth_str=pth_str, rate=rate)
     # start, stop, sensors, pth_str = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
     # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
-    # start, stop, sensors, pth_str = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.222', ['121f03', ], '/home/pims/data/dummy_pad'
-    start, stop, sensors, pth_str = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
+    start, stop, sensors, pth_str = '2020-04-06 00:00:00', '2020-04-06 01:00:00', ['121f03', ], '/home/pims/data/dummy_pad'
+    # start, stop, sensors, pth_str = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pth_str=pth_str, rate=rate)
 
     p = Pad(sensors[0], start, stop, pth_str=pth_str, rate=rate)

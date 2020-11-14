@@ -69,11 +69,11 @@ def pad_quarantiner():
     for sensor, start, stop in quarantines:
         subdirpat = r'*ams*_accel_%s*' % sensor
         header_files = glob_padheaders(ymdpat, subdirpat)
-        print '\nFound %d matching header files for %s*' % (len(header_files), sensor)
+        print('\nFound %d matching header files for %s*' % (len(header_files), sensor))
         
         # Initialize processing pipeline (no file list as input yet)
         ffp = FileFilterPipeline(DateRangePadFile(start, stop))
-        print ffp
+        # print ffp
         
         # Apply processing pipeline input #1 (now ffp is callable)
         bad_dirs = []
@@ -85,7 +85,7 @@ def pad_quarantiner():
                 mkdir_p(quarantined_dir)
             move_pad_pair(f, quarantined_dir)
             
-        print '%d file pairs for %s* were quarantined' % (len(quarantined_hdr_files), sensor)
+        print('%d file pairs for %s* were quarantined' % (len(quarantined_hdr_files), sensor))
 
 
 def main(argv):
@@ -94,7 +94,7 @@ def main(argv):
     for p in sys.argv[1:]:
         pair = p.split('=')
         if (2 != len(pair)):
-            print 'bad parameter: %s' % p
+            print('bad parameter: %s' % p)
             break
         else:
             parameters[pair[0]] = pair[1]

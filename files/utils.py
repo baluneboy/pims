@@ -80,7 +80,7 @@ def prepend_tofile(s, txtfile):
         with open(txtfile, 'w') as modified: modified.write(s + '\n' + old_text)
         bool_success = True
     except:
-        print 'FAILED to prepend to %s' % txtfile
+        print('FAILED to prepend to %s' % txtfile)
     return bool_success
 
 def tail(f, n, offset=0):
@@ -109,7 +109,7 @@ def reshape_csv_file(csv_file, shape_tuple):
     # write new shaped data to new csv file
     new_file = csv_file + '.RESHAPED.csv'
     df_new.to_csv(new_file, index=False, header=False)
-    print 'wrote ' + new_file
+    print('wrote ' + new_file)
 
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:
@@ -142,7 +142,7 @@ def guess_file(name, klass, show_warnings=False):
         p.recognized = False
     #if show_warnings and not p.recognized:
     if not p.recognized:
-        print 'Unrecognized file "%s"' % name
+        print('Unrecognized file "%s"' % name)
     return p
 
 def tuplify_headers(headers):
@@ -349,7 +349,7 @@ def demofiltfiles():
     fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
     big_list = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith('121f03.header')]
     for f in big_list: #filter_filenames(dirpath, re.compile(fullfile_pattern).match):
-        print f
+        print(f)
 
 #demofiltfiles()
 #raise SystemExit
@@ -367,10 +367,10 @@ def remove_old_files(folder, numdays):
             c = t.st_ctime
             # delete f if older than numdays
             if c < cutoff:
-                print 'removing %s' % fullfile
+                print('removing %s' % fullfile)
                 #os.remove( fullfile )
             else:
-                print 'keeping %s' % fullfile
+                print('keeping %s' % fullfile)
 
 
 def get_md5(my_file, blocksize=65536):
@@ -406,7 +406,7 @@ def demo_needles_haystack():
     dailyhistpad_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_QUIETER.txt'
     roadmap_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20hz_map_large_outPDF.txt'
     matched_list = find_needles_in_haystack(dailyhistpad_fname, roadmap_fname)
-    print 'pdfunite ' + ' '.join(matched_list)
+    print('pdfunite ' + ' '.join(matched_list))
 
 
 if __name__ == "__main__":

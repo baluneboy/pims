@@ -84,7 +84,7 @@ class StupidRecognizedFile(RecognizedFile):
 # Decorator for convenience
 def add_squiggles(fn):
     def new(*args):
-        print "~" * len(args[0])
+        print("~" * len(args[0]))
         return fn(*args)
     return new
 
@@ -92,7 +92,7 @@ def add_squiggles(fn):
 #    add_banner(add_squiggles(print_fname('$'*33)))
 # when "add_banner" is above "add_squiggles"
 @add_squiggles
-def print_fname(f): print f
+def print_fname(f): print(f)
 
 if __name__ == '__main__':
 
@@ -113,6 +113,6 @@ if __name__ == '__main__':
         print_fname(f)
         try:
             srf = guess_file(f, filetype_classes, show_warnings=False)
-            print srf._get_dict()
+            print(srf._get_dict())
         except UnrecognizedPimsFile:
-            print 'SKIPPED unrecognized file'
+            print('SKIPPED unrecognized file')
