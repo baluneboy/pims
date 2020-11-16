@@ -296,8 +296,8 @@ if __name__ == '__main__':
     # demo_pad_file_day_groups(day, sensors, pathstr=pathstr, rate=rate)
     # start, stop, sensors, pathstr = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
     # start, stop, sensors, pathstr = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
-    start, stop, sensors, pathstr = '2020-04-06 00:00:00', '2020-04-06 01:00:00', ['121f03', ], '/home/pims/data/dummy_pad'
-    # start, stop, sensors, pathstr = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
+    # start, stop, sensors, pathstr = '2020-04-06 00:00:00', '2020-04-06 01:00:00', ['121f03', ], '/home/pims/data/dummy_pad'
+    start, stop, sensors, pathstr = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pathstr=pathstr, rate=rate)
 
     p = Pad(sensors[0], start, stop, pathstr=pathstr, rate=rate)

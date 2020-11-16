@@ -72,25 +72,126 @@ def pairwise(iterable):
     return zip(a, a)
 
 
+class PadFileGroups(object):
+
+    """metadata that contains PAD file groups (no gaps accounting here) for this start/stop range"""
+
+    def __init__(self, sensor, start, stop=None, pth='/misc/yoda/pub/pad', rate=500.0):
+        self._sensor = sensor
+        self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
+        if stop is None:
+            stop = self._start + datetime.timedelta(days=1)
+        self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
+        if self._start >= self._stop:
+            raise Exception('in %s, start time must be strictly before stop time' % self.__class__.__name__)
+        self._pth = pth
+        self._rate = rate
+        self._groups = iter(self._get_groups())
+
+    def __str__(self):
+        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self._sensor, start_str, stop_str, self._rate)
+        return s
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        return next(self._groups)
+
+    def _get_groups(self):
+        """return list of pad group objects that encompass this start/stop range"""
+        d1, d2 = self._start.date(), self._stop.date()
+        raw_groups = []
+        for d in pd.date_range(d1, d2):
+            pad_day_groups = PadFileDayGroups(self._sensor, d, pth=self._pth, rate=self._rate)
+            if not pad_day_groups._df.empty:
+                if d == d1:
+                    # special handling first day (may need previous day too)
+                    if self._start < pad_day_groups._df.iloc[0].Start:
+                        prev_day = d - datetime.timedelta(days=1)
+                        pre_grp = PadFileDayGroups(self._sensor, prev_day, pth=self._pth, rate=self._rate)
+                        raw_groups.append(pre_grp)
+                raw_groups.append(pad_day_groups)
+        pad_days_groups = chain(*raw_groups)
+        my_groups = []
+        for g in pad_days_groups:
+            if g.stop <= self._start:
+                continue  # this group begins & ends completely before my desired start time, so skip it
+            elif g.start >= self._stop:
+                break  # we are already past stop time
+            elif g.start <= self._start < g.stop:
+                g.trim(self._start, self._stop)  # our span starts within this group sometime
+            elif g.start <= self._stop < g.stop:
+                g.trim(self._start, self._stop)  # our span stops within this group sometime
+                my_groups.append(g)
+                break
+            my_groups.append(g)
+        return my_groups
+
+    @property
+    def pth(self):
+        """return string for PAD path"""
+        return self._pth
+
+    @property
+    def rate(self):
+        """return float for sample rate"""
+        return self._rate
+
+    @property
+    def sensor(self):
+        """return string for sensor"""
+        return self._sensor
+
+    @property
+    def start(self):
+        """return start datetime object for this group"""
+        return self._start
+
+    @property
+    def stop(self):
+        """return stop datetime object for this group"""
+        return self._stop
+
+
 class PadFileDayGroups(object):
 
+    """metadata that contains PAD file groups (no gaps accounting here) for the day"""
+
     def __init__(self, sensor, day, pth='/misc/yoda/pub/pad', rate=500.0):
-        self.sensor = sensor
+        self._sensor = sensor
         self._day = day if isinstance(day, datetime.date) else to_dtm(day).date()
-        self.pth = pth
-        self.rate = rate
-        self.df = self._get_files_dataframe()
-        self.inds = self._get_group_inds()
-        self._zip_inds = zip(self.inds, self.inds[1:])
+        self._pth = pth
+        self._rate = rate
+        self._df = self._get_files_dataframe()
+        self._inds = self._get_group_inds()
+        self._zip_inds = zip(self._inds, self._inds[1:])
+
+    @property
+    def sensor(self):
+        """return string for sensor"""
+        return self._sensor
 
     @property
     def day(self):
-        """return start time for this group"""
+        """return day date object for this group"""
         return self._day
+
+    @property
+    def pth(self):
+        """return string for PAD path"""
+        return self._pth
+
+    @property
+    def rate(self):
+        """return float for sample rate"""
+        return self._rate
 
     def __str__(self):
         day_str = self._day.strftime('%Y-%m-%d')
-        s = '%s: %s for %s day directory (fs=%.2f)' % (self.__class__.__name__, self.sensor, day_str, self.rate)
+        s = '%s: %s for %s day directory (fs=%.2f)' % (self.__class__.__name__, self._sensor, day_str, self._rate)
         return s
 
     def __iter__(self):
@@ -98,7 +199,7 @@ class PadFileDayGroups(object):
 
     def __next__(self):
         i1, i2 = next(self._zip_inds)
-        df_group = self.df.iloc[i1:i2]
+        df_group = self._df.iloc[i1:i2]
         start = df_group.iloc[0].Start
         rate = df_group.iloc[0].SampleRate
         samples = sum(df_group.Samples)
@@ -110,9 +211,9 @@ class PadFileDayGroups(object):
         # ymd = datetime.datetime(*ymd_parts).date()
         # ymd_str = 'year%04d/month%02d/day%02d' % (ymd.year, ymd.month, ymd.day)
         ymd_str = 'year%04d/month%02d/day%02d' % (self._day.year, self._day.month, self._day.day)
-        sensor_prefix, bytes_per_rec = sensor_map[self.sensor]
-        sensor_subdir = sensor_prefix + self.sensor
-        p = Path(self.pth) / Path(ymd_str) / sensor_subdir
+        sensor_prefix, bytes_per_rec = sensor_map[self._sensor]
+        sensor_subdir = sensor_prefix + self._sensor
+        p = Path(self._pth) / Path(ymd_str) / sensor_subdir
         if not p.exists():
             #print('no such path %s', p)
             return pd.DataFrame()
@@ -133,12 +234,12 @@ class PadFileDayGroups(object):
         columns = ["Filename", "Parent", "Samples", "SampleRate", "Start", "Stop"]
         df = pd.DataFrame.from_records(all_files, columns=columns)
         # only keep rows with desired sample rate (and sort on start time)
-        df_filtered = df[df['SampleRate'] == self.rate]
+        df_filtered = df[df['SampleRate'] == self._rate]
         return df_filtered
 
     def _get_plusminus_list(self):
         """return list of plus/minus signs extracted from each Filename in dataframe"""
-        pm_list = list(self.df.apply(lambda row: '+' if '+' in row.Filename else '-', axis=1))
+        pm_list = list(self._df.apply(lambda row: '+' if '+' in row.Filename else '-', axis=1))
         return pm_list
 
     def _get_encoded_run_lengths(self):
@@ -154,7 +255,7 @@ class PadFileDayGroups(object):
             encoded_pm_list.append([0, '+'])
         return encoded_pm_list
 
-    def get_file_group_runs(self):
+    def _get_file_group_runs(self):
         """return a list of run length integers based on plus/minus indicators in filenames"""
         runs = []
         encoded_pm_list = self._get_encoded_run_lengths()
@@ -170,78 +271,10 @@ class PadFileDayGroups(object):
 
     def _get_group_inds(self):
         """return iterable over groups of files in form of dataframe"""
-        runs = self.get_file_group_runs()
+        runs = self._get_file_group_runs()
         inds = np.cumsum(np.array([0] + runs))
         inds[-1] += 1
         return inds
-
-
-class PadFileGroups(object):
-
-    def __init__(self, sensor, start, stop=None, pth='/misc/yoda/pub/pad', rate=500.0):
-        self.sensor = sensor
-        self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
-        if stop is None:
-            stop = self._start + datetime.timedelta(days=1)
-        self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
-        if self._start >= self._stop:
-            raise Exception('in %s, start time must be before stop time' % self.__class__.__name__)
-        self.pth = pth
-        self.rate = rate
-        self.groups = iter(self.get_groups())
-
-    def __str__(self):
-        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        s = '%s: %s from %s to %s (fs=%.2f)' % (self.__class__.__name__, self.sensor, start_str, stop_str, self.rate)
-        return s
-
-    def __iter__(self):
-        return self
-
-    def __next__(self):
-        return next(self.groups)
-
-    def get_groups(self):
-        d1, d2 = self._start.date(), self._stop.date()
-        raw_groups = []
-        for d in pd.date_range(d1, d2):
-            pad_day_groups = PadFileDayGroups(self.sensor, d, pth=self.pth, rate=self.rate)
-            if not pad_day_groups.df.empty:
-                if d == d1:
-                    # special handling first day (may need previous day too)
-                    if self._start < pad_day_groups.df.iloc[0].Start:
-                        pre_grp = PadFileDayGroups(self.sensor, d - datetime.timedelta(days=1), pth=self.pth, rate=self.rate)
-                        raw_groups.append(pre_grp)
-                raw_groups.append(pad_day_groups)
-        pad_days_groups = chain(*raw_groups)
-        my_groups = []
-        for g in pad_days_groups:
-            if g.stop <= self._start:
-                continue  # this group begins & ends completely before my desired start time, so skip it
-            elif g.start >= self._stop:
-                break
-            elif g.start <= self._start < g.stop:
-                # prefix = 'your span starts in here somewhere'
-                g.trim(self._start, self._stop)
-                # print(g, prefix)
-            elif g.start <= self._stop < g.stop:
-                # my desired span stops in here somewhere
-                g.trim(self._start, self._stop)
-                my_groups.append(g)
-                break
-            my_groups.append(g)
-        return my_groups
-
-    @property
-    def start(self):
-        """return start time for this group"""
-        return self._start
-
-    @property
-    def stop(self):
-        """return stop time for this group"""
-        return self._stop
 
 
 def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
@@ -272,7 +305,7 @@ def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=50
                 else:
                     gap_stop = grp.start - delta_t
                     gap_duration = gap_stop - gap_start
-                    gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
+                    gap_samples = (gap_duration.total_seconds() * grp._rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
                 print(prefix, gap, suffix)
             print('%03d' % i, grp)
@@ -307,7 +340,7 @@ def demo_pad_file_groups(start, stop, sensors, pth_str='/misc/yoda/pub/pad', rat
                 else:
                     gap_stop = grp.start - delta_t
                     gap_duration = gap_stop - gap_start
-                    gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
+                    gap_samples = (gap_duration.total_seconds() * grp._rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
                 print(prefix, gap, suffix)
             print('%03d' % i, grp)

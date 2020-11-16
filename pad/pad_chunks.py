@@ -39,19 +39,29 @@ class PadChunk(object):
         self._start = start
         self._rate = rate
         self._samples = self._verify_samples(samples)
-        self._duration = self._set_duration()
+        self._duration = self._get_duration()
         self._stop = self._start + self._duration
-        self.was_nudged = False
-        self.nudge_sec = 0.0
+        self._was_nudged = False
+        self._nudge_sec = 0.0
 
     def __str__(self):
         startstr = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         stopstr = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         durstr = strfdelta(self.duration, '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
         s = '%s to %s (%s, %9d pts, %4d files)' % (startstr, stopstr, durstr, self.samples, len(self.df))
-        if self.was_nudged:
-            s += ' nudged %.3fs' % self.nudge_sec
+        if self._was_nudged:
+            s += ' nudged %.3fs' % self._nudge_sec
         return s
+
+    @property
+    def was_nudged(self):
+        """return boolean True if this group was nudged"""
+        return self._was_nudged
+
+    @property
+    def nudge_sec(self):
+        """return float for number of seconds this group was nudged (negative is left)"""
+        return self._nudge_sec
 
     @property
     def df(self):
@@ -69,6 +79,7 @@ class PadChunk(object):
         return self._samples
 
     def _verify_samples(self, value):
+        """verify number of samples is integer"""
         if not isinstance(value, int):
             raise TypeError('number of samples must be an integer')
         return value
@@ -78,12 +89,11 @@ class PadChunk(object):
         """return datetime.timedelta as duration for this group"""
         return self._duration
 
-    def _set_duration(self):
-        if self._samples == 0:
-            return datetime.timedelta(seconds=0)
-        else:
-            return datetime.timedelta(seconds=(self._samples-1)/self._rate)
-            # return datetime.timedelta(seconds=self._samples/self._rate)
+    def _get_duration(self):
+        """get duration as timedelta object"""
+        if self._samples <= 0:
+            raise ValueError('cannot have zero or negative number of samples, that is just crazy')
+        return datetime.timedelta(seconds=(self._samples-1)/self._rate)
 
     @property
     def stop(self):
@@ -97,17 +107,17 @@ class PadChunk(object):
 
     @start.setter
     def start(self, t):
-        """set start time to t"""
-        if self.was_nudged:
+        """setter used to nudge entirety of this chunk, set start time to t then stop time to t + duration"""
+        if self._was_nudged:
             raise Exception('cannot nudge more than once')
         nudge_sec = (t - self.start).total_seconds()
         if np.abs(nudge_sec) < 1.0e-4:
             # nudge too small, round to zero (i.e. no nudge)
             return
-        self.nudge_sec = nudge_sec
-        self.was_nudged = True
+        self._nudge_sec = nudge_sec
+        self._was_nudged = True
         self._start = t
-        self._stop = t + self.duration
+        self._stop = t + self._duration
 
 
 class PadGroup(PadChunk):
@@ -117,11 +127,11 @@ class PadGroup(PadChunk):
 
     def trim(self, t1, t2):
         """trim entries that do not fall within t1 <= t <= t2"""
-        df = self.df[self.df.Stop >= t1]
+        df = self._df[self._df.Stop >= t1]
         self._df = df[df.Start <= t2]
         self._start = self._df.iloc[0].Start
         self._samples = self._verify_samples(sum(self._df.Samples))
-        self._duration = self._set_duration()
+        self._duration = self._get_duration()
         self._stop = self._start + self._duration
 
 
@@ -131,11 +141,11 @@ class PadGap(PadChunk):
         PadChunk.__init__(self, start, rate, samples)
 
     def __str__(self):
-        if self.samples == 0:
-            dur_str = '00h 00m 00s 000000us'
-        else:
-            dur_str = strfdelta(self.duration,
-                                '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
+        # if self.samples == 0:
+        #     dur_str = '00h 00m 00s 000000us'
+        # else:
+        dur_str = strfdelta(self._duration,
+                            '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
         start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
         s = '%s to %s (%s, %9d pts)' % (start_str, stop_str, dur_str, self.samples)
