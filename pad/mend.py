@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Mend, that is, fix, repair or fill a SAMS data gap using PIMS db tables & PAD files.
 
 This module queries PIMS db tables and reads PAD files in order to surgically fill,

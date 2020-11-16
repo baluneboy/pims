@@ -23,14 +23,14 @@ class DeviceDict(dict):
         return len(self) - len(other)
 
     def get_host_time(self):
-        the_time = [ value for key, value in self.items() if key[1].lower().startswith('host') ]
+        the_time = [ value for key, value in list(self.items()) if key[1].lower().startswith('host') ]
         if len(the_time) == 1:
             return the_time[0]
         else:
             return None
 
     def get_ku_time(self):
-        the_time = [ value for key, value in self.items() if key[0].lower().startswith('ku_aos') ]
+        the_time = [ value for key, value in list(self.items()) if key[0].lower().startswith('ku_aos') ]
         if len(the_time) == 1:
             return the_time[0]
         else:
@@ -39,7 +39,7 @@ class DeviceDict(dict):
     def get_dh_dk(self):
         host_time = self.get_host_time()
         ku_time = self.get_ku_time()
-        for k, v in self.iteritems():
+        for k, v in self.items():
             dh = (v - host_time).total_seconds()
             dk = (v - ku_time).total_seconds()
             self[k] = (v, dh, dk)
@@ -70,15 +70,15 @@ def demo_deltas():
     
     for devdict in [dd1, dd2]:
         devdict.get_dh_dk()
-        for k, v in devdict.iteritems():
-            print devdict.timestamp, v, k
-        print '- - - - - - - - - - - - - -'
+        for k, v in devdict.items():
+            print(devdict.timestamp, v, k)
+        print('- - - - - - - - - - - - - -')
     
     devices = list( set(dd1.keys()).union(set(dd2.keys())) )
     for dev in devices:
-        if dd1.has_key(dev) and dd2.has_key(dev):
+        if dev in dd1 and dev in dd2:
             dt = (dd2[dev][0] - dd1[dev][0]).total_seconds()
-            print dev, dd2[dev][1], dd2[dev][2], dt
+            print(dev, dd2[dev][1], dd2[dev][2], dt)
 
 demo_deltas()
 raise SystemExit
@@ -201,8 +201,8 @@ def OLDtextfile_to_dataframe(txt_file):
             if line.startswith('begin'):
                 parsing = True
     
-    df = pd.DataFrame(delta_dict1.items())
-    print df
+    df = pd.DataFrame(list(delta_dict1.items()))
+    print(df)
     return delta_dict1, delta_dict2
 
 def textfile_to_dataframe(txt_file):
@@ -249,8 +249,8 @@ def textfile_to_dataframe(txt_file):
 txt_file = '/tmp/sensortimesTest.txt'
 df = textfile_to_dataframe(txt_file)
 delta_series = df['two'] - df['one']
-print delta_series
-print delta_series['122-f02']
+print(delta_series)
+print(delta_series['122-f02'])
 #print dd1
 #print '--------------'
 #print dd2
