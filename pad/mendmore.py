@@ -31,7 +31,7 @@ def parse_timedelta(time_str):
         return
     parts = parts.groupdict()
     time_params = {}
-    for (name, param) in parts.items():
+    for (name, param) in list(parts.items()):
         if param:
             time_params[name] = int(param)
     return datetime.timedelta(**time_params)
@@ -53,7 +53,7 @@ class CountEndtime(object):
         # get tzero wrangled in terms of counts (not indices)
         t1 = start if isinstance(start, datetime.date) else to_dtm(start)
         self._rate = float(rate)
-        self._start = t1 - datetime.timedelta(seconds=1/self._rate)  # this for count pts (not index...COUNT)
+        self._start = t1 - datetime.timedelta(seconds=1/self._rate)  # this for count pts (not index)
         self._count = 0
         self._end = self._start
 
@@ -101,7 +101,7 @@ class SpanCalc(object):
 
         # need exactly one None in list of [start, stop, span]
         if [start, stop, duration].count(None) != 1:
-            raise RuntimeError('you need to define exactly 2 of 3 inputs (start, stop, span) and leave other as None')
+            raise RuntimeError('need to define exactly 2 of 3 inputs (start, stop, span) & leave exactly 1 as None')
 
         # get the other two inputs from among (start, stop, duration)
         if stop is None:
@@ -115,21 +115,48 @@ class SpanCalc(object):
         elif duration is None:
             self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
             self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
-            sec = (self._stop - self._start).total_seconds() + (1.0/self._rate)
-            self._pts = sec * self._rate
-            self._duration = datetime.timedelta(seconds=(self._pts / self._rate))
+            self._duration = self._stop - self._start
+            self._pts = self._dur_to_pts(self._duration)
         else:
-            raise RuntimeError('some kind of logic error, how did we get here???')
+            raise RuntimeError('some kind of logic error, how did we ever get here???')
+
+    def _pts_to_dur(self, num_pts):
+        """return timedelta object for given num_pts using rate"""
+        return datetime.timedelta(seconds=(num_pts-1)/self._rate)
+
+    def _dur_to_pts(self, dur):
+        """return integer num_pts from timedelta object, dur, using rate"""
+        return dur.total_seconds() * self._rate
+
+    def _set_duration(self, d):
+        """set duration as a timedelta object"""
+        if isinstance(d, datetime.timedelta):
+            self._duration = d
+        elif isinstance(d, str):
+            if d.endswith('pts'):
+                self._pts = int(d.rstrip('pts'))
+                self._duration = self._pts_to_dur(self._pts)
+                return
+            else:
+                self._duration = parse_timedelta(d)
+        else:
+            raise TypeError('trying to set duration with unhandled type')
+
+        self._pts = self._dur_to_pts(self._duration)
 
     def _calc_start(self):
         """compute start time from stop and duration"""
-        sec = (self._pts - 1) / self._rate
-        return self.stop - datetime.timedelta(seconds=sec)
+        return self.stop - self._duration
 
     def _calc_stop(self):
         """compute stop time from start and duration"""
-        sec = (self._pts - 1) / self._rate
-        return self.start + datetime.timedelta(seconds=sec)
+        return self.start + self._duration
+
+    def __str__(self):
+        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
+        dur_str = '%.3f seconds (%g pts)' % (self._duration.total_seconds(), self._pts)
+        return '%s\n%s\n%s' % (start_str, stop_str, dur_str)
 
     @property
     def start(self):
@@ -156,27 +183,11 @@ class SpanCalc(object):
         """return rate as float"""
         return self._rate
 
-    def _set_duration(self, d):
-        """set duration property as a timedelta object"""
-        if isinstance(d, str):
-            if d.endswith('pts'):
-                pts = int(d.rstrip('pts'))
-                self._duration = datetime.timedelta(seconds=(pts-1)/self._rate)
-            else:
-                self._duration = parse_timedelta(d)
-        else:
-            self._duration = d
-        self._pts = (self._duration.total_seconds() * self._rate)
-
-    def __str__(self):
-        start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        stop_str = self._stop.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]
-        dur_str = '%.3f seconds (%d pts)' % (self._duration.total_seconds(), self._pts)
-        return '%s\n%s\n%s' % (start_str, stop_str, dur_str)
-
 
 def demo_span_calc_class():
     rate = 500.0
+    du = datetime.timedelta(seconds=2)
+    sc = SpanCalc(rate, start=datetime.datetime(2020,1,2,3,4,5), stop=None, duration=du); print(sc)
     sc = SpanCalc(rate, start=datetime.datetime(2020,1,2,3,4,5), stop=None, duration='1s'); print(sc)
     sc = SpanCalc(rate, stop=datetime.datetime(2020,1,2,3,4,5), start=None, duration='1m'); print(sc)
     sc = SpanCalc(rate, start=datetime.datetime(2020,1,2,3,4,5), stop=datetime.datetime(2020,1,2,4,4,5), duration=None); print(sc)
@@ -186,15 +197,25 @@ def demo_span_calc_class():
                   stop=parser.parse('2020-04-06 00:06:03.247'),
                   duration=None)
     print(sc)
-    # 001 2020-04-06 00:06:00.205 to 2020-04-06 00:06:00.205 (00d 00h 00m 00s 000000us,         1 pts) <-- gap -->
+    # 001 2020-04-06 00:06:00.205 to 2020-04-06 00:06:00.205 (00d 00h 00m 00s 000000us,         0 pts) <-- gap -->
     sc = SpanCalc(rate,
                   start=parser.parse('2020-04-06 00:06:00.205'),
                   stop=parser.parse('2020-04-06 00:06:00.205'),
                   duration=None)
     print(sc)
-
-def show_head(d):
-    print(d)
+    # 011 2020-04-06 00:06:00.205 to 2020-04-06 00:06:00.207 (00d 00h 00m 00s 002000us,         1 pts) <-- gap -->
+    sc = SpanCalc(rate,
+                  start=parser.parse('2020-04-06 00:06:00.205'),
+                  stop=parser.parse('2020-04-06 00:06:00.207'),
+                  duration=None)
+    print(sc)
+    # 022 2020-04-06 00:06:00.205 to 2020-04-06 00:06:00.206 (00d 00h 00m 00s 001000us,        0.5 pts) <-- gap -->
+    sc = SpanCalc(rate,
+                  start=parser.parse('2020-04-06 00:06:00.205'),
+                  stop=parser.parse('2020-04-06 00:06:00.206'),
+                  duration=None)
+    print(sc)
+    print('num_pts', sc.pts)
 
 
 if __name__ == '__main__':
