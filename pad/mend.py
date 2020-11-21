@@ -22,6 +22,7 @@ TODO:
 import math
 import numpy as np
 import datetime
+import pandas as pd
 from pathlib import Path
 from pims.pad.mendmore import to_dtm, CountEndtime
 from pims.pad.pad_chunks import PadGap
@@ -113,6 +114,7 @@ class PadRaw(object):
                 gap_start = prev_grp.stop + delta_t
                 gap_rate = prev_grp.rate
                 if sec_between_groups < 0:
+                    # FIXME this should get carved in-place
                     print('*** HOW CAN GAP HAVE NEGATIVE LENGTH?! ***')
                     break
                 elif sec_between_groups < delta_t.total_seconds():
@@ -176,6 +178,11 @@ class Pad(PadRaw):
     def stop_ind(self):
         """return integer which is index into last group to get actual (ceil) stop time"""
         return self._stop_ind
+
+    @property
+    def gaps(self):
+        """return list of just the gaps"""
+        return [g for g in self.groups if isinstance(g, PadGap)]
 
     def _get_ind(self, i_group, i_file, t2, math_fun):
         # FIXME should next line reference df or should it be group metadata's start attribute?
@@ -287,11 +294,30 @@ class SamsShow(object):
         print(xyz)
 
 
+def demo_gap_stats(start_date, num_days, sensors, pathstr='/misc/yoda/pub/pad', rate=500.0):
+    """show concise gap info for given start/num day(s) & sensors in list"""
+    gaps = dict()
+    for sensor in sensors:
+        total_gap_sec = 0.0
+        print(sensor, 'GAP STATS ------------------')
+        gaps[sensor] = []
+        for d in pd.date_range(start_date, freq='1D', periods=num_days):
+            gap_sec = 0.0
+            print(d.date(), end=' ')
+            stop = d + datetime.timedelta(days=1)
+            p = Pad(sensor, d, stop, pathstr=pathstr, rate=rate)
+            gaps[sensor].extend(p.gaps)
+            for g in p.gaps:
+                gap_sec += g.duration.total_seconds()
+            total_gap_sec += gap_sec
+            print('count={:5d}, dur_sec={:12.3f}'.format(len(p.gaps), gap_sec))
+        print('Total      count={:5d}, dur_sec={:12.3f}'.format(len(gaps[sensor]), total_gap_sec))
+
+
 if __name__ == '__main__':
 
-    from pims.files.utils import copy_skip_bytes
-
-    copy_skip_bytes('/tmp/trash.txt', 11)
+    start, num_days, sensors, pathstr = '2020-10-06', 31, ['121f03', '121f08',], '/misc/yoda/pub/pad'
+    demo_gap_stats(start, num_days, sensors, pathstr=pathstr)
     raise SystemExit
 
     # day, sensors, pathstr = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
