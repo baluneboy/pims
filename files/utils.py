@@ -6,22 +6,48 @@ import errno
 import shutil
 import hashlib
 import pandas as pd
+import datetime
 from subprocess import Popen, PIPE
 from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
-from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date
+from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date, pad_fullfilestr_to_start_stop
 from pims.strings.utils import remove_non_ascii
 
 
-def copy_skip_bytes(fname, num_bytes):
+def quarantine_data_file(data_file):
+    """quarantine just data file (AND NOT header file)"""
+    dname = os.path.dirname(data_file)
+    qdir = os.path.join(dname, 'quarantined')
+    if not os.path.isdir(qdir):
+        os.mkdir(qdir)
+    shutil.move(data_file, qdir)
+    print('quarantined %s' % data_file)
+    return os.path.join(qdir, os.path.basename(data_file))
+
+
+def copy_skip_bytes(in_file, out_file, num_bytes):
     """call OS dd command to copy file with num_bytes skipped at beginning of file"""
-    out_file = '/tmp/out_file.bin'
-    cmd = ['dd', 'if=' + fname, 'of=' + out_file, 'bs=' + str(num_bytes), 'skip=1']
+    cmd = ['dd', 'if=' + in_file, 'of=' + out_file, 'bs=' + str(num_bytes), 'skip=1']
     a = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = a.communicate()
     # note that for this dd command, meaningful info goes to stderr & stdout does not contain anything [ever?]
     if 'fail' in str(stderr).lower():
         print(stderr)
+
+
+def carve_pad_file(pad_file, prev_grp_stop, rate):
+    """carve pad file to mesh with previous group stop time"""
+    start, stop = pad_fullfilestr_to_start_stop(pad_file)
+    time_step = 1.0 / rate
+    if start >= prev_grp_stop + datetime.timedelta(seconds=time_step):
+        raise ValueError('not going to carve pad file since it starts after previous group stop time')
+    print(str(prev_grp_stop)[:-3])
+    print(str(start)[:-3])
+    print(prev_grp_stop - start)
+
+
+    # bad_file = quarantine_data_file(pad_file)
+    # copy_skip_bytes(bad_file, pad_file, 11)
 
 
 def get_immediate_subdirs(a):

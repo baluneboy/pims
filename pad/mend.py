@@ -316,6 +316,12 @@ def demo_gap_stats(start_date, num_days, sensors, pathstr='/misc/yoda/pub/pad', 
 
 if __name__ == '__main__':
 
+    from pims.files.utils import carve_pad_file
+    pad_file = '/home/pims/dummy_pad/year2020/month10/day06/sams2_accel_121f03/2020_10_06_02_58_30.001-2020_10_06_02_59_59.501.121f03'
+    prev_grp_stop, rate = datetime.datetime(2020, 10, 6, 2, 58, 48, 2000), 500.0
+    carve_pad_file(pad_file, prev_grp_stop, rate)
+    raise SystemExit
+
     start, num_days, sensors, pathstr = '2020-10-06', 31, ['121f03', '121f08',], '/misc/yoda/pub/pad'
     demo_gap_stats(start, num_days, sensors, pathstr=pathstr)
     raise SystemExit
