@@ -289,6 +289,11 @@ class SamsShow(object):
 
 if __name__ == '__main__':
 
+    from pims.files.utils import copy_skip_bytes
+
+    copy_skip_bytes('/tmp/trash.txt', 11)
+    raise SystemExit
+
     # day, sensors, pathstr = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
     # day, sensors, pathstr = '2020-04-06', ['121f02', '121f03', '121f04', '121f05', '121f08'], 'G:/data/pad'
     # day, sensors, pathstr = '2020-04-02', ['121f02', '121f03'], '/home/pims/data/pad'

@@ -6,11 +6,22 @@ import errno
 import shutil
 import hashlib
 import pandas as pd
+from subprocess import Popen, PIPE
 from pims.files.base import File, UnrecognizedPimsFile
-from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date
 from pims.strings.utils import remove_non_ascii
+
+
+def copy_skip_bytes(fname, num_bytes):
+    """call OS dd command to copy file with num_bytes skipped at beginning of file"""
+    out_file = '/tmp/out_file.bin'
+    cmd = ['dd', 'if=' + fname, 'of=' + out_file, 'bs=' + str(num_bytes), 'skip=1']
+    a = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = a.communicate()
+    # note that for this dd command, meaningful info goes to stderr & stdout does not contain anything [ever?]
+    if 'fail' in str(stderr).lower():
+        print(stderr)
 
 
 def get_immediate_subdirs(a):
