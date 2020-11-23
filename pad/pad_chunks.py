@@ -18,9 +18,11 @@ TODO:
 
 """
 
+import os
 import math
 import numpy as np
 import datetime
+from pims.files.utils import carve_pad_file
 
 
 def strfdelta(tdelta, fmt):
@@ -124,6 +126,11 @@ class PadGroup(PadChunk):
 
     def __init__(self, start, rate, samples, df):
         PadChunk.__init__(self, start, rate, samples, df=df)
+
+    def carve_first_file(self, prev_grp_stop):
+        """user determined this group starts BEFORE a previous group ends, so carve away"""
+        pad_file = os.path.join(self.df.iloc[0].Parent, self.df.iloc[0].Filename)
+        carve_pad_file(pad_file, prev_grp_stop, self._rate)
 
     def trim(self, t1, t2):
         """trim entries that do not fall within t1 <= t <= t2"""

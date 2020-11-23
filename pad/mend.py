@@ -115,10 +115,13 @@ class PadRaw(object):
                 gap_rate = prev_grp.rate
                 if sec_between_groups < 0:
                     # FIXME this should get carved in-place
-                    print('*** HOW CAN GAP HAVE NEGATIVE LENGTH?! ***')
+                    print('*** HOW CAN GAP HAVE NEGATIVE LENGTH?! (need to carve here then RESTART?) ***')
+                    print(sec_between_groups)
+                    grp.carve_first_file(prev_grp.stop)
                     break
                 elif sec_between_groups < delta_t.total_seconds():
-                    print('*** A GAP THAT IS SHORTER THAN DELTA-T?! ***')
+                    # FIXME this can be fixed with a little nudge?
+                    print('*** A GAP THAT IS SHORTER THAN DELTA-T?! (can this be fixed with nudge and RESTART?) ***')
                     break
                 elif (sec_between_groups == delta_t.total_seconds()) or (prev_grp.stop == grp.start):
                     prefix = 'wtf'
@@ -316,15 +319,17 @@ def demo_gap_stats(start_date, num_days, sensors, pathstr='/misc/yoda/pub/pad', 
 
 if __name__ == '__main__':
 
-    from pims.files.utils import carve_pad_file
-    pad_file = '/home/pims/dummy_pad/year2020/month10/day06/sams2_accel_121f03/2020_10_06_02_58_30.001-2020_10_06_02_59_59.501.121f03'
-    prev_grp_stop, rate = datetime.datetime(2020, 10, 6, 2, 58, 48, 2000), 500.0
-    carve_pad_file(pad_file, prev_grp_stop, rate)
-    raise SystemExit
+    if False:
+        from pims.files.utils import carve_pad_file
+        pad_file = '/home/pims/dummy_pad/year2020/month10/day06/sams2_accel_121f03/2020_10_06_02_58_30.001-2020_10_06_02_59_59.501.121f03'
+        prev_grp_stop, rate = datetime.datetime(2020, 10, 6, 2, 58, 48, 2000), 500.0
+        carve_pad_file(pad_file, prev_grp_stop, rate)
+        raise SystemExit
 
-    start, num_days, sensors, pathstr = '2020-10-06', 31, ['121f03', '121f08',], '/misc/yoda/pub/pad'
-    demo_gap_stats(start, num_days, sensors, pathstr=pathstr)
-    raise SystemExit
+    if False:
+        start, num_days, sensors, pathstr = '2020-10-06', 31, ['121f03', ], '/misc/yoda/pub/pad'
+        demo_gap_stats(start, num_days, sensors, pathstr=pathstr)
+        raise SystemExit
 
     # day, sensors, pathstr = '2020-04-07', ['121f02', '121f03', '121f04', '121f05', '121f08'], '/misc/yoda/pub/pad'
     # day, sensors, pathstr = '2020-04-06', ['121f02', '121f03', '121f04', '121f05', '121f08'], 'G:/data/pad'
@@ -333,8 +338,8 @@ if __name__ == '__main__':
     # demo_pad_file_day_groups(day, sensors, pathstr=pathstr, rate=rate)
     # start, stop, sensors, pathstr = '2020-04-02 00:00:00.000', None, ['121f03', ], '/home/pims/data/pad'
     # start, stop, sensors, pathstr = '2020-04-06 00:06:00.211', '2020-04-06 00:06:03.206', ['121f03', ], 'G:/data/dummy_pad'
-    # start, stop, sensors, pathstr = '2020-04-06 00:00:00', '2020-04-06 01:00:00', ['121f03', ], '/home/pims/data/dummy_pad'
-    start, stop, sensors, pathstr = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
+    start, stop, sensors, pathstr = '2020-10-06 00:00:00', '2020-10-07 00:00:00', ['121f03', ], '/home/pims/data/dummy_pad'
+    # start, stop, sensors, pathstr = '2020-04-04 00:00:00', '2020-04-04 01:00:00', ['121f03', ], '/misc/yoda/pub/pad'
     # demo_pad_file_groups(start, stop, sensors, pathstr=pathstr, rate=rate)
 
     p = Pad(sensors[0], start, stop, pathstr=pathstr, rate=rate)
