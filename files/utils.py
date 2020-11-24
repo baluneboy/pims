@@ -50,8 +50,10 @@ def carve_pad_file(pad_file, prev_grp_stop, rate):
     offset_sec = (prev_grp_stop - f_start).total_seconds()   # 18.647 seconds
     offset_recs = offset_sec / time_step
     print(offset_recs)   # 9323.4999999
-    print(np.floor(offset_recs))  # 9323
-    print(np.ceil(offset_recs))   # 9324
+    num_remove_recs = np.floor(offset_recs)
+    print(num_remove_recs)  # 9323
+    new_start = f_start + datetime.timedelta(seconds=(num_remove_recs * time_step))
+    print(str(new_start)[:-3])
     # bad_file = quarantine_data_file(pad_file)
     # copy_skip_bytes(bad_file, pad_file, 11)
     # print('CARVED %s' % pad_file)
