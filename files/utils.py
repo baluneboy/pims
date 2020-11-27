@@ -38,22 +38,21 @@ def copy_skip_bytes(in_file, out_file, num_bytes):
 
 def carve_pad_file(pad_file, prev_grp_stop, rate):
     """carve pad file to mesh with previous group stop time; removes data points from start of file based on rate and
-    previous group stop time"""
+    previous group stop time (does not nudge at all, that is handled elsewhere within infrastructure)"""
     f_start, f_stop = pad_fullfilestr_to_start_stop(pad_file)
     time_step = 1.0 / rate
     if f_start >= prev_grp_stop + datetime.timedelta(seconds=time_step):
         s = 'PAD FILE = %s' % pad_file
         s += "\nnot going to carve this PAD file since it starts well enough after previous group stop's time"
         raise ValueError(s)
-    print(str(prev_grp_stop)[:-3])   # 2020-10-06 02:58:48.648
-    print(str(f_start)[:-3])         # 2020-10-06 02:58:30.001
+    print("prev_grp_stop", str(prev_grp_stop)[:-3])   # 2020-10-06 02:58:48.648
+    print("file_start   ", str(f_start)[:-3])         # 2020-10-06 02:58:30.001
     offset_sec = (prev_grp_stop - f_start).total_seconds()   # 18.647 seconds
     offset_recs = offset_sec / time_step
-    print(offset_recs)   # 9323.4999999
-    num_remove_recs = np.floor(offset_recs)
-    print(num_remove_recs)  # 9323
+    num_remove_recs = np.ceil(offset_recs)
+    print(num_remove_recs)  # 9324
     new_start = f_start + datetime.timedelta(seconds=(num_remove_recs * time_step))
-    print(str(new_start)[:-3])
+    print("newfile_start", str(new_start)[:-3])         # 2020-10-06 02:58:48.649
     # bad_file = quarantine_data_file(pad_file)
     # copy_skip_bytes(bad_file, pad_file, 11)
     # print('CARVED %s' % pad_file)
