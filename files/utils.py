@@ -49,6 +49,7 @@ def carve_pad_file(pad_file, prev_grp_stop, rate):
     print("file_start   ", str(f_start)[:-3])         # 2020-10-06 02:58:30.001
     offset_sec = (prev_grp_stop - f_start).total_seconds()   # 18.647 seconds
     offset_recs = offset_sec / time_step
+    print(offset_recs)   # 9323.4999999
     num_remove_recs = np.ceil(offset_recs)
     print(num_remove_recs)  # 9324
     new_start = f_start + datetime.timedelta(seconds=(num_remove_recs * time_step))
