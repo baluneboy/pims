@@ -1,5 +1,6 @@
 import os
 import pytest
+import difflib
 import tempfile
 import shutil
 import datetime
@@ -8,6 +9,13 @@ from pims.files.utils import carve_pad_file
 
 def simple_carve():
     pad_file = '2020_10_06_00_00_00.000-2020_10_06_00_00_00.008.121f00'
+    text1 = open(pad_file, 'r').readlines()
+    text2 = open(pad_file, 'r').readlines()
+    text3 = [x.replace('A', 'Z') for x in text2]
+
+    for line in difflib.unified_diff(text1, text3):
+        print(line)
+    raise SystemExit
     prev_grp_stop = datetime.datetime(2020, 10, 6, 0, 0, 0, 4000)
     rate = 500.0
     with tempfile.TemporaryDirectory() as dirpath:
