@@ -28,7 +28,8 @@ def quarantine_data_file(data_file):
 
 def copy_skip_bytes(in_file, out_file, num_bytes):
     """call OS dd command to copy file with num_bytes skipped at beginning of file"""
-    cmd = ['dd', 'if=' + in_file, 'of=' + out_file, 'bs=' + str(num_bytes), 'skip=1']
+    # dd skip=32 if=/tmp/carveme.txt of=/tmp/carveme.new bs=8192 iflag=skip_bytes
+    cmd = ['dd', 'skip=%d' % num_bytes, 'if=' + in_file, 'of=' + out_file, 'bs=8192', 'iflag=skip_bytes']
     a = Popen(cmd, stdout=PIPE, stderr=PIPE)
     stdout, stderr = a.communicate()
     # note that for this dd command, meaningful info goes to stderr & stdout does not contain anything [ever?]
@@ -38,25 +39,31 @@ def copy_skip_bytes(in_file, out_file, num_bytes):
 
 def carve_pad_file(pad_file, prev_grp_stop, rate):
     """carve pad file to mesh with previous group stop time; removes data points from start of file based on rate and
-    previous group stop time (does not nudge at all, that is handled elsewhere within infrastructure)"""
+    previous group stop time"""
     f_start, f_stop = pad_fullfilestr_to_start_stop(pad_file)
     time_step = 1.0 / rate
     if f_start >= prev_grp_stop + datetime.timedelta(seconds=time_step):
         s = 'PAD FILE = %s' % pad_file
         s += "\nnot going to carve this PAD file since it starts well enough after previous group stop's time"
         raise ValueError(s)
-    print("prev_grp_stop", str(prev_grp_stop)[:-3])   # 2020-10-06 02:58:48.648
-    print("file_start   ", str(f_start)[:-3])         # 2020-10-06 02:58:30.001
+    print(str(prev_grp_stop)[:-3], "= prev_grp_stop")   # 2020-10-06 02:58:48.648
+    print(str(f_start)[:-3], "= f_start")         # 2020-10-06 02:58:30.001
     offset_sec = (prev_grp_stop - f_start).total_seconds()   # 18.647 seconds
-    offset_recs = offset_sec / time_step
-    print(offset_recs)   # 9323.4999999
+    offset_recs = (offset_sec / time_step) + 0.5  # half rec ensures no overlap at all
+    print(offset_recs, " is calc. offset recs")   # 9323.4999999
     num_remove_recs = np.ceil(offset_recs)
-    print(num_remove_recs)  # 9324
+    print(num_remove_recs, " is how many recs we will remove")  # 9324
     new_start = f_start + datetime.timedelta(seconds=(num_remove_recs * time_step))
-    print("newfile_start", str(new_start)[:-3])         # 2020-10-06 02:58:48.649
-    # bad_file = quarantine_data_file(pad_file)
-    # copy_skip_bytes(bad_file, pad_file, 11)
-    # print('CARVED %s' % pad_file)
+    print(str(new_start)[:-3], "= new file start time")
+    if rate == 500.0:
+        bytes_per_rec = 16
+    else:
+        # FIXME why not handle other data sets gracefully we have very poor proxy of 500 sa/sec implies 16 bytes/rec???
+        raise Exception('unhandled rate')
+    num_remove_bytes = num_remove_recs * bytes_per_rec
+    bad_file = quarantine_data_file(pad_file)
+    copy_skip_bytes(bad_file, pad_file, num_remove_bytes)
+    print('CARVED %s' % pad_file)
     print('-.' * 22)
 
 
@@ -454,6 +461,17 @@ def demo_needles_haystack():
     roadmap_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20hz_map_large_outPDF.txt'
     matched_list = find_needles_in_haystack(dailyhistpad_fname, roadmap_fname)
     print('pdfunite ' + ' '.join(matched_list))
+
+
+def demo_carve():
+    """
+    >>> pad_file = '/tmp/2020_10_06_02_58_30.001-2020_10_06_02_59_59.501.121f03'
+    >>> prev_grp_stop = datetime.datetime(2020, 10, 6, 2, 58, 48, 648000)
+    >>> rate = 500.0
+    >>> carve_pad_file(pad_file, prev_grp_stop, rate)
+    /monkey/do
+    """
+    pass
 
 
 if __name__ == "__main__":
