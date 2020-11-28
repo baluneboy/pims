@@ -4,6 +4,7 @@ import glob
 import time
 import errno
 import shutil
+import struct
 import hashlib
 import numpy as np
 import pandas as pd
@@ -26,6 +27,19 @@ def quarantine_data_file(data_file):
     return os.path.join(qdir, os.path.basename(data_file))
 
 
+def files_differ(f1, f2):
+    """return True if files differ via call OS diff command:'diff =qs file1 file2'"""
+    cmd = ['diff', '-qs', f1, f2]
+    a = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = a.communicate()
+    if 'differ' in str(stdout).lower():
+        return True
+    elif 'identical' in str(stdout).lower():
+        return False
+    else:
+        raise RuntimeError('did not get either "differ" or "identical" with diff on 2 files')
+
+
 def copy_skip_bytes(in_file, out_file, num_bytes):
     """call OS dd command to copy file with num_bytes skipped at beginning of file"""
     # dd skip=32 if=/tmp/carveme.txt of=/tmp/carveme.new bs=8192 iflag=skip_bytes
@@ -37,24 +51,50 @@ def copy_skip_bytes(in_file, out_file, num_bytes):
         print(stderr)
 
 
+def rezero_pad_file(pad_file, rate):
+    """rewrite pad_file so time column starts with zero and ticks up by 1/rate"""
+    offset, step = 0, 16
+    value = 11.0
+    with open("/tmp/2020_04_01_00_05_13.393+2020_04_01_00_15_13.404.121f03", "r+b") as fh:
+        value_bytes = struct.pack('f', value)
+        fh.seek(offset)
+        fh.write(value_bytes)
+
+        offset += step
+        value += 1.0 / rate
+
+        value_bytes = struct.pack('f', value)
+        fh.seek(offset)
+        fh.write(value_bytes)
+
+    # value = 13.37  # arbitrary float
+    # bin = struct.pack('f', value)
+    # print(len(bin))
+    # for b in bin:
+    #     ser.write(b)
+
+
 def carve_pad_file(pad_file, prev_grp_stop, rate):
-    """carve pad file to mesh with previous group stop time; removes data points from start of file based on rate and
-    previous group stop time"""
+    """return new pad file name AND carve file to mesh with previous group stop time; this function does 3 things:
+    1. removes data points from start of file based on rate and previous group stop time
+    2. rename resulting carved pad file so that plus/minus is minus (to start a new group)
+    3. rezero/rewrite time column to start with zero
+    """
     f_start, f_stop = pad_fullfilestr_to_start_stop(pad_file)
     time_step = 1.0 / rate
     if f_start >= prev_grp_stop + datetime.timedelta(seconds=time_step):
         s = 'PAD FILE = %s' % pad_file
         s += "\nnot going to carve this PAD file since it starts well enough after previous group stop's time"
         raise ValueError(s)
-    print(str(prev_grp_stop)[:-3], "= prev_grp_stop")   # 2020-10-06 02:58:48.648
-    print(str(f_start)[:-3], "= f_start")         # 2020-10-06 02:58:30.001
+    # print(str(prev_grp_stop)[:-3], "= prev_grp_stop")   # 2020-10-06 02:58:48.648
+    # print(str(f_start)[:-3], "= f_start")         # 2020-10-06 02:58:30.001
     offset_sec = (prev_grp_stop - f_start).total_seconds()   # 18.647 seconds
     offset_recs = (offset_sec / time_step) + 0.5  # half rec ensures no overlap at all
-    print(offset_recs, " is calc. offset recs")   # 9323.4999999
+    # print(offset_recs, " is calc. offset recs")   # 9323.4999999
     num_remove_recs = np.ceil(offset_recs)
-    print(num_remove_recs, " is how many recs we will remove")  # 9324
+    # print(num_remove_recs, " is how many recs we will remove")  # 9324
     new_start = f_start + datetime.timedelta(seconds=(num_remove_recs * time_step))
-    print(str(new_start)[:-3], "= new file start time")
+    # print(str(new_start)[:-3], "= new file start time")
     if rate == 500.0:
         bytes_per_rec = 16
     else:
@@ -63,8 +103,12 @@ def carve_pad_file(pad_file, prev_grp_stop, rate):
     num_remove_bytes = num_remove_recs * bytes_per_rec
     bad_file = quarantine_data_file(pad_file)
     copy_skip_bytes(bad_file, pad_file, num_remove_bytes)
-    print('CARVED %s' % pad_file)
-    print('-.' * 22)
+    new_pad_file = pad_file.replace('+', '-')
+    os.rename(pad_file, new_pad_file)
+    return new_pad_file
+    # os.rename(pad_file, pad_file_minus)
+    # print('CARVED %s' % pad_file)
+    # print('-.' * 22)
 
 
 def get_immediate_subdirs(a):
@@ -295,7 +339,7 @@ def listdir_filename_pattern(dirpath, fname_pattern):
     return files
 
 def filter_filenames(dirpath, predicate):
-    """
+    r"""
     >>> sensor = '121f03'
     >>> fullfile_pattern = r'(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_%s)/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.%s\Z' % (sensor, sensor)
     >>> dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
@@ -400,7 +444,7 @@ def ike_jaxa_file_transfer(fromdir, todir):
 def demofiltfiles():
     dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
     sensor_subdir = 'sams2_accel_121f03'
-    fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
+    fullfile_pattern = r'(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
     big_list = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith('121f03.header')]
     for f in big_list: #filter_filenames(dirpath, re.compile(fullfile_pattern).match):
         print(f)
