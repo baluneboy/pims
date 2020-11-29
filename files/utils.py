@@ -53,25 +53,17 @@ def copy_skip_bytes(in_file, out_file, num_bytes):
 
 def rezero_pad_file(pad_file, rate):
     """rewrite pad_file so time column starts with zero and ticks up by 1/rate"""
-    offset, step = 0, 16
-    value = 11.0
-    with open("/tmp/2020_04_01_00_05_13.393+2020_04_01_00_15_13.404.121f03", "r+b") as fh:
-        value_bytes = struct.pack('f', value)
-        fh.seek(offset)
-        fh.write(value_bytes)
-
-        offset += step
-        value += 1.0 / rate
-
-        value_bytes = struct.pack('f', value)
-        fh.seek(offset)
-        fh.write(value_bytes)
-
-    # value = 13.37  # arbitrary float
-    # bin = struct.pack('f', value)
-    # print(len(bin))
-    # for b in bin:
-    #     ser.write(b)
+    # FIXME change 16 to dynamic value (like MAMS has more floats per record than typical SAMS)
+    num_recs = os.path.getsize(pad_file) // 16
+    value = 0.0
+    with open(pad_file, "r+b") as fh:
+        for i in range(num_recs):
+            # FIXME change 16 to dynamic value (like MAMS has more floats per rec than SAMS, not 16)
+            offset = i * 16
+            value_bytes = struct.pack('f', value)
+            fh.seek(offset)
+            fh.write(value_bytes)
+            value += 1.0 / rate
 
 
 def carve_pad_file(pad_file, prev_grp_stop, rate):
@@ -105,6 +97,7 @@ def carve_pad_file(pad_file, prev_grp_stop, rate):
     copy_skip_bytes(bad_file, pad_file, num_remove_bytes)
     new_pad_file = pad_file.replace('+', '-')
     os.rename(pad_file, new_pad_file)
+    rezero_pad_file(new_pad_file, rate)
     return new_pad_file
     # os.rename(pad_file, pad_file_minus)
     # print('CARVED %s' % pad_file)
