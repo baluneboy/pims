@@ -14,16 +14,19 @@ from pims.files.base import File, UnrecognizedPimsFile
 from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date, pad_fullfilestr_to_start_stop
 from pims.strings.utils import remove_non_ascii
+from pims.pad.modify_header import modify_header_file
 
 
-def quarantine_data_file(data_file):
-    """quarantine just data file (AND NOT header file)"""
+def quarantine_pad_pair(data_file):
+    """quarantine PAD data file AND its companion header file"""
     dname = os.path.dirname(data_file)
     qdir = os.path.join(dname, 'quarantined')
     if not os.path.isdir(qdir):
         os.mkdir(qdir)
     shutil.move(data_file, qdir)
     print('quarantined %s' % data_file)
+    shutil.move(data_file + '.header', qdir)
+    print('quarantined %s' % data_file + '.header')
     return os.path.join(qdir, os.path.basename(data_file))
 
 
@@ -67,10 +70,11 @@ def rezero_pad_file(pad_file, rate):
 
 
 def carve_pad_file(pad_file, prev_grp_stop, rate):
-    """return new pad file name AND carve file to mesh with previous group stop time; this function does 3 things:
+    """return new pad file name AND carve file to mesh with previous group stop time; this function does 4 things:
     1. removes data points from start of file based on rate and previous group stop time
     2. rename resulting carved pad file so that plus/minus is minus (to start a new group)
     3. rezero/rewrite time column to start with zero
+    4. modifies PAD header file (see pad/modify_header.py)
     """
     f_start, f_stop = pad_fullfilestr_to_start_stop(pad_file)
     time_step = 1.0 / rate
@@ -93,11 +97,15 @@ def carve_pad_file(pad_file, prev_grp_stop, rate):
         # FIXME why not handle other data sets gracefully we have very poor proxy of 500 sa/sec implies 16 bytes/rec???
         raise Exception('unhandled rate')
     num_remove_bytes = num_remove_recs * bytes_per_rec
-    bad_file = quarantine_data_file(pad_file)
-    copy_skip_bytes(bad_file, pad_file, num_remove_bytes)
+    old_pad_data_file = quarantine_pad_pair(pad_file)
+    copy_skip_bytes(old_pad_data_file, pad_file, num_remove_bytes)
     new_pad_file = pad_file.replace('+', '-')
+    new_tzero = new_pad_file.split('-')[0]
     os.rename(pad_file, new_pad_file)
     rezero_pad_file(new_pad_file, rate)
+    new_data_bname = os.path.basename(new_pad_file)
+    append_dqm = '(carved %d records)' % num_remove_recs
+    modify_header_file(old_pad_data_file + '.header', new_pad_file + '.header', new_data_bname, new_tzero, append_dqm)
     return new_pad_file
     # os.rename(pad_file, pad_file_minus)
     # print('CARVED %s' % pad_file)

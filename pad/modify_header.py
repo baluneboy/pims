@@ -45,6 +45,6 @@ def modify_header_file(xml_file, out_file, new_data_bname, new_tzero, append_dqm
         open_file.write(content)
 
 
-xml_file = 'C:/Temp/2020_04_05_00_05_15.785+2020_04_05_00_15_15.803.121f03.header'
-out_file = 'c:/Temp/trash.xml'
-modify_header_file(xml_file, out_file, 'one', 'two', 'three')
+# xml_file = 'C:/Temp/2020_04_05_00_05_15.785+2020_04_05_00_15_15.803.121f03.header'
+# out_file = 'c:/Temp/trash.xml'
+# modify_header_file(xml_file, out_file, 'one', 'two', 'three')
