@@ -23,8 +23,15 @@ def quarantine_pad_pair(data_file):
     qdir = os.path.join(dname, 'quarantined')
     if not os.path.isdir(qdir):
         os.mkdir(qdir)
+    qfile = os.path.join(dname, 'quarantined', os.path.basename(data_file))
+    if os.path.exists(qfile):
+        print('The filesystem needs to be fixed, same file already in quarantined subdir!?')
+        raise Exception('%s ALREADY EXISTS' % qfile)
     shutil.move(data_file, qdir)
     print('quarantined %s' % data_file)
+    if os.path.exists(qfile + '.header'):
+        print('The filesystem needs to be fixed, same file already in quarantined subdir!?')
+        raise Exception('%s ALREADY EXISTS' % qfile + '.header')
     shutil.move(data_file + '.header', qdir)
     print('quarantined %s' % data_file + '.header')
     return os.path.join(qdir, os.path.basename(data_file))
@@ -69,12 +76,24 @@ def rezero_pad_file(pad_file, rate):
             value += 1.0 / rate
 
 
+def get_new_pad_name(pad_file, new_start, new_stop):
+    """return new pad filename after replacing '+' to '-' and changing start/stop time"""
+    folder = os.path.dirname(pad_file)
+    sensor = pad_file.split('.')[-1]
+    start_str = new_start.strftime('%Y_%m_%d_%H_%M_%S.%f')[:-3]
+    stop_str = new_stop.strftime('%Y_%m_%d_%H_%M_%S.%f')[:-3]
+    new_basename = '%s-%s.%s' % (start_str, stop_str, sensor)
+    new_pad_file = os.path.join(folder, new_basename)
+    return new_pad_file
+
+
 def carve_pad_file(pad_file, prev_grp_stop, rate):
-    """return new pad file name AND carve file to mesh with previous group stop time; this function does 4 things:
+    """return new pad file name AND carve file to mesh with previous group stop time; this function does 5 things:
     1. removes data points from start of file based on rate and previous group stop time
     2. rename resulting carved pad file so that plus/minus is minus (to start a new group)
     3. rezero/rewrite time column to start with zero
-    4. modifies PAD header file (see pad/modify_header.py)
+    4. rename resulting carved pad file for new start time
+    5. modifies PAD header file (see pad/modify_header.py)
     """
     f_start, f_stop = pad_fullfilestr_to_start_stop(pad_file)
     time_step = 1.0 / rate
@@ -99,7 +118,11 @@ def carve_pad_file(pad_file, prev_grp_stop, rate):
     num_remove_bytes = num_remove_recs * bytes_per_rec
     old_pad_data_file = quarantine_pad_pair(pad_file)
     copy_skip_bytes(old_pad_data_file, pad_file, num_remove_bytes)
-    new_pad_file = pad_file.replace('+', '-')
+    # rename pad data file
+    old_num_recs = os.path.getsize(pad_file) / 16
+    new_num_recs = old_num_recs - num_remove_recs
+    new_stop = new_start + datetime.timedelta(seconds=(new_num_recs / rate))
+    new_pad_file = get_new_pad_name(pad_file, new_start, new_stop)
     new_tzero = new_pad_file.split('-')[0]
     os.rename(pad_file, new_pad_file)
     rezero_pad_file(new_pad_file, rate)
