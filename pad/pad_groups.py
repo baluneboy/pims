@@ -76,7 +76,7 @@ class PadFileGroups(object):
 
     """metadata that contains PAD file groups (no gaps accounting here) for this start/stop range"""
 
-    def __init__(self, sensor, start, stop=None, pth='/misc/yoda/pub/pad', rate=500.0):
+    def __init__(self, sensor, start, stop=None, path='/misc/yoda/pub/pad', rate=500.0):
         self._sensor = sensor
         self._start = start if isinstance(start, datetime.datetime) else to_dtm(start)
         if stop is None:
@@ -84,7 +84,7 @@ class PadFileGroups(object):
         self._stop = stop if isinstance(stop, datetime.datetime) else to_dtm(stop)
         if self._start >= self._stop:
             raise Exception('in %s, start time must be strictly before stop time' % self.__class__.__name__)
-        self._pth = pth
+        self._path = path
         self._rate = rate
         self._groups = iter(self._get_groups())
 
@@ -105,13 +105,13 @@ class PadFileGroups(object):
         d1, d2 = self._start.date(), self._stop.date()
         raw_groups = []
         for d in pd.date_range(d1, d2):
-            pad_day_groups = PadFileDayGroups(self._sensor, d, pth=self._pth, rate=self._rate)
+            pad_day_groups = PadFileDayGroups(self._sensor, d, path=self._path, rate=self._rate)
             if not pad_day_groups._df.empty:
                 if d == d1:
                     # special handling first day (may need previous day too)
                     if self._start < pad_day_groups._df.iloc[0].Start:
                         prev_day = d - datetime.timedelta(days=1)
-                        pre_grp = PadFileDayGroups(self._sensor, prev_day, pth=self._pth, rate=self._rate)
+                        pre_grp = PadFileDayGroups(self._sensor, prev_day, path=self._path, rate=self._rate)
                         raw_groups.append(pre_grp)
                 raw_groups.append(pad_day_groups)
         pad_days_groups = chain(*raw_groups)
@@ -131,9 +131,9 @@ class PadFileGroups(object):
         return my_groups
 
     @property
-    def pth(self):
+    def path(self):
         """return string for PAD path"""
-        return self._pth
+        return self._path
 
     @property
     def rate(self):
@@ -160,10 +160,10 @@ class PadFileDayGroups(object):
 
     """metadata that contains PAD file groups (no gaps accounting here) for the day"""
 
-    def __init__(self, sensor, day, pth='/misc/yoda/pub/pad', rate=500.0):
+    def __init__(self, sensor, day, path='/misc/yoda/pub/pad', rate=500.0):
         self._sensor = sensor
         self._day = day if isinstance(day, datetime.date) else to_dtm(day).date()
-        self._pth = pth
+        self._path = path
         self._rate = rate
         self._df = self._get_files_dataframe()
         self._inds = self._get_group_inds()
@@ -180,9 +180,9 @@ class PadFileDayGroups(object):
         return self._day
 
     @property
-    def pth(self):
+    def path(self):
         """return string for PAD path"""
-        return self._pth
+        return self._path
 
     @property
     def rate(self):
@@ -213,7 +213,7 @@ class PadFileDayGroups(object):
         ymd_str = 'year%04d/month%02d/day%02d' % (self._day.year, self._day.month, self._day.day)
         sensor_prefix, bytes_per_rec = sensor_map[self._sensor]
         sensor_subdir = sensor_prefix + self._sensor
-        p = Path(self._pth) / Path(ymd_str) / sensor_subdir
+        p = Path(self._path) / Path(ymd_str) / sensor_subdir
         if not p.exists():
             #print('no such path %s', p)
             return pd.DataFrame()
@@ -277,10 +277,10 @@ class PadFileDayGroups(object):
         return inds
 
 
-def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
+def demo_pad_file_day_groups(day, sensors, path_str='/misc/yoda/pub/pad', rate=500.0):
     delta_t = datetime.timedelta(seconds=1.0/rate)
     for sensor in sensors:
-        pad_groups = PadFileDayGroups(sensor, day, pth=pth_str, rate=rate)
+        pad_groups = PadFileDayGroups(sensor, day, path=path_str, rate=rate)
         print('---', sensor, '---', pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)
@@ -315,7 +315,7 @@ def demo_pad_file_day_groups(day, sensors, pth_str='/misc/yoda/pub/pad', rate=50
 def demo_pad_file_groups(start, stop, sensors, pth_str='/misc/yoda/pub/pad', rate=500.0):
     delta_t = datetime.timedelta(seconds=1.0/rate)
     for sensor in sensors:
-        pad_groups = PadFileGroups(sensor, start, stop=stop, pth=pth_str, rate=rate)
+        pad_groups = PadFileGroups(sensor, start, stop=stop, path=pth_str, rate=rate)
         print('<--', sensor, '-->', pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)

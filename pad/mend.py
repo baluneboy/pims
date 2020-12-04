@@ -102,7 +102,7 @@ class PadRaw(object):
     def _get_groups(self):
         """call PadFileGroups and use times to interleave gaps between them"""
         delta_t = datetime.timedelta(seconds=1.0/self._rate)
-        pad_groups = PadFileGroups(self._sensor, self._start, stop=self._stop, pth=self._pathstr, rate=self._rate)
+        pad_groups = PadFileGroups(self._sensor, self._start, stop=self._stop, path=self._pathstr, rate=self._rate)
         # print('<--', self.sensor, '-->', pad_groups)
         # runs = pad_groups.get_file_group_runs()
         # print(sensor, sum(runs), runs)
