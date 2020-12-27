@@ -324,9 +324,32 @@ def northfield_fullfilestr_to_date(fullfilestr):
     return d
 
 
-# convert string like YODA_YMD_PATH/.../2014_05_31_20_49_60.000-2014_05_31_21_00_00.001.SENSOR to datetime object
+def pad_basenamestr_to_start_stop(fstr):
+    """convert pad file basename string to datetime objects"""
+    # convert string like 2020_08_04_03_38_07.937-2020_08_04_03_38_08.083.121f03 to datetime objects
+    # get rid of header ext if there is one, and just work with basename
+    fstr = fstr.replace('.header', '')
+    if not re.match('^\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}\..*$', fstr):
+        raise ValueError('basename str %s does not match expected pattern' % fstr)
+    [startstr, bigstr] = fstr.split(fstr[23])
+    stopstr = '.'.join(bigstr.split('.')[:-1])
+    # print 'stopstr', stopstr
+    try:
+        d1 = timestr_to_datetime(startstr)
+    except ValueError, e:
+        warn('startstr %s did not nicely convert to datetime in timestr_to_datetime' % startstr )
+        d1 = None
+    try:
+        d2 = timestr_to_datetime(stopstr)
+    except ValueError, e:
+        warn('stopstr %s did not nicely convert to datetime in timestr_to_datetime' % stopstr )
+        d2 = None
+    return d1, d2
+
+
 def pad_fullfilestr_to_start_stop(fullfilestr):
     """convert pad fullfile string to datetime object"""
+    # convert string like YODA_YMD_PATH/.../2014_05_31_20_49_60.000-2014_05_31_21_00_00.001.SENSOR to datetime object
     # get rid of header ext if there is one, and just work with basename
     fstr = os.path.basename(fullfilestr.replace('.header', ''))
     if not re.match('^\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}.\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3}\..*$', fstr):
