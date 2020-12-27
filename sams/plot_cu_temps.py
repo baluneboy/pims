@@ -280,7 +280,8 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
 
     ax1 = plt.subplot(211)
 
-    df.plot(ax=ax1, x='timestamp').legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    # df.plot(ax=ax1, x='timestamp').legend(loc='center left', bbox_to_anchor=(1, 0.5))
+    df.plot(ax=ax1, x='timestamp', legend=False)
 
     format_x_date_month_day(ax1)
 
@@ -290,13 +291,15 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
 
     plt.ylabel('Charge (%)')
     plt.xlabel('GMT Hour')
-    plt.ylim((-1, 101))
+    plt.ylim((-5, 105))
     ax1.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
 
     for label in ax1.xaxis.get_ticklabels(minor=True):
         label.set_visible(False)
 
     #plt.legend(prop={'size': 8}, bbox_to_anchor=(1, 0.88))
+
+    plt.yticks([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
 
     ax2 = plt.subplot(212, sharex=ax1)
 
@@ -314,9 +317,9 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
     # plt.title('ER6 Locker 3 Current, 60-Second Average (updated at %s)' % d2.strftime('%Y-%m-%d %H:%M:%S'))
     plt.ylabel('Current (A)')
     plt.xlabel('GMT Hour')
-    plt.ylim((-0.1, 6.1))
+    plt.ylim((-0.2, 9.2))
     ax2.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
-    plt.yticks([0, 1, 2, 3, 4, 5, 6])
+    plt.yticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     for label in ax2.xaxis.get_ticklabels(minor=True)[::2]:
         label.set_visible(False)
@@ -453,6 +456,7 @@ def main():
     #plot_cu_temps()
     #plot_gse_current()
     plot_cutemps_and_current()
+    plot_cubattery_and_current()
 
 
 if __name__ == '__main__':

@@ -132,7 +132,7 @@ def xmlEscape(s):
 # SQL helper routines ---------------------------------------------------------------
 # create a connection (with possible defaults), submit command, return all results
 # try to do all connecting through this function to handle exceptions
-def sqlConnect(command, shost='localhost', suser='pims', spasswd='pims2000', sdb='pims'):
+def sqlConnect(command, shost='localhost', suser='pims', spasswd=PASSWD, sdb='pims'):
     sqlRetryTime =30
     repeat = 1
     while repeat:

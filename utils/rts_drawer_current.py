@@ -174,7 +174,7 @@ def run(start, stop, out_dir):
             plt.savefig(os.path.join(out_dir, 'rts%s' % d) + '.png', dpi=120)
 
             # if mid-day, then archive the pdf too
-            if stop.hour == 10 and stop.minute == 15:
+            if stop.hour == 10 and stop.minute == 10:
                 #subdir = os.path.join('year%4d' % start.year, 'month%02d' % start.month, 'day%02d' % start.day)
                 subdir = os.path.join('year%4d' % start.year, 'month%02d' % start.month)
                 pth = os.path.join(out_dir, subdir)

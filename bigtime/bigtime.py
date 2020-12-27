@@ -296,9 +296,9 @@ def demo_on_park():
     bigs = [
         #    table  prefix  EDS      db host
         # -----------------------------------
-        ('es05rt',   'CIR', 0.9, 'manbearpig'),
-        ('es06rt',   'FIR', 0.9, 'manbearpig'),
-        ('121f05rt', 'JEM', 0.9, 'manbearpig'),
+        ('es05rt',   'CIR', 0.9, 'mr-hankey'),
+        ('es06rt',   'FIR', 0.9, 'mr-hankey'),
+        ('121f05rt', 'JEM', 0.9, 'mr-hankey'),
     ]
 
     shift = 0
@@ -334,24 +334,25 @@ if __name__ == '__main__':
         #    table        prefix  ExpDeltaSec  db host        time getter
         # -----------------------------------------------------------
         ('gse_packet',   'Ku_AOS',  SLEEP/6,  'yoda',        KuTimeGetter),        
-        #('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
-        #('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
-        #('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),\
-        ('122f02',       '122-f02', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
-        ('122f03',       '122-f03', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
-        ('122f04',       '122-f04', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),        
-        ('122f07',       '122-f07', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        ('ee_packet_rt', '122-f02', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet_rt', '122-f03', SLEEP/6,  'yoda',        EeTimeGetter),
+        ('ee_packet_rt', '122-f04', SLEEP/6,  'yoda',        EeTimeGetter),\
+        #('122f02',       '122-f02', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        #('122f03',       '122-f03', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
+        #('122f04',       '122-f04', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),        
+        #('122f07',       '122-f07', SLEEP/6,  'jimmy',       CcsdsEeTimeGetter),
         #('es03rt',       'MSG',     SLEEP/6,  'chef',        TimeGetter),
-        ('es03rt',       'MSG',     SLEEP/6,  'mr-hankey',   TimeGetter),
+        ('es09rt',       'MSG',     SLEEP/6,  'mr-hankey',   TimeGetter),
         ('es05rt',       'CIR',     SLEEP/6,  'mr-hankey',   TimeGetter),
         ('es06rt',       'FIR',     SLEEP/6,  'mr-hankey',   TimeGetter),
-        ('121f02rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f03rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f04rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f05rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('121f08rt',     'SE',      SLEEP/6,  'manbearpig',  TimeGetter),
-        ('hirap',        'MAM',     SLEEP/6,  'towelie',     HirapTimeGetter),
-        ('oss',          'MAM',     SLEEP/6,  'stan',        HirapTimeGetter),
+        ('es20rt',       'ER6',     SLEEP/6,  'mr-hankey',   TimeGetter),
+        ('121f02rt',     'SE',      SLEEP/6,  'mr-hankey',   TimeGetter),
+        ('121f03rt',     'SE',      SLEEP/6,  'mr-hankey',   TimeGetter),
+        ('121f04rt',     'SE',      SLEEP/6,  'mr-hankey',   TimeGetter),
+        ('121f05rt',     'SE',      SLEEP/6,  'mr-hankey',   TimeGetter),
+        ('121f08rt',     'SE',      SLEEP/6,  'mr-hankey',   TimeGetter),
+        #('hirap',        'MAM',     SLEEP/6,  'towelie',     HirapTimeGetter),
+        #('oss',          'MAM',     SLEEP/6,  'stan',        HirapTimeGetter),
         #('xx00rt',       'XXX',     SLEEP/6,  'chef',        TimeGetter),        
     ]
 

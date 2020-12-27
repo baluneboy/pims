@@ -32,7 +32,7 @@ Features:
 
 import os
 import urwid
-from pims.roadmap_probe import *
+#from pims.roadmap_probe import *
 
 class ExampleTreeWidget(urwid.TreeWidget):
     """ Display widget for leaf nodes """
@@ -122,8 +122,8 @@ def get_example_tree():
 
 def main():
     sample = get_example_tree()
-    #ExampleTreeBrowser(sample).main()
-    print sample
+    #print(sample)
+    ExampleTreeBrowser(sample).main()
 
 if __name__=="__main__":
     main()
