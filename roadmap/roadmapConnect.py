@@ -1,3 +1,4 @@
+import os
 from MySQLdb import *
 from jaxaException import *
 from _mysql_exceptions import *
@@ -8,6 +9,9 @@ from syslog import *
 #import sys, string, time, logging
 import sys
 import logging,logging.config
+
+
+PPASS=os.environ.get('PPASS')
 
 # SQL helper routines ---------------------------------------------------------------
 # create a connection (with possible defaults), submit command, return all results
@@ -47,7 +51,7 @@ def HumanToUnixTime(month, day, year, hour, minute, second, fraction = 0.0):
 		raise 'ValueError', err
 	return result
 
-def roadmapConnection(host='yoda', user='pims', passwd=PASSWD, db='pimsmap',init_command = 'SET sql_mode=STRICT_ALL_TABLES'):
+def roadmapConnection(host='yoda', user='pims', passwd=PPASS, db='pimsmap',init_command = 'SET sql_mode=STRICT_ALL_TABLES'):
 	try:
 		con = Connection(host=host, user=user, passwd=passwd, db=db)
 		if con is not None:
