@@ -483,7 +483,7 @@ def days_ago_string(n):
 _2DAYSAGO = days_ago_string(2).replace('_', '-')
 _5DAYSAGO = days_ago_string(5).replace('_', '-')
 
-def days_ago_path_path(base_dir,n):
+def days_ago_pad_path(base_dir,n):
     """Return PAD path for n days ago like PADPATH/yearYYYY/monthMM/dayDD"""
     date_n_days_ago = datetime.date.today()-datetime.timedelta(n)
     return os.path.join( base_dir, date_n_days_ago.strftime('year%Y/month%m/day%d') )
