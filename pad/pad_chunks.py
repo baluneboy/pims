@@ -148,9 +148,6 @@ class PadGap(PadChunk):
         PadChunk.__init__(self, start, rate, samples)
 
     def __str__(self):
-        # if self.samples == 0:
-        #     dur_str = '00h 00m 00s 000000us'
-        # else:
         dur_str = strfdelta(self._duration,
                             '{days:02d}d {hours:02d}h {minutes:02d}m {seconds:02d}s {microseconds:06d}us')
         start_str = self._start.strftime('%Y-%m-%d %H:%M:%S.%f')[:-3]

@@ -74,7 +74,7 @@ def pairwise(iterable):
 
 class PadFileGroups(object):
 
-    """metadata that contains PAD file groups (no gaps accounting here) for this start/stop range"""
+    """iterator of metadata that contains PAD file groups (no gaps accounting here) for a start/stop range"""
 
     def __init__(self, sensor, start, stop=None, path='/misc/yoda/pub/pad', rate=500.0):
         self._sensor = sensor
@@ -106,10 +106,10 @@ class PadFileGroups(object):
         raw_groups = []
         for d in pd.date_range(d1, d2):
             pad_day_groups = PadFileDayGroups(self._sensor, d, path=self._path, rate=self._rate)
-            if not pad_day_groups._df.empty:
+            if not pad_day_groups.df.empty:
                 if d == d1:
                     # special handling first day (may need previous day too)
-                    if self._start < pad_day_groups._df.iloc[0].Start:
+                    if self._start < pad_day_groups.df.iloc[0].Start:
                         prev_day = d - datetime.timedelta(days=1)
                         pre_grp = PadFileDayGroups(self._sensor, prev_day, path=self._path, rate=self._rate)
                         raw_groups.append(pre_grp)
@@ -158,7 +158,7 @@ class PadFileGroups(object):
 
 class PadFileDayGroups(object):
 
-    """metadata that contains PAD file groups (no gaps accounting here) for the day"""
+    """iterator of metadata that contains PAD file groups (no gaps accounting here) for a day"""
 
     def __init__(self, sensor, day, path='/misc/yoda/pub/pad', rate=500.0):
         self._sensor = sensor
@@ -178,6 +178,11 @@ class PadFileDayGroups(object):
     def day(self):
         """return day date object for this group"""
         return self._day
+
+    @property
+    def df(self):
+        """return dataframe for PAD files in this group"""
+        return self._df
 
     @property
     def path(self):
@@ -207,15 +212,11 @@ class PadFileDayGroups(object):
 
     def _get_files_dataframe(self):
         """return dataframe of file info for given sensor, day, pad_path"""
-        # ymd_parts = (int(x) for x in self.day.split('-'))
-        # ymd = datetime.datetime(*ymd_parts).date()
-        # ymd_str = 'year%04d/month%02d/day%02d' % (ymd.year, ymd.month, ymd.day)
         ymd_str = 'year%04d/month%02d/day%02d' % (self._day.year, self._day.month, self._day.day)
         sensor_prefix, bytes_per_rec = sensor_map[self._sensor]
         sensor_subdir = sensor_prefix + self._sensor
         p = Path(self._path) / Path(ymd_str) / sensor_subdir
         if not p.exists():
-            #print('no such path %s', p)
             return pd.DataFrame()
         all_files = []
         for hdr in p.rglob('*.header'):
@@ -239,7 +240,8 @@ class PadFileDayGroups(object):
 
     def _get_plusminus_list(self):
         """return list of plus/minus signs extracted from each Filename in dataframe"""
-        pm_list = list(self._df.apply(lambda row: '+' if '+' in row.Filename else '-', axis=1))
+        pm_func = lambda row: '+' if '+' in row.Filename else '-'
+        pm_list = list(self._df.apply(pm_func, axis=1))
         return pm_list
 
     def _get_encoded_run_lengths(self):
@@ -305,7 +307,7 @@ def demo_pad_file_day_groups(day, sensors, path_str='/misc/yoda/pub/pad', rate=5
                 else:
                     gap_stop = grp.start - delta_t
                     gap_duration = gap_stop - gap_start
-                    gap_samples = (gap_duration.total_seconds() * grp._rate) + 1
+                    gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
                 print(prefix, gap, suffix)
             print('%03d' % i, grp)
@@ -340,7 +342,7 @@ def demo_pad_file_groups(start, stop, sensors, pth_str='/misc/yoda/pub/pad', rat
                 else:
                     gap_stop = grp.start - delta_t
                     gap_duration = gap_stop - gap_start
-                    gap_samples = (gap_duration.total_seconds() * grp._rate) + 1
+                    gap_samples = (gap_duration.total_seconds() * grp.rate) + 1
                 gap = PadGap(gap_start, gap_rate, gap_samples)
                 print(prefix, gap, suffix)
             print('%03d' % i, grp)

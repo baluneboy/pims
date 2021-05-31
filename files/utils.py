@@ -6,15 +6,27 @@ import errno
 import shutil
 import struct
 import hashlib
+import pathlib
 import numpy as np
 import pandas as pd
 import datetime
 from subprocess import Popen, PIPE
 from pims.files.base import File, UnrecognizedPimsFile
-from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
+from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN, _ANYPADPATH_PATTERN, _SENSOR_DIR_PATTERN
 from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date, pad_fullfilestr_to_start_stop
 from pims.strings.utils import remove_non_ascii
 from pims.pad.modify_header import modify_header_file
+
+
+def get_pad_timestamp_deltas(pad_files):
+    """return dict of min/med/max delta of file modify times minus filename start time"""
+    files = {f: datetime.datetime.fromtimestamp(f.stat().st_mtime) - pad_fullfilestr_to_start_stop(str(f))[0] for f in
+             pad_files}
+    file_min = min(files, key=files.get)
+    file_max = max(files, key=files.get)
+    # med = np.median(np.array(list(files.values())))
+    # return files[file_min], med, files[file_max]
+    return files[file_min], files[file_max]
 
 
 def quarantine_pad_pair(data_file):
@@ -35,6 +47,33 @@ def quarantine_pad_pair(data_file):
     shutil.move(data_file + '.header', qdir)
     print('quarantined %s' % data_file + '.header')
     return os.path.join(qdir, os.path.basename(data_file))
+
+
+def get_file_mtime(f):
+    """return datetime object for when file was last modified (data/content changed)"""
+    fobj = f if isinstance(f, pathlib.Path) else pathlib.Path(f)
+    return datetime.datetime.fromtimestamp(fobj.stat().st_mtime)
+
+
+def is_pad_dir_pure(d):
+    """return True if PAD day directory is pure
+    criteria for being pure for both header files and data files:
+    - sort order by filename SAME as sort order by modify time
+    - modify time is ABOUT 24 hours after start part of filename
+    """
+    dir_obj = d if isinstance(d, pathlib.Path) else pathlib.Path(d)
+    regex_pad_sensor_path = re.compile(_SENSOR_DIR_PATTERN)
+    if not dir_obj.is_dir():
+        raise ValueError('%s directory does not exist' % dir_obj)
+    if regex_pad_sensor_path.match(str(dir_obj)) is None:
+        raise ValueError('%s directory does not match PAD sensor path pattern' % dir_obj)
+    # get sorted list of header file objects based on alphanumeric
+    hdr_files_by_alphanum = sorted(list(x for x in dir_obj.iterdir() if x.is_file() and str(x).endswith('.header')))
+    # get sorted list of header file objects based on modified time
+    hdr_files_by_mtimes = sorted(hdr_files_by_alphanum, key=os.path.getmtime)
+    # check first criteria (sorts must match)
+    if hdr_files_by_alphanum != hdr_files_by_mtimes:
+        return False
 
 
 def files_differ(f1, f2):
