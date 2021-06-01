@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 
+
 def data_gen():
     t = data_gen.t
     cnt = 0
