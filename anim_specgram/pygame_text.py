@@ -8,6 +8,7 @@ import socket
 
 # define font constants
 FONT_STR, FONT_SIZE, FONT_SIZE_SMALL = "ubuntumono, bold", 132, 72
+FONT_STR, FONT_SIZE, FONT_SIZE_SMALL = "lucidaconsole, bold", 96, 48
 
 
 def init_display(title_str):
@@ -16,7 +17,7 @@ def init_display(title_str):
     pygame.display.set_caption(title_str)
     info_object = pygame.display.Info()
     screen_w, screen_h = info_object.current_w, info_object.current_h
-    win = pygame.display.set_mode((info_object.current_w, info_object.current_h), pygame.RESIZABLE)
+    win = pygame.display.set_mode((info_object.current_w-111, info_object.current_h-111), pygame.RESIZABLE)
     return screen_w, screen_h, win
 
 
