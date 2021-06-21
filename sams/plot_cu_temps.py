@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 import datetime
 from pims.database.samsquery import SimpleQueryAOS, query_cu_packet_temps, query_gse_packet_current
-from pims.database.samsquery import query_cu_packet_battery
+from pims.database.samsquery import query_cu_packet_battery, query_cu_packet_cpu
 from pimsdateutil import round_time
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
@@ -255,8 +255,10 @@ def plot_current_custom(d1, d2=None):
     plt.savefig('/misc/yoda/www/plots/user/sams/status/cutemps_cache/2018-04-11_laptop_batt_replaced_er6_locker3_current.pdf')
 
 
-def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
+def plot_cu_battery_current_cpu(d1=None, d2=None, pdf_file=None):
+    """PDF output 2-panel plot of SAMS CU Battery Charge & CPU Usage on top double plot and current on bottom plot"""
     SEC_AVG = 30  # just for current (for now)
+    flag_battery, flag_cpu = False, False
 
     if pdf_file is None:
         pdf_file = '/misc/yoda/www/plots/user/sams/status/cubattery_er6locker1aggcurrent.pdf'
@@ -272,32 +274,53 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
     # print d1.strftime('%Y-%m-%d %H:%M:%S'),
     # print d2.strftime('%Y-%m-%d %H:%M:%S')
 
-    # queries for battery charge and current
+    # queries for battery charge and current and cpu utilization
     df = query_cu_packet_battery(d1, d2)
     dfc = query_gse_packet_current(d1, d2)
+    dfu = query_cu_packet_cpu(d1, d2)
+
+    # for notification purposes, do groupby to check battery_charge threshold and trend
+    df_g5m = df.groupby(pd.Grouper(key='timestamp', freq='300s')).agg({'timestamp': 'first', 'battery_charge': 'mean'})[-3:]
+    batt_charge = df_g5m['battery_charge'].values
+    if np.all(batt_charge < 75) and (batt_charge[-1] < batt_charge[0]):
+        flag_battery = True
+
+    # for notification purposes, do groupby to check cpu utilization threshold
+    dfu_g5m = dfu.groupby(pd.Grouper(key='timestamp', freq='300s')).agg({'timestamp': 'first', 'cpu_utilization1': 'mean'})[-3:]
+    cpu_usage = dfu_g5m['cpu_utilization1'].values
+    if np.all(cpu_usage > 60):
+        flag_cpu = True
 
     fig = plt.figure(num=None, figsize=(11, 8.5), dpi=200, facecolor='w', edgecolor='k')
 
     ax1 = plt.subplot(211)
 
-    # df.plot(ax=ax1, x='timestamp').legend(loc='center left', bbox_to_anchor=(1, 0.5))
-    df.plot(ax=ax1, x='timestamp', legend=False)
+    # df.plot(ax=ax1, x='timestamp', legend=False)
+    df.plot(ax=ax1, x='timestamp')
+    # df.plot(ax=ax1, x='timestamp').legend(loc='center', shadow=True, fancybox=True)
+    # handles, labels = ax1.get_legend_handles_labels()
+    # ax1.legend(handles=handles[1:], labels=labels[1:], title='Percentages:')
+
+    # now plot cpu utilization (5-min average one) on same, top subplot
+    dfu.plot(ax=ax1, x='timestamp')
+
+    # tweak legend
+    handles, labels = ax1.get_legend_handles_labels()
+    ax1.legend(fontsize=8, loc='best')
 
     format_x_date_month_day(ax1)
 
     dt = datetime.datetime.now()
-    plt.suptitle('SAMS CU Laptop Battery and %d-Sec. Avg. of\nER6 Locker 1 Aggregate Current (updated at %s)' % (
+    plt.suptitle('SAMS CU Laptop Battery, 5-Min CPU Usage & %d-Sec. Avg. of\nER6 Locker 1 Aggregate Current (updated at %s)' % (
     SEC_AVG, dt.strftime('%Y-%m-%d %H:%M:%S')))
 
-    plt.ylabel('Charge (%)')
+    plt.ylabel('Percentage (%)')
     plt.xlabel('GMT Hour')
     plt.ylim((-5, 105))
     ax1.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
 
     for label in ax1.xaxis.get_ticklabels(minor=True):
         label.set_visible(False)
-
-    #plt.legend(prop={'size': 8}, bbox_to_anchor=(1, 0.88))
 
     plt.yticks([0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
 
@@ -308,8 +331,9 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
     dfc_m = dfc_m.reset_index()
     # print dfc_m
 
-    # plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_3_current'])
-    plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_1_current'])
+    # plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_3_current'])  # we used to draw from Locker 3 back in the day
+    color = 'tab:blue'
+    plt.plot(dfc_m['ku_timestamp'], dfc_m['er6_locker_1_current'], color=color)
     plt.subplots_adjust(left=0.1, right=0.85, bottom=0.15, top=0.88)
 
     format_x_date_month_day(ax2)
@@ -319,6 +343,7 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
     plt.xlabel('GMT Hour')
     plt.ylim((-0.2, 9.2))
     ax2.grid(which='both', color=(0.2, 0.3, 0.3), linestyle=':', linewidth=0.4)
+    ax2.tick_params(axis='y')
     plt.yticks([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
 
     for label in ax2.xaxis.get_ticklabels(minor=True)[::2]:
@@ -332,6 +357,18 @@ def plot_cubattery_and_current(d1=None, d2=None, pdf_file=None):
     # plt.show()
 
     plt.savefig(pdf_file)
+
+    # if a flag got set True, then we need to know about it somehow...blinkstick perhaps (no-go for jawa email-to-text)
+    if flag_battery and flag_cpu:
+        color, t_on, t_off = 'red', 1, 1  # battery draining AND elevated CPU
+    elif flag_battery:
+        color, t_on, t_off = 'yellow', 1, 1  # just battery draining is all
+    elif flag_cpu:
+        color, t_on, t_off = 'blue', 2, 2  # just elevated CPU utilization
+    else:
+        color, t_on, t_off = 'green', 2, 8  # okay fine
+
+    return color, t_on, t_off
 
 
 def plot_cutemps_and_current(d1=None, d2=None, pdf_file=None):
@@ -446,17 +483,21 @@ def long_temp_plot():
 
 
 def quick_job():
-    d1 = datetime.datetime(2018, 4, 30, 20)
-    d2 = datetime.datetime(2018, 4, 30, 22)
+    d1 = datetime.datetime(2021, 5, 29)
+    d2 = datetime.datetime(2021, 6, 1)
     pdf_file = '/tmp/out.pdf'
-    plot_cutemps_and_current(d1=d1, d2=d2, pdf_file=pdf_file)
+    plot_cu_battery_current_cpu(d1=d1, d2=d2, pdf_file=pdf_file)
 
 
 def main():
     #plot_cu_temps()
     #plot_gse_current()
+
+    # quick_job()
+
     plot_cutemps_and_current()
-    plot_cubattery_and_current()
+    color, t_on, t_off = plot_cu_battery_current_cpu()
+
 
 
 if __name__ == '__main__':

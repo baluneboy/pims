@@ -10,9 +10,15 @@ from roadmapConnect import *
 from time import *
 from commands import *
 from syslog import *
+from pims.database.pimsquery import query_pimsmap_id
+
 
 #Instantiate logging
-rmlog = InitLogging()
+try:
+	rmlog = InitLogging()
+except:
+	print '??? Could not intantiate logging.'
+
 
 ###############################################################################
 # class to represent files from JAXA
@@ -164,12 +170,43 @@ class roadmapFile(object):
 			self.dbGetId()
 
 
+def get_insert_from_roadmap_file(roadmap_file):
+	"""return insert (query) string given roadmap filename string"""
+	rf = roadmapFile(roadmap_file)
+	plottype_id = query_pimsmap_id(rf.plot, table='plottype')
+	sensor_id = query_pimsmap_id(rf.sensor, table='sensor')
+	s = 'INSERT INTO `pimsmap`.`roadmap` (`name`, `plot_id`, `sensor_id`, `year`, `month`, `day`, `samplerate`, `date`) VALUES ("%s' % rf.filename
+	s += '",%s' % plottype_id   # db
+	s += ',%s' % sensor_id  # db
+	s += ',%d' % int(rf.year)
+	s += ',%d' % int(rf.month)
+	s += ',%d' % int(rf.day)
+	s += ',%.2f' % float(rf.samplerate)  # float
+	s += ',"%s");' % rf.date
+	return str(s)
+
+
+def backfill_roadmap_db(list_file):
+	"""print insert statement(s) for each in files list"""
+	with open(list_file, 'r') as f:
+		for line in f.readlines():
+			full_filename = line.rstrip('\n')
+			print get_insert_from_roadmap_file(full_filename)
 
 
 ###############################################################################
 # MAIN
 if __name__ == '__main__':
 	#from apihelper import info
+
+	# How to backfill roadmap db with list of PDFs that are missing in calendar view.
+	# do this...[ to get what goes into list_file ]
+	# find /misc/yoda/www/plots/batch/year2021/month01/day0{1,2,3} -type f -name "*.pdf" >  /misc/yoda/www/plots/user/pims/roadmap_inserts_output.txt
+	my_list_file = '/misc/yoda/www/plots/user/pims/roadmap_inserts_output.txt'
+	# then do this next line to get insert statements on stdout
+	backfill_roadmap_db(my_list_file)
+
+	raise SystemExit
 
 	#s =jaxaFile(filename ='/misc/yoda/pub/jaxa/year2008/month08/day06/mma_accel_0bbc/2008_08_06_00_49_02.000+2008_08_06_01_49_02.000.0bbc',offsetRecs=0,numRecs=732420)
 	s = roadmapFile(filename ='/misc/yoda/www/plots/batch/year2003/month01/day01/2003_01_01_00_00_00_121f03_otos_8h_200hz.pdf')

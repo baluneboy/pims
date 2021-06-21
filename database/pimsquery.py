@@ -104,6 +104,16 @@ def get_db_count(host, schema, sensor, start, stop):
 # raise SystemExit
 
 
+def query_pimsmap_id(abbr, table='plottype', schema='pimsmap', host='yoda', user=_UNAME, passwd=_PASSWD):
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    # SELECT `plottype`.`id` FROM `pimsmap`.`plottype` WHERE `abbr` = "spgs";
+    query = 'SELECT `%s`.`id` FROM `pimsmap`.`%s` WHERE `abbr` = "%s";' % (table, table, abbr)
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    id = df.id[0]
+    return id
+
+
 def query_heartbeat(table='heartbeat', schema='pimsmon', host='stan', user=_UNAME, passwd=_PASSWD):
     """query stan for South Park machine heart beats (and uptimes)"""
     constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)

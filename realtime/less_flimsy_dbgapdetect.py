@@ -55,9 +55,9 @@ from pims.utils.pimsdateutil import floor_ten_minutes
 #}
 defaults = {
 'sensorhosts': [
-    ('121f02',      'timmeh',        'pims',     '8'),
-    ('121f03',      'timmeh',        'pims',     '8'),
-    ('121f04',      'timmeh',        'pims',     '8'),
+    ('121f02',      'kenny',        'pims',     '8'),
+    ('121f03',      'kenny',        'pims',     '8'),
+    ('121f04',      'kenny',        'pims',     '8'),
     ('121f05',      'cartman',         'pims',     '8'),
     ('121f08',      'cartman',        'pims',     '8'),
     ('es03',        'cartman',        'pims',     '7.84'),

@@ -278,8 +278,8 @@ class RtsDrawerCurrentQuery(EeStatusQuery):
 
     def _get_query(self):
         query = "SELECT ku_timestamp, %s from gse_packet WHERE ku_timestamp between '%s' and '%s' order by ku_timestamp asc;" % (self.field, self.start, self.stop)
-        #print query
-        #print self.schema
+        print query
+        # print self.schema
         return query
 
     def dataframe_from_query(self):
@@ -665,6 +665,19 @@ def query_cu_packet_temps(d1, d2, table='cu_packet', schema='samsnew', host='yod
     # query = "select timestamp, cpu_temp0, cpu_temp1, case_temp0, case_temp1, case_temp2, case_temp3, case_temp4, case_temp5, case_temp6, case_temp7, case_temp8, gpu_temp from %s.%s where timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, t1, t2)
     query = "select timestamp, cpu_temp0 as acpi1_temp, cpu_temp1 as acpi2_temp, case_temp0 as acpi3_temp, case_temp1 as acpi4_temp, case_temp2 as acpi5_temp, case_temp3 as acpi6_temp, case_temp4 as phys0_temp, case_temp5 as core1_temp, case_temp6 as core2_temp, case_temp7 as core3_temp, case_temp8 as core4_temp, gpu_temp from %s.%s where timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, t1, t2)
     #print query
+    #print query
+    engine = create_engine(constr, echo=False)
+    df = pd.read_sql_query(query, con=engine)
+    return df
+
+
+def query_cu_packet_cpu(d1, d2, table='cu_packet', schema='samsnew', host='yoda', user=_UNAME_SAMS, passwd=_PASSWD_SAMS):
+    """get records from d1 to d2"""
+    constr = 'mysql://%s:%s@%s/%s' % (user, passwd, host, schema)
+    t1 = d1.strftime('%Y-%m-%d %H:%M:%S')
+    t2 = d2.strftime('%Y-%m-%d %H:%M:%S')
+    # SELECT timestamp, cpu_utilization1 FROM samsnew.cu_packet;
+    query = "SELECT timestamp, cpu_utilization1 FROM %s.%s where timestamp >= '%s' and timestamp < '%s' order by timestamp asc;" % (schema, table, t1, t2)
     #print query
     engine = create_engine(constr, echo=False)
     df = pd.read_sql_query(query, con=engine)

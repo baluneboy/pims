@@ -10,12 +10,12 @@ import pandas as pd
 from pims.utils.pimsdateutil import doytimestr_to_datetime, datetime_to_doytimestr
 
 MAX_ABS_DELTA_KU = 2
-SOUND_DEVICES = ['122-f02', '122-f03', '122-f04', '122-f07', '121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt']
+SOUND_DEVICES = ['122-f01', '122-f02', '122-f04', '122-f06', '121f02rt', '121f03rt', '121f04rt', '121f05rt', '121f08rt']
 
 # input parameters
 defaults = {
 #                comma-sep values for plus groups    
-'groups':       '122-f07+121f04rt,122-f02+122-f03+Ku_AOS,122-f02+121f03rt,122-f04+121f02rt+121f05rt',
+'groups':       '122-f01+121f04rt,122-f02+122-f03+Ku_AOS,122-f02+121f03rt,122-f04+121f02rt+121f08rt',
 'gmtoffset':    '0', # hour offset from this system clock's time and GMT (like -4 or -5 for Eastern time)
 }
 parameters = defaults.copy()
