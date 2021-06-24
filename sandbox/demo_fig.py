@@ -1,3 +1,5 @@
+
+import numpy as np
 import matplotlib.pyplot as plt
 
 
@@ -24,7 +26,7 @@ class Plot3x1(object):
         self.fig, self.axs = self._init_subplots()
         self._plot_data()
         self.set_labels()
-        self.anns = {'left': None, 'center': None, 'right': None}
+        self.anns = {'left': [], 'center': [], 'right': []}
 
     @staticmethod
     def _init_subplots():
@@ -46,22 +48,41 @@ class Plot3x1(object):
             if not self.labels['title'][i] is None:
                 self.axs[i].set_title(self.labels['title'][i])
 
-    def set_annotations(self, ann_list, ha):
+    def set_annotations(self, horiz_align, anns_list):
         xycoords = ('axes fraction', 'axes fraction')
         xpos = {'left': -0.08, 'center': 0.5, 'right': 1.05}
-        xval = xpos[ha]
+        xval = xpos[horiz_align]
         yval, ydelta = 1.35, 0.05
         handles = []
-        for ann in ann_list:
-            handles.append(self.axs[0].annotate(ann, xy=(xval, yval), xycoords=xycoords, ha=ha))
+        for ann in anns_list:
+            handles.append(self.axs[0].annotate(ann, xy=(xval, yval), xycoords=xycoords, ha=horiz_align))
             yval -= ydelta
-        self.anns[ha] = handles
+        self.anns[horiz_align] = handles
 
     def save_fig(self, pdf_file, dpi=100):
         self.fig.savefig(pdf_file, dpi=dpi)
 
 
-def get_example_data():
+class SamsPlot3x1(Plot3x1):
+
+    def __init__(self, arr, labels, invert=True, demean=True):
+        self.invert = invert
+        self.demean = demean
+        self.means = np.array([None, None, None])
+        arr = self._preprocess(arr)
+        super().__init__(arr, labels)
+
+    def _preprocess(self, arr):
+        """return pre-processed array"""
+        if self.invert:
+            arr[:, 1:4] = -arr[:, 1:4]
+        if self.demean:
+            self.means = arr[:, 1:4].mean(axis=0)
+            arr[:, 1:4] = arr[:, 1:4] - self.means
+        return arr
+
+
+def get_example_sams_data():
     """return 2 numpy arrays for example x, y data"""
     import ugaudio.load as load
     pad_file = 'G:/data/pad/year2020/month04/day05/sams2_accel_121f03/2020_04_05_00_05_15.785+2020_04_05_00_15_15.803.121f03'
@@ -69,26 +90,27 @@ def get_example_data():
     return arr
 
 
-def get_example_labels():
+def get_example_sams_labels():
     """return dict for x- and y-labels strings"""
     #                       Top Subplot              Mid Subplot            Bottom Subplot
     example_labels = {'x': [None,                    None,                ('Time', 'sec')],
-                      'y': [('X-Axis Accel', 'g'), ('Y-Axis Accel', 'g'), ('Z-Axis Accel', 'g')],
+                      'y': [('X-Axis Quantity', 'units'), ('Y-Axis Quantity', 'units'), ('Z-Axis Quantity', 'units')],
                       'title': ['Top Title',         None,                  None]}
     return example_labels
 
 
 def main():
     # load example data and labels
-    a = get_example_data()
-    my_labels = get_example_labels()
+    a = get_example_sams_data()
+    my_labels = get_example_sams_labels()
 
     # plot example
-    p3x1 = Plot3x1(a, my_labels)
+    p3x1 = SamsPlot3x1(a, my_labels, invert=True, demean=True)
 
     # set annotations
-    p3x1.set_annotations(['one', 'two', 'three', 'four', 'five'], 'left')
-    p3x1.set_annotations(['one', 'two', 'three'], 'right')
+    p3x1.set_annotations('left', ['Upper Left One', 'Upper Left Two', 'Upper Left Three', 'Upper Left Four', 'Five'])
+    p3x1.set_annotations('right', ['one', 'two', 'three'])
+    p3x1.set_annotations('center', ['one', 'two', 'three', 'four'])
 
     # save pdf
     # p3x1.save_fig('c:/temp/sample.pdf')
@@ -98,5 +120,6 @@ def main():
 
 if __name__ == '__main__':
     p3 = main()
+    print(p3.means)
     move_figure(p3.fig, 10, 1)
     plt.show()
