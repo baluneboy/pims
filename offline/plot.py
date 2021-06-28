@@ -44,6 +44,7 @@ class Plot3x1(object):
         self.dpi = 120
         self.fig = None
         self.axs = None
+        self.lines = [None, None, None]
         self.upper_text = {'left': [], 'center': [], 'right': []}
 
     @staticmethod
@@ -58,7 +59,7 @@ class Plot3x1(object):
         """plot each of x-, y-, and z-axis data"""
         self.fig, self.axs = self._init_subplots()
         for i in range(3):
-            self.axs[i].plot(self.arr[:, 0], self.arr[:, i + 1], color='black', marker=None, linestyle='solid')
+            self.lines[i] = self.axs[i].plot(self.arr[:, 0], self.arr[:, i+1], color='k')[0]
 
     def set_labels(self):
         """set labels for xlabel, ylabel and title"""
@@ -119,6 +120,7 @@ class SamsGvtPlot3x1(SamsPlot3x1):
         self.header = header
         labels = self._get_labels(scale)
         super().__init__(arr, labels, scale=scale, invert=invert, demean=demean)
+        self.dtm = self._get_datetime_array()
 
     def on_press(self, event):
         """callback handler for keypress event"""
@@ -141,17 +143,19 @@ class SamsGvtPlot3x1(SamsPlot3x1):
         print("updated ylims: ", event_ax.get_ylim())
 
     def plot(self):
-        """plot each of x-, y-, and z-axis data"""
-        self.fig, self.axs = self._init_subplots()
-        dtm = self._get_datetime_array()
-        for i in range(3):
-            self.axs[i].plot_date(dtm, self.arr[:, i + 1], color='black', marker=None, linestyle='solid')
+        # create fig, ax objects as needed
+        if self.fig is None:
+            self.fig, self.axs = self._init_subplots()
+            [ax.callbacks.connect('xlim_changed', self.on_xlim_change) for ax in self.axs]
+            [ax.callbacks.connect('ylim_changed', self.on_ylim_change) for ax in self.axs]
             # cid = self.fig.canvas.mpl_connect('key_press_event', self.on_press)
-            self.axs[i].callbacks.connect('xlim_changed', self.on_xlim_change)
-            self.axs[i].callbacks.connect('ylim_changed', self.on_ylim_change)
+        # index over axes and columns of arr for plots
+        for i in range(3):
+            self.lines[i] = self.axs[i].plot_date(self.dtm, self.arr[:, i+1], color='black', linestyle='solid')[0]
+            self.lines[i].set_marker(None)
 
     def _get_datetime_array(self):
-        """return array of absolute datetimes using tzero (GMT) and relative offset (sec) from arr's first column"""
+        """return array of absolute datetimes using tzero (GMT) and relative offset (sec) from arr's first column """
         # delta in milliseconds (which is the L in freq string)
         delta = 1000.0 / self.header['fs']
         freq = '%.3fL' % delta
@@ -164,9 +168,9 @@ class SamsGvtPlot3x1(SamsPlot3x1):
         u = SCALES[scale][1] + 'g'
         top_title = self.header['tzero'].strftime('Start GMT %Y-%m-%d, %j/%H:%M:%S.%f')[:-3]
         #                   Top Subplot              Mid Subplot            Bottom Subplot
-        labels = {'x': [None, None, ('Time', 'sec')],
-                  'y': [('X-Axis %s' % q, u), ('Y-Axis %s' % q, u), ('Z-Axis %s' % q, u)],
-                  'title': [top_title, None, None]}
+        labels = {'x':     [None,                    None,                ('Time', 'sec')],
+                  'y':     [('X-Axis %s' % q, u), ('Y-Axis %s' % q, u), ('Z-Axis %s' % q, u)],
+                  'title': [top_title,               None,                  None]}
         return labels
 
     def _get_upper_text_lists(self):
@@ -183,12 +187,12 @@ class SamsGvtPlot3x1(SamsPlot3x1):
         return text_upper_left, text_upper_center, text_upper_right
 
     def set_ancillary_text(self):
-        """return handles after setting ancillary upper text objects"""
-        txtUL, txtUC, txtUR = self._get_upper_text_lists()
-        self.set_upper_text('left', txtUL)
-        self.set_upper_text('center', txtUC)
-        self.set_upper_text('right', txtUR)
-        self.upper_text['center'][3].set_fontsize(11)
+       """return handles after setting ancillary upper text objects"""
+       txtUL, txtUC, txtUR = self._get_upper_text_lists()
+       self.set_upper_text('left', txtUL)
+       self.set_upper_text('center', txtUC)
+       self.set_upper_text('right', txtUR)
+       self.upper_text['center'][3].set_fontsize(11)
 
 
 def get_example_sams_data():
@@ -197,11 +201,23 @@ def get_example_sams_data():
     from pims.pad.read_header import get_sams_simple_header
 
     pad_file = 'G:/data/pad/year2020/month04/day05/sams2_accel_121f03/2020_04_05_00_05_15.785+2020_04_05_00_15_15.803.121f03'
+    pad_file = '/media/pims/mybook/gipoc.grc.nasa.gov/pims/pub/pad/year2021/month05/day02/sams2_accel_121f02/2021_05_02_00_20_46.080+2021_05_02_00_30_46.091.121f02'
     hdr_file = pad_file + '.header'
 
-    hdr = get_sams_simple_header(hdr_file)
-    for k, v in hdr.items():
-        print(k, v)
+    try:
+        from pims.pad.read_header import get_sams_simple_header
+        hdr = get_sams_simple_header(hdr_file)
+        for k, v in hdr.items():
+            print(k, v)
+    except Exception as e:
+        import datetime
+        print('Oops!  Cannot import header code, so fake it.')
+        hdr = {'fs': 500.0, 'fc': 200.0, 'location': 'UNKNOWN', 'sensor': 'UNKNOWN'}
+        hdr['tzero'] = datetime.datetime(1964, 12, 2, 1, 2, 3, 456789)
+        hdr['system'] = 'sysifuss'
+        hdr['xyz_coords'] = [1.1, 2.2, 3.3]
+        hdr['rpy_orient'] = [11, 22, 33]
+        hdr['coord_sys'] = 'cordifus'
 
     arr = load.pad_read(pad_file)
     return arr, hdr
@@ -211,18 +227,26 @@ def get_example_sams_labels(hdr):
     """return dict for x- and y-labels strings given simple sams pad header info"""
     top_title = hdr['tzero'].strftime('Start GMT %Y-%m-%d, %j/%H:%M:%S.%f')[:-3]
     #                       Top Subplot              Mid Subplot            Bottom Subplot
-    example_labels = {'x': [None, None, ('Time', 'sec')],
+    example_labels = {'x': [None,                    None,                ('Time', 'sec')],
                       'y': [('X-Axis Quantity', 'units'), ('Y-Axis Quantity', 'units'), ('Z-Axis Quantity', 'units')],
-                      'title': [top_title, None, None]}
+                      'title': [top_title,           None,                  None]}
     return example_labels
 
 
+def on_press(event):
+    print('pressed t for Time Toggle', event.key)
+    if event.key == 't':
+        print(get_fmt(plt.gca().xaxis))
+
+
 def main():
+
     # load example data and labels
     a, hdr = get_example_sams_data()
 
     # create plot object
-    gvt3 = SamsGvtPlot3x1(a, hdr, scale='milli', invert=True, demean=True)
+    gvt3 = SamsGvtPlot3x1(a, hdr, scale='milli')
+    dtm = gvt3._get_datetime_array()
 
     # plot data
     gvt3.plot()
@@ -233,16 +257,14 @@ def main():
     # set ancillary (upper) text
     gvt3.set_ancillary_text()
 
-    # save svg
-    gvt3.save_fig('c:/temp/sample.svg')
-    gvt3.save_fig('c:/temp/sample.pdf')
+    # # save svg
+    # gvt3.save_fig('c:/temp/sample.svg')
+    # gvt3.save_fig('c:/temp/sample.pdf')
 
     return gvt3
 
 
 if __name__ == '__main__':
     p3 = main()
-    # print(p3.means)
-    # print(p3.tzero)
     # move_figure(p3.fig, 10, 1)
-    # plt.show()
+    plt.show()
