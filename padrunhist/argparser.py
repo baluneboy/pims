@@ -57,12 +57,12 @@ def show_args(args):
     # demo show
     my_date = args.date
     if args.verbosity == 2:
-        print "date of interest is {}".format(str(args.date))
+        print("date of interest is {}".format(str(args.date)))
     elif args.verbosity == 1:
-        print "date = {}".format(str(args.date))
+        print("date = {}".format(str(args.date)))
     else:
-        print my_date
-    print args
+        print(my_date)
+    print(args)
 
 
 def parse_inputs():
@@ -120,7 +120,7 @@ def parse_inputs():
 
     # handle the case when fromfile option is used (and we ignore start/stop)
     if args.fromfile is not None:
-        print 'using fromfile option, so ignore start/stop info'
+        print('using fromfile option, so ignore start/stop info')
         args.start, args.stop = None, None
     else:
         # finalize start and stop dates
@@ -145,4 +145,4 @@ if __name__ == '__main__':
 
     DARGS = vars(ARGS)
     for k, v in DARGS.iteritems():
-        print k, 'is', v
+        print(k, 'is', v)

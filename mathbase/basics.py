@@ -20,7 +20,7 @@ def round_up(x, m):
 
 def demo_round2ten():
     for v in range(65740, 65860, 10):
-        print v / 10.0, round2ten(v/10.0)
+        print(v / 10.0, round2ten(v/10.0))
 
 
 def demo_numpy_array_append_rows(sensor, y, m, d):
@@ -52,4 +52,4 @@ def demo_numpy_array_append_rows(sensor, y, m, d):
 
 if __name__ == '__main__':
     arr = demo_numpy_array_append_rows('121f03006', 2017, 11, 1)
-    print arr
+    print(arr)

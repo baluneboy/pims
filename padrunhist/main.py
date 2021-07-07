@@ -10,21 +10,21 @@ import os
 import sys
 import glob
 import datetime
-from dateutil.relativedelta import relativedelta
+# from dateutil.relativedelta import relativedelta
 import numpy as np
 import pandas as pd
 import scipy.io as sio
 from pathlib import Path
-from dateutil import parser
+# from dateutil import parser
 from matplotlib import rc, pyplot as plt
 from matplotlib.ticker import MultipleLocator, FormatStrFormatter
 from matplotlib.font_manager import FontProperties
 
-import argparser
-from plumb_line import plumblines
+import pims.padrunhist.argparser as argparser
+from pims.padrunhist.plumb_line import plumblines
 from pims.mathbase.basics import round_up
 from pims.utils.pimsdateutil import datetime_to_ymd_path, datetime_to_dailyhist_path, year_month_to_dtm_start_stop, ymd_pathstr_to_date
-from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
+# from pims.utils.pimsdateutil import pad_fullfilestr_to_start_stop
 from pims.files.filter_pipeline import FileFilterPipeline, BigFile
 from histpad.pad_filter_pipeline import PadDataDaySensorWhere, sensor2subdir, PadDataDaySensorWhereMinDur
 from histpad.file_disposal import DailyHistFileDisposal, DailyMinMaxFileDisposal
@@ -100,18 +100,18 @@ def get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=2*1024*1024)
     return list( ffp(files) )
 
 
-def get_pad_day_sensor_rate_mindur_files(files, day, sensor, fs, mindur=5):
+def get_pad_day_sensor_rate_mindur_files(files, day, sensor, fs, mindur=5, base_dir='/misc/yoda/pub/pad'):
 
     # FIXME rate implied at 500.0 (needs attention in PadDataDaySensorWhereMinDur)
 
     # initialize callable classes that act as filters for our pipeline
-    file_filter1 = PadDataDaySensorWhereMinDur(day, sensor, where={'SampleRate': fs}, mindur=mindur)
+    file_filter1 = PadDataDaySensorWhereMinDur(day, sensor, where={'SampleRate': fs}, mindur=mindur, base_dir=base_dir)
 
     # initialize processing pipeline with callable classes, but not using file list as input yet
     ffp = FileFilterPipeline(file_filter1)
 
     # now apply processing pipeline to file list; at this point, ffp is callable
-    return list( ffp(files) )
+    return list(ffp(files))
 
 
 def demo_pad_pct99(sensor, y, m, d, min_bytes=2*1024*1024):
@@ -140,14 +140,14 @@ def demo_99pct_vecmag_array(min_bytes):
     #sensor = '121f03006'
     drange = pd.date_range('2017-01-01', '2018-01-01')
     sensor = 'es05020'
-    print sensor
-    print '{:>9}  {:4}  {:2}  {:2}'.format('# Files', 'Year', 'Mo', 'Da')
+    print(sensor)
+    print('{:>9}  {:4}  {:2}  {:2}'.format('# Files', 'Year', 'Mo', 'Da'))
     def do_plot():
         pcts = np.empty((0, 4), np.float)
         for d in drange:
             pct = demo_pad_pct99(sensor, d.year, d.month, d.day, min_bytes=min_bytes)
             pcts = np.append(pcts, pct, axis=0)
-            print '{:9}  {:4}  {:02}  {:02}'.format(pcts.shape[0], d.year, d.month, d.day)
+            print('{:9}  {:4}  {:02}  {:02}'.format(pcts.shape[0], d.year, d.month, d.day))
         plt.plot(pcts[:,0] * 1e3)
         plt.ylabel('99th Pctile of Accel. Mag. (mg)')
         plt.title(sensor)
@@ -169,14 +169,14 @@ def save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, b
 
         # get list of PAD data files for particular day and sensor
         pth = os.path.join( datetime_to_ymd_path(d), sensor2subdir(sensor) )
-        print pth
+        print(pth)
         if os.path.exists(pth):
             tmp = os.listdir(pth)
             files = [ os.path.join(pth, f) for f in tmp ]
 
             # now filter files
             my_files = get_pad_day_sensor_files_minbytes(files, day, sensor, min_bytes=min_bytes)            
-            print '%s gives %d files' % (day, len(my_files))
+            print('%s gives %d files' % (day, len(my_files)))
             
             len_files = len(my_files)
             if len_files > 0:
@@ -191,7 +191,7 @@ def save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, b
 
                 dh = DailyHistFileDisposal(my_files[0], bins, vecmag_bins)
                 Nx, Ny, Nz, Nv = dh.run()
-                print '>> completed %s' % my_files[0]
+                print('>> completed %s' % my_files[0])
                 for f in my_files[1:]:
                     dh = DailyHistFileDisposal(f, bins, vecmag_bins)
                     nx, ny, nz, nv = dh.run()
@@ -199,11 +199,11 @@ def save_dailyhistpad(start, stop, sensor='121f03', where={'CutoffFreq': 200}, b
                     Ny += ny
                     Nz += nz
                     Nv += nv
-                    print '>> completed %s' % f
+                    print('>> completed %s' % f)
                 sio.savemat(outfile, {'Nx': Nx, 'Ny': Ny, 'Nz': Nz, 'Nv': Nv})
                 print
         else:
-            print '%s gives NO FILES' % day
+            print('%s gives NO FILES' % day)
 
 
 def Jan_thru_Sep_2017():
@@ -239,8 +239,8 @@ def save_monthlyhistpad(year, month, sensor='121f03', fc=200):
             hx += data['Nx'][0]
             hy += data['Ny'][0]
             hz += data['Nz'][0]
-            print '%d' % np.sum(hv)
-    print ''
+            print('%d' % np.sum(hv))
+    print('')
     
     # output filename relative to common path
     outdir = DEFAULT_HISTDIR
@@ -250,7 +250,7 @@ def save_monthlyhistpad(year, month, sensor='121f03', fc=200):
     
     # save to output file
     sio.savemat(outfile, {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outfile
+    print(outfile)
 
 
 def get_axis_settings(xvals):
@@ -258,7 +258,7 @@ def get_axis_settings(xvals):
     mult = 5  
     xMajorLoc = MultipleLocator(1)
     xMinorLoc = MultipleLocator(0.5)
-    print 'xvals_max', xvals_max
+    print('xvals_max', xvals_max)
     if xvals_max > 40:
         #mult = 220
         #xMajorLoc = MultipleLocator(20)
@@ -324,8 +324,8 @@ def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
             hz += data['Nz'][0]
             num_pts = np.sum(hv)
             #print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d.date()), num_pts, f)
-    print ''
+            print("{} {:20,.0f} {}".format(str(d.date()), num_pts, f))
+    print('')
     
     # output filename relative to common path
     outdir = os.path.join(DEFAULT_HISTDIR, 'plots')
@@ -335,7 +335,7 @@ def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
     # save to output mat file
     outmat = outstub + '.mat'
     sio.savemat(outstub + '.mat', {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outmat
+    print(outmat)
 
     font = {'family' : 'DejaVu Sans',
             'weight' : 'normal',
@@ -403,7 +403,7 @@ def OBSOLETE_plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     outpdf = outmat.replace('.mat', '.pdf')    
     plt.savefig(outpdf)
-    print "evince", outpdf, "&"
+    print("evince", outpdf, "&")
 
 
 def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
@@ -432,8 +432,8 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
             hz += data['Nz'][0]
             num_pts = np.sum(hv)
             # print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d.date()), num_pts, f)
-    print ''
+            print("{} {:20,.0f} {}".format(str(d.date()), num_pts, f))
+    print('')
 
     # output filename relative to common path
     outdir = os.path.join(DEFAULT_HISTDIR, 'plots')
@@ -444,7 +444,7 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
     outmat = outstub + '.mat'
     sio.savemat(outstub + '.mat',
                 {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outmat
+    print(outmat)
 
     # ################################################
     # plot vector magnitude cumulative distribution
@@ -522,7 +522,7 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     outpdf = outmat.replace('.mat', '_vcdf.pdf')  # xyzh
     plt.savefig(outpdf)
-    print "evince", outpdf, "&"
+    print("evince", outpdf, "&")
 
     # ################################################
     #  plot xyz probability densities
@@ -595,7 +595,7 @@ def plotnsave_daterange_histpad(start, stop, sensor='121f03', fc=200):
 
     outpdf = outmat.replace('.mat', '_xyzp.pdf')  # xyzp
     plt.savefig(outpdf)
-    print "evince", outpdf, "&"
+    print("evince", outpdf, "&")
 
 
 def plotnsave_histmatfiles(files, sensor, tag):
@@ -628,8 +628,8 @@ def plotnsave_histmatfiles(files, sensor, tag):
             num_pts = np.sum(hv)
             d = ymd_pathstr_to_date(f)
             #print '%s %d %s' % (d.date(), np.sum(hv), f)
-            print "{} {:20,.0f} {}".format(str(d), num_pts, f)
-    print ''
+            print("{} {:20,.0f} {}".format(str(d), num_pts, f))
+    print('')
     
     # output filename relative to common path
     outdir = os.path.join(DEFAULT_HISTDIR, 'plots')
@@ -639,7 +639,7 @@ def plotnsave_histmatfiles(files, sensor, tag):
     # save to output mat file
     outmat = outstub + '.mat'
     sio.savemat(outstub + '.mat', {'vecmag_bins': vecmag_bins, 'bins': bins, 'hx': hx, 'hy': hy, 'hz': hz, 'hv': hv, 'files': files})
-    print outmat
+    print(outmat)
 
     font = {'family' : 'DejaVu Sans',
             'weight' : 'normal',
@@ -717,7 +717,7 @@ def plotnsave_histmatfiles(files, sensor, tag):
 
     outpdf = outmat.replace('.mat', '.pdf')    
     plt.savefig(outpdf)
-    print "evince", outpdf, "&"
+    print("evince", outpdf, "&")
 
 
 def plotnsave_monthrange_histpad(start, stop, sensor='121f03'):
@@ -735,7 +735,7 @@ def plotnsave_monthrange_histpad(start, stop, sensor='121f03'):
 
 def save_range_of_months(year, moStart, moStop, sensor='121f03'):
     for mo in range(moStart, moStop+1):
-        print '######### MONTH%02d ################' % mo
+        print('######### MONTH%02d ################' % mo)
         save_monthlyhistpad(year, mo, sensor=sensor)
 
 
@@ -774,7 +774,7 @@ class CreateMatFile(object):
     def do_run(self):
         try:
             self.mat_file = self.dailyhistpad_matsave()
-        except Exception, e:
+        except Exception as e:
             self.exc_info = sys.exc_info()
      
     def dailyhistpad_matsave(self):
@@ -810,7 +810,7 @@ class CreateMatFile(object):
         """get_result"""
         
         # this is that odd python legacy tuple dance here
-        if self.exc_info: raise self.exc_info[1], None, self.exc_info[2]
+        if self.exc_info: raise self.exc_info[1](None).with_traceback(self.exc_info[2])
         return self.mat_file
     
 
@@ -822,14 +822,14 @@ def process_date_list_from_file(fname, sensor):
             ymd_path = line.rstrip('\n')
             mat_file = os.path.join(ymd_path, sensor2subdir(sensor), 'dailyhistpad.mat')
             if os.path.exists(mat_file):
-                print 'padrunhist mat file exists {}'.format(mat_file)
+                print('padrunhist mat file exists {}'.format(mat_file))
             else:
-                print 'padrunhist mat file create {}'.format(mat_file)
+                print('padrunhist mat file create {}'.format(mat_file))
                 day = ymd_pathstr_to_date(mat_file)
                 cmf = CreateMatFile(day, sensor, where=where)
-                print 'doing histogram processing for our running mat file result'
+                print('doing histogram processing for our running mat file result')
                 cmf.do_run()
-                print 'now we have mat file for', day
+                print('now we have mat file for', day)
                 mat_file = cmf.get_matfile()
             files.append(mat_file)
     return files
@@ -878,10 +878,10 @@ def pad_percentiles_from_date_list_file(fname, sensor):
                 sum50 = np.append(sum50, p[0]/1e-6, axis=0)
                 sum95 = np.append(sum95, p[1]/1e-6, axis=0)
                 
-                print s, arr.shape, summary
-                print n
-                print sum50
-                print sum95
+                print(s, arr.shape, summary)
+                print(n)
+                print(sum50)
+                print(sum95)
 
 
 #import sys

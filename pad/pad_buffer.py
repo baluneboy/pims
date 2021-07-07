@@ -36,7 +36,7 @@ class PadBottomBuffer(object):
 
         if self.is_full:
             # TODO log warning that we tried to add to a buffer that's already full
-            print 'buffer full already'
+            print('buffer full already')
             # logger.info('Buffer already full, array shape is %s' % str(self.xyz.shape))
             # return
 

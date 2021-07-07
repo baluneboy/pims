@@ -1,43 +1,47 @@
-#!/usr/bin/env python
-
 import os
 import sys
-import glob
+# import glob
 import datetime
 from dateutil import parser
 import numpy as np
 from matplotlib import pyplot as plt
 import pandas as pd
+from pathlib import Path
 
-from ugaudio.load import pad_read
+from ugaudio.load import padread_vxyz
 from pims.pad.grygier_counter import get_day_files
 from pims.files.utils import mkdir_p
+from pims.sandbox.stats_dataclasses import MinMax
+
 
 _TWODAYSAGO = (datetime.datetime.now().date() - datetime.timedelta(days=2)).strftime('%Y-%m-%d')
 
 # input parameters
 defaults = {
-'start':      _TWODAYSAGO,       # string start day
-'stop':              None,       # string stop day
-'sensor':        '121f03',       # string for sensor (e.g. 121f03 or 121f08006)
-'fs':             '500.0',       # samples/second for data to be analyzed
-'min_dur':          '5.0',       # minutes -- PAD file has at least this amount; otherwise skip file
-'dry_run':        'False',       # boolean True to just dry run; False to actually run
+'func':              'run_minmax',  # function to run
+'start':              _TWODAYSAGO,  # string start day
+'stop':                      None,  # string stop day
+'sensor':                '121f03',  # string for sensor (e.g. 121f03 or 121f08006)
+'fs':                     '500.0',  # samples/second for data to be analyzed
+'min_dur':                  '5.0',  # minutes -- PAD file has at least this amount; otherwise skip file
+'reverse':                 'True',  # boolean True for reverse day ordering
+'base_dir':  '/misc/yoda/pub/pad',  # boolean True for reverse day ordering
+'dry_run':                'False',  # boolean True to just dry run; False to actually run
 }
 parameters = defaults.copy()
 
 
-def load_file(filename, show_files=False):
+def load_file(filename, show_file=False):
     # read data from file (not using double type here like MATLAB would, so we get courser demeaning)
     b = pad_read(filename)
 
     # demean each column
     a = b - b.mean(axis=0)
 
-    if show_files:
-        print '{0:s}, {1:>.4e}, {2:>.4e}, {3:>.4e}, {4:>.4e}, {5:>.4e}, {6:>.4e}'.format(filename,
+    if show_file:
+        print('{0:s}, {1:>.4e}, {2:>.4e}, {3:>.4e}, {4:>.4e}, {5:>.4e}, {6:>.4e}'.format(filename,
                                            a.min(axis=0)[1], a.max(axis=0)[1], a.min(axis=0)[2],
-                                           a.max(axis=0)[2], a.min(axis=0)[3], a.max(axis=0)[3] )
+                                           a.max(axis=0)[2], a.min(axis=0)[3], a.max(axis=0)[3]))
 
     return a
 
@@ -64,47 +68,63 @@ def parameters_ok():
     try:
         start = parser.parse(parameters['start'])
         parameters['start'] = str(start.date())
-    except Exception, e:
-        print 'could not get day input as date object: %s' % e.message
+    except Exception as e:
+        print('could not get day input as date object: %s' % e.message)
         return False
 
     # convert stop day to date object
-    if parameters['stop'] is None:
+    if parameters['stop'] is None or parameters['stop'].lower() == 'none':
         stop = start
         parameters['stop'] = str(stop.date())
     else:
         try:
             parameters['stop'] = str(parser.parse(parameters['stop']).date())
-        except Exception, e:
-            print 'could not get stop input as date object: %s' % e.message
+        except Exception as e:
+            print('could not get stop input as date object: %s' % e.message)
             return False
 
     # convert fs to float
     try:
         parameters['fs'] = float(parameters['fs'])
-    except Exception, e:
-        print 'could not convert fs to float: %s' % e.message
+    except Exception as e:
+        print('could not convert fs to float: %s' % e.message)
         return False
 
     # convert min_dur to float
     try:
         parameters['min_dur'] = float(parameters['min_dur'])
-    except Exception, e:
-        print 'could not convert min_dur to float: %s' % e.message
+    except Exception as e:
+        print('could not convert min_dur to float: %s' % e.message)
+        return False
+
+    # convert reverse to boolean
+    try:
+        parameters['reverse'] = True if parameters['reverse'].lower() in ['true', '1', 'yes', 'y'] else False
+    except Exception as e:
+        print('could not convert reverse to boolean: %s' % e.message)
         return False
 
     # convert dry_run to boolean
     try:
         parameters['dry_run'] = True if parameters['dry_run'].lower() in ['true', '1', 'yes', 'y'] else False
-    except Exception, e:
-        print 'could not convert dry_run to boolean: %s' % e.message
+    except Exception as e:
+        print('could not convert dry_run to boolean: %s' % e.message)
         return False
 
+    # convert base_dir string to Path object
+    try:
+        parameters['base_dir'] = Path(parameters['base_dir'])
+        assert parameters['base_dir'].is_dir()
+    except Exception as e:
+        print('could not convert base_dir to Path: %s' % e.message)
+        return False
+
+    # made it to here means all parameters ingested/converted okay fine
     return True  # params are OK; otherwise, we returned False above
 
 
 def print_usage():
-    print "print short description of how to run the program"""
+    print('print short description of how to run the program')
     #
     # print 'USAGE:    %s [options]' % os.path.abspath(__file__)
     # print 'EXAMPLE1: %s # FOR DEFAULTS' % os.path.abspath(__file__)
@@ -112,7 +132,7 @@ def print_usage():
     # print 'EXAMPLE3: %s sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # ACTUAL RUN' % os.path.abspath(__file__)
 
 
-def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
+def run_hist(day, sensor, fs, mindur=5, reverse=True, show_files=True, base_dir='/misc/yoda/pub/pad'):
 
     # FIXME these bins will best come by doing some homework for say the past umpteen years (all 200 Hz SAMS data)
 
@@ -120,8 +140,8 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
     dmin, dmax, nbins, bins, hx, hy, hz = load_hist_params(vecmag=False)
     dmina, dmaxa, nbinsa, binsa, hxa, hya, hza = load_hist_params(vecmag=True)
 
-    # get files
-    files = get_day_files(day, sensor, fs, mindur=mindur, is_rev=is_rev)
+    # get files (sort order of files based on reverse flag
+    files = get_day_files(day, sensor, fs, mindur=mindur, reverse=reverse, base_dir=base_dir)
 
     for f in files:
 
@@ -159,13 +179,13 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
     mkdir_p(save_dir)
     np.savez(os.path.join(save_dir, mat_name),
              width=width, center=center, dmin=dmin, dmax=dmax, nbins=nbins, bins=bins, hx=hx, hy=hy, hz=hz)
-    print 'saved %s' % mat_name
+    print('saved %s' % mat_name)
 
     suffix_str = '%s_hist_mat_%s_mag' % (sensor, fs_str)
     mat_name = '%s_%s' % (day_str, suffix_str)
     np.savez(os.path.join(save_dir, mat_name),
              width=widtha, center=centera, dmin=dmina, dmax=dmaxa, nbins=nbinsa, bins=binsa, hx=hxa, hy=hya, hz=hza)
-    print 'saved %s' % mat_name
+    print('saved %s' % mat_name)
 
     hh = {'x': (hx, hxa), 'y': (hy, hya), 'z': (hz, hza)}
 
@@ -179,7 +199,7 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
         suffix_str = '%s_%s_%s' % (sensor, h, fs_str)
         fname = '%s_%s.pdf' % (day_str, suffix_str)
         fig.savefig(os.path.join(save_dir, fname))
-        print 'evince %s &' % fname
+        print('evince %s &' % fname)
         plt.close(fig)
 
         figa, axa = plt.subplots()
@@ -189,8 +209,40 @@ def run_hist(day, sensor, fs, mindur=5, is_rev=False, show_files=True):
         plt.title('Vector Magnitude Histogram for %s, %s-Axis' % (sensor, h))
         fnamea = '%s_%s_mag.pdf' % (day_str, suffix_str)
         figa.savefig(os.path.join(save_dir, fnamea))
-        print 'evince %s &' % fnamea
+        print('evince %s &' % fnamea)
         plt.close(figa)
+
+
+def list_days_files(day, sensor, fs, mindur=5, reverse=False, base_dir='/misc/yoda/pub/pad', out_dir='/home/pims'):
+
+    # get output filename for npz file
+    npz_bname = '_'.join([day.strftime('%Y-%m-%d'), sensor, 'minmax']) + '.npz'
+    npz_file = os.path.join(out_dir, npz_bname)
+
+    # get files (sort order of files based on reverse flag
+    files = get_day_files(day, sensor, fs, mindur=mindur, reverse=reverse, base_dir=base_dir)
+    print('found %d files' % len(files))
+
+    # get starting values for mins and maxs
+    resume = False
+    start_mins = np.array([np.inf, np.inf, np.inf, np.inf])
+    start_maxs = np.array([-np.inf, -np.inf, -np.inf, -np.inf])
+    if resume:
+        # load data to resume based on previous (day(s)?) values FIXME dummy data
+        start_mins = np.array([1, 2, 3, 4])
+        start_maxs = np.array([11, 22, 33, 44])
+
+    mm = MinMax(mins=start_mins, maxs=start_maxs)
+    print(f'{mm = }')
+
+    for f in files:
+        a = padread_vxyz(f)
+        mm.update(a)
+        print('MIN: {:>6.3e} {:>6.3e} {:>6.3e} {:>6.3e}'.format(*mm.mins), end=', ')
+        print('MAX: {:>6.3e} {:>6.3e} {:>6.3e} {:>6.3e}'.format(*mm.maxs), end=', ')
+        print('{:>9d} pts in {:s}'.format(a.shape[0], f))
+
+    mm.save(npz_file)
 
 
 def main(argv):
@@ -200,17 +252,31 @@ def main(argv):
     for p in sys.argv[1:]:
         pair = p.split('=')
         if 2 != len(pair):
-            print 'bad parameter: %s' % p
+            print('bad parameter: %s' % p)
             break
         else:
             parameters[pair[0]] = pair[1]
     else:
         if parameters_ok():
-            # print parameters; raise SystemExit
-            for d in pd.date_range(parameters['start'], parameters['stop']):
-                 day = d.to_pydatetime().date()
-                 # print day
-                 run_hist(day, parameters['sensor'], parameters['fs'])
+            # print(parameters); raise SystemExit
+            date_range = pd.date_range(parameters['start'], parameters['stop'])
+            if parameters['reverse']:
+                date_range = date_range[::-1]
+            for d in date_range:
+                day = d.to_pydatetime().date()
+                print(day)
+                if parameters['func'] == 'run_hist':
+                    print('run_hist')
+                    # run_hist(day, parameters['sensor'], parameters['fs'])
+                elif parameters['func'] == 'run_minmax':
+                    print('run_minmax')
+                elif parameters['func'] == 'list_days_files':
+                    print(' > list_days_files', end=' ')
+                    list_days_files(day, parameters['sensor'], parameters['fs'],
+                                    mindur=parameters['min_dur'], reverse=parameters['reverse'],
+                                    base_dir=parameters['base_dir'].as_posix())
+                else:
+                    print('unknown function to run %s' % parameters['func'])
             return 0
 
         print_usage()
@@ -226,8 +292,5 @@ def main(argv):
 # FIXME dry_run input arg does nothing at the moment - it'd be nice if it traced run w/o actually loading files or calc
 
 
-# ----------------------------------------------------------------------
-# EXAMPLES:
-# put example(s) here
 if __name__ == '__main__':
     sys.exit(main(sys.argv))
