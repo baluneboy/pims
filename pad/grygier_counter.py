@@ -10,7 +10,7 @@ from dateutil import parser
 from dateutil.relativedelta import relativedelta
 from collections import deque
 
-from ugaudio.load import padread
+from ugaudio.load import pad_read
 from pims.padrunhist.main import get_pad_day_sensor_rate_mindur_files
 from pims.utils.pimsdateutil import datetime_to_ymd_path, pad_fullfilestr_to_start_stop
 from pims.pad.pad_buffer import PadBottomBuffer
@@ -43,13 +43,19 @@ def filespan_relativeto_dayhour(fullfilestr, dh):
         return +1
 
 
-def get_day_files(d, sensor, fs, mindur=5, is_rev=True):
-    """return list of files for given day, d, that match sensor, rate & min duration (sorted according to is_rev)"""
-    ymd_dir = datetime_to_ymd_path(d)
-    glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
-    fnames = glob.glob(glob_pat)
-    files = get_pad_day_sensor_rate_mindur_files(fnames, d.strftime('%Y-%m-%d'), sensor, fs, mindur=mindur)
-    files.sort(reverse=is_rev)
+def get_day_files(d, sensor, fs, mindur=5, reverse=True, base_dir='/misc/yoda/pub/pad'):
+    """return list of files for given day, d, that match sensor, rate & min duration (sorted according to reverse)"""
+    fnames = []
+    dd = datetime.timedelta(days=1)
+    drange = pd.date_range(start=d-dd, end=d+dd)
+    for da in drange:
+        print(f'{da = }')
+        ymd_dir = datetime_to_ymd_path(da, base_dir=base_dir)
+        glob_pat = '%s/*_accel_%s/*%s' % (ymd_dir, sensor, sensor)
+        fnames += glob.glob(glob_pat)
+    files = get_pad_day_sensor_rate_mindur_files(fnames, d.strftime('%Y-%m-%d'), sensor, fs, mindur=mindur,
+                                                 base_dir=base_dir)
+    files.sort(reverse=reverse)
     return files
 
 
@@ -70,13 +76,13 @@ def old_demo():
 
             # get previous day's files
             prev_day = d - relativedelta(days=1)
-            files = get_day_files(prev_day, sensor, mindur=MINDUR, is_rev=False)
-            print prev_day.strftime('%Y-%m-%d'), len(files)
+            files = get_day_files(prev_day, sensor, mindur=MINDUR, reverse=False)
+            print(prev_day.strftime('%Y-%m-%d'), len(files))
             is_first_day = False
 
         # get day's files
-        files += get_day_files(d, sensor, mindur=MINDUR, is_rev=False)
-        print d.strftime('%Y-%m-%d'), len(files)
+        files += get_day_files(d, sensor, mindur=MINDUR, reverse=False)
+        print(d.strftime('%Y-%m-%d'), len(files))
 
         # FIXME this relies on sometimes faulty stop part of string in PAD filename
         # filter files to keep those with fstop > curr_dh's hour
@@ -89,11 +95,11 @@ def old_demo():
             fspan_relative = filespan_relativeto_dayhour(f, curr_dh)
 
             if fspan_relative == 0:
-                print 'extract', curr_dh, 'part of', f
+                print('extract', curr_dh, 'part of', f)
                 last_file = f
 
             elif fspan_relative < 0:
-                print 'before', curr_dh, 'is', f
+                print('before', curr_dh, 'is', f)
                 raise Exception('this should never happen???')
 
             elif fspan_relative > 0:
@@ -101,9 +107,9 @@ def old_demo():
                     # print 'prepending', last_file
                     my_deck.appendleft(last_file)
                 curr_dh += relativedelta(hours=1)
-                print 'current dh now', curr_dh
+                print('current dh now', curr_dh)
 
-        print '-' * 55
+        print('-' * 55)
 
 
     # # arr = np.empty((0, 4))
@@ -131,12 +137,12 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
 
     # get files for all of stop_str's day
     stop_day = parser.parse(stop_str).replace(hour=0, minute=0, second=0, microsecond=0)
-    print stop_day.strftime('%Y-%m-%d'), '<< getting stop_day files before iteration begins'
+    print(stop_day.strftime('%Y-%m-%d'), '<< getting stop_day files before iteration begins')
     files = get_day_files(stop_day, sensor, fs, mindur=min_dur)
 
     # get files for all of last_day
     last_day = stop_day - relativedelta(days=1)
-    print last_day.strftime('%Y-%m-%d'), '<< getting last_day files before iteration begins'
+    print(last_day.strftime('%Y-%m-%d'), '<< getting last_day files before iteration begins')
     files += get_day_files(last_day, sensor, fs, mindur=min_dur)
 
     # print 'len(files) = %d' % len(files)
@@ -158,10 +164,10 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
             while dfiles_empty:
                 days_ago += 1
                 prior_day = dh.replace(hour=0) - relativedelta(days=days_ago)
-                print prior_day.strftime('%Y-%m-%d'), '<< deque of files empty, so extending deque with prior day files'
+                print(prior_day.strftime('%Y-%m-%d'), '<< deque of files empty, so extending deque with prior day files')
                 prior_day_files = get_day_files(prior_day, sensor, fs, mindur=min_dur)
                 dfiles.extend(prior_day_files)
-                print 'extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d'))
+                print('extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d')))
                 dfiles_empty = False if dfiles else True
 
         # # if it's high noon, then get list of matching files for prior day and extend deque
@@ -175,7 +181,7 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
         # print 'len(dfiles) = %d' % len(dfiles)
 
         # iterate over deque, popping only files that overlap Interval from dh:dh+relativedelta(hours=1)
-        print dh.strftime('%Y-%m-%d/%H'), 'extracting (t,x,y,z,v) data from files for this dh'
+        print(dh.strftime('%Y-%m-%d/%H'), 'extracting (t,x,y,z,v) data from files for this dh')
         last_file = None
         while True:
             if dfiles:
@@ -185,7 +191,7 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
                 if fspan_relative == 0:
                     a = padread_hourpart(f, fs, dh)
                     buffer.add(a)
-                    print 'extract', dh, 'part of', f, 'count =', np.count_nonzero(~np.isnan(buffer.vxyz[:, 0]))
+                    print('extract', dh, 'part of', f, 'count =', np.count_nonzero(~np.isnan(buffer.vxyz[:, 0])))
                     last_file = f
 
                 elif fspan_relative < 0:
@@ -208,15 +214,15 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
                         with open(csv_file, 'w') as fd:
                             fd.write(labels)
                     buffer.append_to_csv(csv_file, dh)
-                    print 'before', dh, 'is', f, csv_file
+                    print('before', dh, 'is', f, csv_file)
                     break
 
                 elif fspan_relative > 0:
-                    print 'after', dh, 'is', f
+                    print('after', dh, 'is', f)
 
             else:
 
-                print 'no more files to pop from deque'
+                print('no more files to pop from deque')
 
                 # deque of files is empty, extend as needed
                 dfiles_empty = True
@@ -225,10 +231,10 @@ def run_reverse(sensor, fs, start_str, stop_str, sec=3600.0, min_dur=5.0):
                     while dfiles_empty:
                         days_ago += 1
                         prior_day = dh.replace(hour=0) - relativedelta(days=days_ago)
-                        print prior_day.strftime('%Y-%m-%d'), '<< deque of files empty, so extending deque with prior day files'
+                        print(prior_day.strftime('%Y-%m-%d'), '<< deque of files empty, so extending deque with prior day files')
                         prior_day_files = get_day_files(prior_day, sensor, fs, mindur=min_dur)
                         dfiles.extend(prior_day_files)
-                        print 'extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d'))
+                        print('extended deque by adding %d more files from %s' % (len(prior_day_files), prior_day.strftime('%Y-%m-%d')))
                         dfiles_empty = False if dfiles else True
 
 
@@ -239,8 +245,8 @@ def parameters_ok():
     try:
         start = parser.parse(parameters['start_str'])
         parameters['start_str'] = str(start.date())
-    except Exception, e:
-        print 'could not get start_str input as date object: %s' % e.message
+    except Exception as e:
+        print('could not get start_str input as date object: %s' % e.message)
         return False
 
     # convert stop day to date object
@@ -250,36 +256,36 @@ def parameters_ok():
     else:
         try:
             parameters['stop_str'] = str(parser.parse(parameters['stop_str']).date())
-        except Exception, e:
-            print 'could not get stop_str input as date object: %s' % e.message
+        except Exception as e:
+            print('could not get stop_str input as date object: %s' % e.message)
             return False
 
     # convert fs to float
     try:
         parameters['fs'] = float(parameters['fs'])
-    except Exception, e:
-        print 'could not convert fs to float: %s' % e.message
+    except Exception as e:
+        print('could not convert fs to float: %s' % e.message)
         return False
 
     # convert sec to float
     try:
         parameters['sec'] = float(parameters['sec'])
-    except Exception, e:
-        print 'could not convert sec to float: %s' % e.message
+    except Exception as e:
+        print('could not convert sec to float: %s' % e.message)
         return False
 
     # convert min_dur to float
     try:
         parameters['min_dur'] = float(parameters['min_dur'])
-    except Exception, e:
-        print 'could not convert min_dur to float: %s' % e.message
+    except Exception as e:
+        print('could not convert min_dur to float: %s' % e.message)
         return False
 
     # convert dry_run to boolean
     try:
         parameters['dry_run'] = True if parameters['dry_run'].lower() in ['true', '1', 'yes', 'y'] else False
-    except Exception, e:
-        print 'could not convert dry_run to boolean: %s' % e.message
+    except Exception as e:
+        print('could not convert dry_run to boolean: %s' % e.message)
         return False
 
     return True  # params are OK; otherwise, we returned False above
@@ -287,11 +293,11 @@ def parameters_ok():
 
 def print_usage():
     """print short description of how to run the program"""
-
-    print 'USAGE:    %s [options]' % os.path.abspath(__file__)
-    print 'EXAMPLE1: %s # FOR DEFAULTS' % os.path.abspath(__file__)
-    print 'EXAMPLE2: %s dry_run=True sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # DRY RUN' % os.path.abspath(__file__)
-    print 'EXAMPLE3: %s sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # ACTUAL RUN' % os.path.abspath(__file__)
+    file_pth = os.path.abspath(__file__)
+    print('USAGE:    %s [options]' % file_pth)
+    print('EXAMPLE1: %s # FOR DEFAULTS' % file_pth)
+    print('EXAMPLE2: %s dry_run=True sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # DRY RUN' % file_pth)
+    print('EXAMPLE3: %s sensor=es20 fs=500 start_str=2019-05-01 stop_str=2019-07-01 # ACTUAL RUN' % file_pth)
 
 
 def main(argv):
@@ -301,7 +307,7 @@ def main(argv):
     for p in sys.argv[1:]:
         pair = p.split('=')
         if 2 != len(pair):
-            print 'bad parameter: %s' % p
+            print('bad parameter: %s' % p)
             break
         else:
             parameters[pair[0]] = pair[1]

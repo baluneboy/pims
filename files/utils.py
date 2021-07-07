@@ -4,13 +4,174 @@ import glob
 import time
 import errno
 import shutil
+import struct
 import hashlib
+import pathlib
+import numpy as np
 import pandas as pd
+import datetime
+from subprocess import Popen, PIPE
 from pims.files.base import File, UnrecognizedPimsFile
-from pims.patterns.handbookpdfs import is_unique_handbook_pdf_match
-from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN
-from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date
+from pims.patterns.dailyproducts import _BATCHROADMAPS_PATTERN, _PADHEADERFILES_PATTERN, _ANYPADPATH_PATTERN, _SENSOR_DIR_PATTERN
+from pims.utils.pimsdateutil import timestr_to_datetime, ymd_pathstr_to_date, pad_fullfilestr_to_start_stop
 from pims.strings.utils import remove_non_ascii
+from pims.pad.modify_header import modify_header_file
+
+
+def get_pad_timestamp_deltas(pad_files):
+    """return dict of min/med/max delta of file modify times minus filename start time"""
+    files = {f: datetime.datetime.fromtimestamp(f.stat().st_mtime) - pad_fullfilestr_to_start_stop(str(f))[0] for f in
+             pad_files}
+    file_min = min(files, key=files.get)
+    file_max = max(files, key=files.get)
+    # med = np.median(np.array(list(files.values())))
+    # return files[file_min], med, files[file_max]
+    return files[file_min], files[file_max]
+
+
+def quarantine_pad_pair(data_file):
+    """quarantine PAD data file AND its companion header file"""
+    dname = os.path.dirname(data_file)
+    qdir = os.path.join(dname, 'quarantined')
+    if not os.path.isdir(qdir):
+        os.mkdir(qdir)
+    qfile = os.path.join(dname, 'quarantined', os.path.basename(data_file))
+    if os.path.exists(qfile):
+        print('The filesystem needs to be fixed, same file already in quarantined subdir!?')
+        raise Exception('%s ALREADY EXISTS' % qfile)
+    shutil.move(data_file, qdir)
+    print('quarantined %s' % data_file)
+    if os.path.exists(qfile + '.header'):
+        print('The filesystem needs to be fixed, same file already in quarantined subdir!?')
+        raise Exception('%s ALREADY EXISTS' % qfile + '.header')
+    shutil.move(data_file + '.header', qdir)
+    print('quarantined %s' % data_file + '.header')
+    return os.path.join(qdir, os.path.basename(data_file))
+
+
+def get_file_mtime(f):
+    """return datetime object for when file was last modified (data/content changed)"""
+    fobj = f if isinstance(f, pathlib.Path) else pathlib.Path(f)
+    return datetime.datetime.fromtimestamp(fobj.stat().st_mtime)
+
+
+def is_pad_dir_pure(d):
+    """return True if PAD day directory is pure
+    criteria for being pure for both header files and data files:
+    - sort order by filename SAME as sort order by modify time
+    - modify time is ABOUT 24 hours after start part of filename
+    """
+    dir_obj = d if isinstance(d, pathlib.Path) else pathlib.Path(d)
+    regex_pad_sensor_path = re.compile(_SENSOR_DIR_PATTERN)
+    if not dir_obj.is_dir():
+        raise ValueError('%s directory does not exist' % dir_obj)
+    if regex_pad_sensor_path.match(str(dir_obj)) is None:
+        raise ValueError('%s directory does not match PAD sensor path pattern' % dir_obj)
+    # get sorted list of header file objects based on alphanumeric
+    hdr_files_by_alphanum = sorted(list(x for x in dir_obj.iterdir() if x.is_file() and str(x).endswith('.header')))
+    # get sorted list of header file objects based on modified time
+    hdr_files_by_mtimes = sorted(hdr_files_by_alphanum, key=os.path.getmtime)
+    # check first criteria (sorts must match)
+    if hdr_files_by_alphanum != hdr_files_by_mtimes:
+        return False
+
+
+def files_differ(f1, f2):
+    """return True if files differ via call OS diff command:'diff =qs file1 file2'"""
+    cmd = ['diff', '-qs', f1, f2]
+    a = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = a.communicate()
+    if 'differ' in str(stdout).lower():
+        return True
+    elif 'identical' in str(stdout).lower():
+        return False
+    else:
+        raise RuntimeError('did not get either "differ" or "identical" with diff on 2 files')
+
+
+def copy_skip_bytes(in_file, out_file, num_bytes):
+    """call OS dd command to copy file with num_bytes skipped at beginning of file"""
+    # dd skip=32 if=/tmp/carveme.txt of=/tmp/carveme.new bs=8192 iflag=skip_bytes
+    cmd = ['dd', 'skip=%d' % num_bytes, 'if=' + in_file, 'of=' + out_file, 'bs=8192', 'iflag=skip_bytes']
+    a = Popen(cmd, stdout=PIPE, stderr=PIPE)
+    stdout, stderr = a.communicate()
+    # note that for this dd command, meaningful info goes to stderr & stdout does not contain anything [ever?]
+    if 'fail' in str(stderr).lower():
+        print(stderr)
+
+
+def rezero_pad_file(pad_file, rate):
+    """rewrite pad_file so time column starts with zero and ticks up by 1/rate"""
+    # FIXME change 16 to dynamic value (like MAMS has more floats per record than typical SAMS)
+    num_recs = os.path.getsize(pad_file) // 16
+    value = 0.0
+    with open(pad_file, "r+b") as fh:
+        for i in range(num_recs):
+            # FIXME change 16 to dynamic value (like MAMS has more floats per rec than SAMS, not 16)
+            offset = i * 16
+            value_bytes = struct.pack('f', value)
+            fh.seek(offset)
+            fh.write(value_bytes)
+            value += 1.0 / rate
+
+
+def get_new_pad_name(pad_file, new_start, new_stop):
+    """return new pad filename after replacing '+' to '-' and changing start/stop time"""
+    folder = os.path.dirname(pad_file)
+    sensor = pad_file.split('.')[-1]
+    start_str = new_start.strftime('%Y_%m_%d_%H_%M_%S.%f')[:-3]
+    stop_str = new_stop.strftime('%Y_%m_%d_%H_%M_%S.%f')[:-3]
+    new_basename = '%s-%s.%s' % (start_str, stop_str, sensor)
+    new_pad_file = os.path.join(folder, new_basename)
+    return new_pad_file
+
+
+def carve_pad_file(pad_file, prev_grp_stop, rate):
+    """return new pad file name AND carve file to mesh with previous group stop time; this function does 5 things:
+    1. removes data points from start of file based on rate and previous group stop time
+    2. rename resulting carved pad file so that plus/minus is minus (to start a new group)
+    3. rezero/rewrite time column to start with zero
+    4. rename resulting carved pad file for new start time
+    5. modifies PAD header file (see pad/modify_header.py)
+    """
+    f_start, f_stop = pad_fullfilestr_to_start_stop(pad_file)
+    time_step = 1.0 / rate
+    if f_start >= prev_grp_stop + datetime.timedelta(seconds=time_step):
+        s = 'PAD FILE = %s' % pad_file
+        s += "\nnot going to carve this PAD file since it starts well enough after previous group stop's time"
+        raise ValueError(s)
+    # print(str(prev_grp_stop)[:-3], "= prev_grp_stop")   # 2020-10-06 02:58:48.648
+    # print(str(f_start)[:-3], "= f_start")         # 2020-10-06 02:58:30.001
+    offset_sec = (prev_grp_stop - f_start).total_seconds()   # 18.647 seconds
+    offset_recs = (offset_sec / time_step) + 0.5  # half rec ensures no overlap at all
+    # print(offset_recs, " is calc. offset recs")   # 9323.4999999
+    num_remove_recs = np.ceil(offset_recs)
+    # print(num_remove_recs, " is how many recs we will remove")  # 9324
+    new_start = f_start + datetime.timedelta(seconds=(num_remove_recs * time_step))
+    # print(str(new_start)[:-3], "= new file start time")
+    if rate == 500.0:
+        bytes_per_rec = 16
+    else:
+        # FIXME why not handle other data sets gracefully we have very poor proxy of 500 sa/sec implies 16 bytes/rec???
+        raise Exception('unhandled rate')
+    num_remove_bytes = num_remove_recs * bytes_per_rec
+    old_pad_data_file = quarantine_pad_pair(pad_file)
+    copy_skip_bytes(old_pad_data_file, pad_file, num_remove_bytes)
+    # rename pad data file
+    old_num_recs = os.path.getsize(pad_file) / 16
+    new_num_recs = old_num_recs - num_remove_recs
+    new_stop = new_start + datetime.timedelta(seconds=(new_num_recs / rate))
+    new_pad_file = get_new_pad_name(pad_file, new_start, new_stop)
+    new_tzero = new_pad_file.split('-')[0]
+    os.rename(pad_file, new_pad_file)
+    rezero_pad_file(new_pad_file, rate)
+    new_data_bname = os.path.basename(new_pad_file)
+    append_dqm = '(carved %d records)' % num_remove_recs
+    modify_header_file(old_pad_data_file + '.header', new_pad_file + '.header', new_data_bname, new_tzero, append_dqm)
+    return new_pad_file
+    # os.rename(pad_file, pad_file_minus)
+    # print('CARVED %s' % pad_file)
+    # print('-.' * 22)
 
 
 def get_immediate_subdirs(a):
@@ -80,7 +241,7 @@ def prepend_tofile(s, txtfile):
         with open(txtfile, 'w') as modified: modified.write(s + '\n' + old_text)
         bool_success = True
     except:
-        print 'FAILED to prepend to %s' % txtfile
+        print('FAILED to prepend to %s' % txtfile)
     return bool_success
 
 def tail(f, n, offset=0):
@@ -109,7 +270,7 @@ def reshape_csv_file(csv_file, shape_tuple):
     # write new shaped data to new csv file
     new_file = csv_file + '.RESHAPED.csv'
     df_new.to_csv(new_file, index=False, header=False)
-    print 'wrote ' + new_file
+    print('wrote ' + new_file)
 
 def overwrite_file_with_non_ascii_chars_removed(f):
     with open (f, "r") as myfile:
@@ -142,7 +303,7 @@ def guess_file(name, klass, show_warnings=False):
         p.recognized = False
     #if show_warnings and not p.recognized:
     if not p.recognized:
-        print 'Unrecognized file "%s"' % name
+        print('Unrecognized file "%s"' % name)
     return p
 
 def tuplify_headers(headers):
@@ -241,7 +402,7 @@ def listdir_filename_pattern(dirpath, fname_pattern):
     return files
 
 def filter_filenames(dirpath, predicate):
-    """
+    r"""
     >>> sensor = '121f03'
     >>> fullfile_pattern = r'(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_%s)/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.%s\Z' % (sensor, sensor)
     >>> dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
@@ -346,10 +507,10 @@ def ike_jaxa_file_transfer(fromdir, todir):
 def demofiltfiles():
     dirpath = '/misc/yoda/pub/pad/year2015/month03/day17'
     sensor_subdir = 'sams2_accel_121f03'
-    fullfile_pattern = '(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
+    fullfile_pattern = r'(?P<ymdpath>/misc/yoda/pub/pad/year\d{4}/month\d{2}/day\d{2}/)(?P<subdir>.*_(?P<sensor>.*))/(?P<start>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})(?P<pm>[\+\-])(?P<stop>\d{4}_\d{2}_\d{2}_\d{2}_\d{2}_\d{2}\.\d{3})\.(?P=sensor)\.header\Z'
     big_list = [ x for x in filter_filenames(dirpath, re.compile(fullfile_pattern).match) if x.endswith('121f03.header')]
     for f in big_list: #filter_filenames(dirpath, re.compile(fullfile_pattern).match):
-        print f
+        print(f)
 
 #demofiltfiles()
 #raise SystemExit
@@ -367,10 +528,10 @@ def remove_old_files(folder, numdays):
             c = t.st_ctime
             # delete f if older than numdays
             if c < cutoff:
-                print 'removing %s' % fullfile
+                print('removing %s' % fullfile)
                 #os.remove( fullfile )
             else:
-                print 'keeping %s' % fullfile
+                print('keeping %s' % fullfile)
 
 
 def get_md5(my_file, blocksize=65536):
@@ -406,10 +567,20 @@ def demo_needles_haystack():
     dailyhistpad_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20Hz_QUIETER.txt'
     roadmap_fname = '/home/pims/Documents/CIR_PaRIS_Based_on_es05_spgs_below_20hz_map_large_outPDF.txt'
     matched_list = find_needles_in_haystack(dailyhistpad_fname, roadmap_fname)
-    print 'pdfunite ' + ' '.join(matched_list)
+    print('pdfunite ' + ' '.join(matched_list))
+
+
+def demo_carve():
+    """
+    >>> pad_file = '/tmp/2020_10_06_02_58_30.001-2020_10_06_02_59_59.501.121f03'
+    >>> prev_grp_stop = datetime.datetime(2020, 10, 6, 2, 58, 48, 648000)
+    >>> rate = 500.0
+    >>> carve_pad_file(pad_file, prev_grp_stop, rate)
+    /monkey/do
+    """
+    pass
 
 
 if __name__ == "__main__":
     import doctest
     doctest.testmod(verbose=True)
-    

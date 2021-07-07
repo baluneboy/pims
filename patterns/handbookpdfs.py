@@ -319,8 +319,8 @@ def demo_hbfpat():
         #raise ValueError('Invalid literal for PATTERN: %r' % input_value)
         pass
     else:
-        print 'timestr: %s' % m.group('timestr')
-        print 'plot_type: %s' % m.group('plot_type')
+        print('timestr: %s' % m.group('timestr'))
+        print('plot_type: %s' % m.group('plot_type'))
 
 def is_unique_handbook_pdf_match(fname):
     """
@@ -371,4 +371,4 @@ if __name__ == "__main__":
 
     for f in files:
         is_match = is_unique_handbook_pdf_match(f)
-        print is_match, f
+        print(is_match, f)

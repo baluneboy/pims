@@ -13,9 +13,9 @@ import pygame
 from pygame.locals import QUIT
 import pandas as pd
 
-from fontmgr import FontManager
-from timemachine import RapidTimeGetter, TimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
-from timemachine import EeTimeGetter, CcsdsEeTimeGetter
+from .fontmgr import FontManager
+from .timemachine import RapidTimeGetter, TimeGetter, KuTimeGetter, HirapTimeGetter, TimeMachine
+from .timemachine import EeTimeGetter, CcsdsEeTimeGetter
 
 from pims.utils.pimsdateutil import unix2dtm
 
@@ -315,14 +315,14 @@ def demo_on_park():
 def check_df():
     df = pd.read_pickle('/tmp/df.pik')
     df_host = df[ df['Type'] == 'HOST' ]
-    print df_host
+    print(df_host)
     host_gmt = df_host['GMT'].values[0]
     df_okay = df[ df['GMT'] >= host_gmt ]
     df_olds = df[ df['GMT'] <  host_gmt ]
-    print df_host
-    print host_gmt
-    print df_okay
-    print df_olds
+    print(df_host)
+    print(host_gmt)
+    print(df_okay)
+    print(df_olds)
     
 #check_df()
 #raise SystemExit

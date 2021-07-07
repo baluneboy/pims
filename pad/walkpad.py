@@ -4,21 +4,11 @@ from collections import deque
 from pathlib import Path
 from scipy import signal
 
+from pims.pad.daily_utils import sensor_subdir
 from pims.utils.pimsdateutil import datetime_to_ymd_path
 from pims.files.filter_pipeline import FileFilterPipeline, HeaderMatchesSensorRateCutoffPad, BigFile
-from pims.signal.filter import my_psd
-from ugaudio.load import padread
-
-
-# FIXME this function should go in better/generic location BUT w/o breaking daily infrastructure from 2to3 deal
-def sensor_subdir(sensor):
-    """return string for sensor subdir name given sensor designation"""
-    if sensor.startswith('121f0'):
-        return 'sams2_accel_' + sensor
-    elif sensor.startswith('es'):
-        return 'samses_accel_' + sensor
-    else:
-        return 'unknown'
+from pims.signal.filter import my_psd, my_int_rms
+from ugaudio.load import pad_read
 
 
 # FIXME this needs StopIteration on probably the cumulative number of days that have been visited
@@ -93,19 +83,33 @@ class PadFilePsd(PadFileProcess):
 
     def save_config(self, file1):
         print('do something special with very first file & call process_file too')
-        data = padread(file1)
+        data = pad_read(file1)
         # TODO get label, deltaf (to get freqs), nfft, etc. into config file for this labeled data set
 
     def process_file(self, pad_file, fs, nfft):
         super().process_file(pad_file)
         # return os.stat(pad_file).st_size // 16 // nmax
 
-        y = padread(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
+        y = pad_read(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
         n = nfft * (len(y) // nfft)
         y = y[:n]  # y gets truncated after an integer multiple of nfft pts
 
         f, pyy = my_psd(y, fs, nfft)
         return pyy
+
+
+class PadFileIntRms(PadFileProcess):
+
+    def process_file(self, pad_file, int_pts, olap_pts):
+        super().process_file(pad_file)
+        # return os.stat(pad_file).st_size // 16 // nmax
+
+        y = pad_read(pad_file)[:, 2]  # indexing here gives JUST Y-AXIS
+        n = int_pts * (len(y) // int_pts)
+        y = y[:n]  # y gets truncated after an integer multiple of nfft pts
+
+        t, arms = my_int_rms(y, fs, int_pts)
+        return t, arms
 
 
 nfft = 8192
@@ -119,12 +123,18 @@ fs, fc = 142.0, 6.0
 min_bytes = 0.7 * 1024 * 1024  # bytes in 5 min = 5(16B/rec)(142rec/sec)(60sec/1min)/1024/1024 = 0.65 MB
 ffp = FileFilterPipeline(HeaderMatchesSensorRateCutoffPad(sensor, fs, fc), BigFile(min_bytes=min_bytes))
 # top_dir = os.sep.join(['d:', 'pad'])
-top_dir = 'p:' + os.sep
-start_date = date(2020, 5, 10)
-num_days = 77
+# top_dir = 'p:' + os.sep
+top_dir = '/misc/yoda/pub/pad'
+start_date = date(2020, 3, 1)
+num_days = 2 # 120
 
 # create iterator
 pfi = PadFilesIterator(sensor, start_date, num_days, reverse=False, top=top_dir, ffp=ffp)
+
+for i, f in enumerate(pfi):
+    print(i, f)
+
+raise SystemExit
 
 # pad_file = next(pfi)
 # data = padread(pad_file)

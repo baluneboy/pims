@@ -16,7 +16,7 @@ from pims.utils.pimsdateutil import dtm2unix
 DEBUG = 0
 
 def debug_print(s):
-    if DEBUG: print s
+    if DEBUG: print(s)
 
 
 # get real-time db table unix time (like from es05rt table)
