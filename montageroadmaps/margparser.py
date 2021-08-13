@@ -43,6 +43,22 @@ def folder_str(f):
         raise argparse.ArgumentTypeError('"%s" does not exist as a folder' % f)
     return f
 
+def date_str(d):
+    """return datetime date object converted from input string, s"""
+    dtm = date_parser.parse(d)
+    return dtm.date()
+
+def runs_str(r):
+    """return valid min_runs int value converted from string, r"""
+    try:
+        value = int(r)
+    except Exception, e:
+        raise argparse.ArgumentTypeError('minimum runs could not be converted from %s' % e.message)
+
+    if value < 1 or value > 999:
+        raise argparse.ArgumentTypeError('minimum runs has to be 1 <= r <= 999')
+
+    return value
 
 def pattern_str(p):
     """return string provided only if it is a valid regular expression pattern string"""
@@ -54,6 +70,13 @@ def pattern_str(p):
     if not is_valid:
         raise argparse.ArgumentError('"%s" does not appear to be a valid regular expression')
     return p
+
+def team_str(t):
+    """return uppercase of string input, provided it exists in teams.team_abbrevs"""
+    t = t.upper()
+    if t not in teams.team_abbrevs:
+        raise argparse.ArgumentTypeError('"%s" is not in official list of teams.team_abbrevs' % t)
+    return t
 
 
 def show_args(args):
